@@ -11,7 +11,7 @@
     "allowImportingTsExtensions": true,
     "moduleResolution": "bundler",
     "noEmit": true,
-    "verbatimModuleSyntax": true,
+    "verbatimModuleSyntax": false,
 
     /* Linting */
     "forceConsistentCasingInFileNames": true,
