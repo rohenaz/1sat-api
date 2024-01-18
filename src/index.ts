@@ -103,7 +103,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         details.listings = await fetchJSON<ListingsV2[]>(urlListings)
 
         // add sales
-        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&type=v2&id=${id}`;
+        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=1&offset=0&type=v2&id=${id}`;
         details.sales = await fetchJSON<ListingsV2[]>(urlSales)
 
         d.push(details)
@@ -146,7 +146,7 @@ const fetchMarketData = async (assetType: AssetType) => {
         };
       });
     case AssetType.BSV20V2:
-      const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=1&offset=0&sort=fund_total&dir=desc&included=true`;
+      const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
       const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
       const tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
       const detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(tokenIds, assetType);
