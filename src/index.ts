@@ -7,8 +7,8 @@ import { BSV20TXO } from './types/ordinals';
 const redis = new Redis(`${process.env.REDIS_PRIVATE_URL}`);
 await redis.connect()
 
-const app = new Elysia().get("/", () => {
-
+const app = new Elysia().get("/", ({ set }) => {
+  set.headers["Content-Type"] = "text/plain";
   // sweet ascii art from the 90s
   console.log(`
   ██████╗ ██████╗ ███████╗██╗   ██╗███████╗██████╗ ███████╗██████╗
