@@ -15,7 +15,7 @@ const app = new Elysia().get("/", ({ set }) => {
 }).get('/market/:assetType', async ({ set, params }) => {
   console.log(params.assetType)
   try {
-    let market = await redis.get(`market-${params.assetType}`);
+    let market = await redis.get(`markes-${params.assetType}`);
     console.log("In cache?", market)
     if (!market) {
       const marketData = await fetchMarketData(params.assetType as AssetType);
@@ -114,7 +114,7 @@ const fetchMarketData = async (assetType: AssetType) => {
   const exchangeRate = await fetchExchangeRate();
   switch (assetType) {
     case AssetType.BSV20:
-      const urlV1Tokens = `${API_HOST} / api / bsv20 ? limit = 100 & offset=0 & sort=height & dir=desc & included=true`;
+      const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
       const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
       const t1 = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
       const detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
