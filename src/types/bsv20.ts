@@ -40,13 +40,25 @@ export interface BSV20V1 extends BaseTxo {
 export interface BSV20V2 extends BaseTxo {
   id: string;
   sym: string; // Symbol
-  icon?: string;
+  icon?: string; // eg 87f1d0785cf9b4951e75e8cf9353d63a49f98e9b6b255bcd6a986db929a00472_0
   amt: string; // Total supply
   dec: number; // Decimal places (display only)
   fundAddress: string;
   fundTotal: string; // Total value in satoshis
   fundUsed?: string;
   fundBalance: string;
+}
+
+export interface ListingsV2 extends BSV20V2 {
+  price: string;
+  pricePer: string;
+  owner: string;
+  sale: boolean;
+  payout: string; // base64 encoded
+  script: string; // base64 encoded
+  spend: string;
+  spendIdx: string;
+  spendHeight: string;
 }
 
 export interface BSV20V1Details extends BSV20V1 {

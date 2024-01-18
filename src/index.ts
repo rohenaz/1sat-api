@@ -2,7 +2,7 @@ import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
 import { uniqBy } from 'lodash';
 import { API_HOST, AssetType } from './constants';
-import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details } from './types/bsv20';
+import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV2 } from './types/bsv20';
 
 const redis = new Redis(`${process.env.REDIS_URL}`);
 
@@ -98,10 +98,11 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
 
         // add listings
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v2&id=${id}`;
-        details.listings = await fetchJSON<BSV20V2[]>(urlListings)
+        const listings = await fetchJSON<ListingsV2[]>(urlListings)
+
+        details.listings = listings
         d.push(details)
       })
-
       break;
     default:
       break;
@@ -118,7 +119,7 @@ const fetchMarketData = async (assetType: AssetType) => {
       const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
       const t1 = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
       const detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
-
+      console.log({ detailedTokensV1 })
       return detailedTokensV1.map(ticker => {
         // Convert price from token sale price to USD
         const priceUSD = parseFloat(ticker.fundTotal) * exchangeRate;
