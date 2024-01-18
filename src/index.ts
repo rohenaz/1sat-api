@@ -15,7 +15,7 @@ const app = new Elysia().get("/", ({ set }) => {
 }).get('/market/:assetType', async ({ set, params }) => {
   console.log(params.assetType)
   try {
-    let market = await redis.get(`markett-${params.assetType}`);
+    let market = await redis.get(`market-${params.assetType}`);
     console.log("In cache?", market)
     if (!market) {
       const marketData = await fetchMarketData(params.assetType as AssetType);
@@ -39,6 +39,7 @@ const app = new Elysia().get("/", ({ set }) => {
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
 );
+
 // Helper function to fetch JSON
 const fetchJSON = async <T>(url: string): Promise<T> => {
   const response = await fetch(url);
@@ -137,13 +138,13 @@ const fetchMarketData = async (assetType: AssetType) => {
         };
       });
     case AssetType.BSV20V2:
-      const urlV2Tokens = `${API_HOST} / api / bsv20 / v2 ? limit = 20 & offset=0 & sort=fund_total & dir=desc & included=true`;
+      const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
       const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
       const tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
       const detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(tokenIds, assetType);
       return detailedTokensV2.map(ticker => {
-        const amount = parseFloat(ticker.amt) / Math.pow(10, ticker.dec || 0);
-        const price = parseFloat(ticker.fundTotal) * exchangeRate / amount;
+        const amount = parseFloat(ticker.amt);
+        const price = 0;
         const marketCap = calculateMarketCap(price, amount);
         const holders = ticker.accounts;
         return {
