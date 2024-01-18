@@ -2,7 +2,7 @@ import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
 import { uniqBy } from "lodash";
 import { API_HOST, AssetType } from './constants';
-import { BSV20V1, BSV20V2 } from './types/bsv20';
+import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details } from './types/bsv20';
 
 const redis = new Redis(`${process.env.REDIS_URL}`);
 
@@ -56,7 +56,7 @@ const fetchExchangeRate = async (): Promise<number> => {
 
 // add generic type
 
-const fetchTokensDetails = async <T extends BSV20V1 | BSV20V2>(tokenIDs: string[], assetType: AssetType): Promise<T[]> => {
+const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tokenIDs: string[], assetType: AssetType): Promise<T[]> => {
   // promise all passed in
   let tokensDetails: T[] = [];
 
@@ -90,7 +90,7 @@ const fetchMarketData = async (assetType: AssetType) => {
       const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
       const tickersV1 = await fetchJSON(urlV1Tokens) as BSV20V1[];
       const t1 = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
-      const defailedTokensV1 = await fetchTokensDetails<BSV20V1>(t1, assetType);
+      const defailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
 
       return defailedTokensV1.map(ticker => {
         // Convert price from token sale price to USD
@@ -109,7 +109,7 @@ const fetchMarketData = async (assetType: AssetType) => {
       const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
       const tickersV2 = await fetchJSON(urlV2Tokens) as BSV20V2[];
       const t2 = uniqBy(tickersV2, 'sym').map(ticker => ticker.sym);
-      const defailedTokensV2 = await fetchTokensDetails<BSV20V2>(t2, assetType);
+      const defailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(t2, assetType);
       return defailedTokensV2.map(ticker => {
         const amount = parseFloat(ticker.amt) / Math.pow(10, ticker.dec || 0);
         const price = parseFloat(ticker.fundTotal) * exchangeRate / amount;
