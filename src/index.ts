@@ -84,7 +84,12 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         const lastSales = await fetchJSON<BSV20V1[]>(urlPrice);
         console.log({ lastSales })
         const url = `${API_HOST}/api/bsv20/tick/${id}?refresh=false`;
-        const details = await fetchJSON<BSV20V2Details>(url)
+        const details = await fetchJSON<BSV20V1Details>(url)
+
+        // add listings
+        const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1`;
+        const listings = await fetchJSON<BSV20V1[]>(urlListings)
+        details.listings = listings
         return details
       }));
       break;
