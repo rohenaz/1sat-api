@@ -88,7 +88,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
 
         // add sales
         const urlSales = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1&sale=true&tick=${id}`;
-        details.sales = await fetchJSON<BSV20V2[]>(urlSales)
+        details.sales = await fetchJSON<BSV20V1[]>(urlSales)
 
         d.push(details)
       }
@@ -104,7 +104,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
 
         // add sales
         const urlSales = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v2&sale=true&id=${id}`;
-        details.sales = await fetchJSON<BSV20V2[]>(urlSales)
+        details.sales = await fetchJSON<ListingsV2[]>(urlSales)
 
         d.push(details)
       }
@@ -147,21 +147,26 @@ const fetchMarketData = async (assetType: AssetType) => {
       const tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
       const detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(tokenIds, assetType);
       return detailedTokensV2.map(ticker => {
-        const amount = parseFloat(ticker.amt);
         // average price per unit bassed on last 10 sales
+        console.log({ sales: ticker.sales })
 
-        const price = ticker.sales.reduce((acc, sale) => {
-          return acc + parseInt(sale.pricePer);
-        }, 0) / ticker.sales.length;
-
-        const marketCap = calculateMarketCap(price, amount);
+        // add up total price and divide by the amount to get an average price
+        const totalSales = ticker.sales.reduce((acc, sale) => {
+          return acc + parseInt(sale.price)
+        }, 0);
+        const totalAmount = ticker.sales.reduce((acc, sale) => {
+          return acc + parseInt(sale.amt)
+        }, 0);
+        const price = totalSales / totalAmount;
+        const marketCap = calculateMarketCap(price, parseFloat(ticker.amt));
         const holders = ticker.accounts;
         return {
           tick: ticker.sym,
-          price: price,
+          price,
           marketCap: marketCap,
           holders,
-          listings: ticker.listings
+          listings: ticker.listings,
+          sales: ticker.sales
         };
       });
 
