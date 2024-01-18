@@ -96,8 +96,6 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
 // Function to fetch and process market data
 const fetchMarketData = async (assetType: AssetType) => {
   const exchangeRate = await fetchExchangeRate();
-  let tokens;
-
   switch (assetType) {
     case AssetType.BSV20:
       const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
@@ -111,16 +109,15 @@ const fetchMarketData = async (assetType: AssetType) => {
 
         // Calculate market cap
         const marketCap = priceUSD * parseFloat(ticker.max);
+        const holders = ticker.accounts;
         return {
           tick: ticker.tick,
           price: priceUSD,
-          marketCap: marketCap,
-          holders: 0, // Replace with actual data if available
+          marketCap,
+          holders,
         };
       });
     case AssetType.BSV20V2:
-
-
       const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
       const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
 
@@ -137,17 +134,12 @@ const fetchMarketData = async (assetType: AssetType) => {
           tick: ticker.sym,
           price: price,
           marketCap: marketCap,
-          holders, // Replace with actual data if available
+          holders,
         };
       });
 
     default:
-      return [{
-        tick: "PEPE",
-        price: 0.3152226666666666,
-        marketCap: 6619675.999999998,
-        holders: 208,
-      }];
+      return [];
   }
 };
 
