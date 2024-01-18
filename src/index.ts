@@ -73,7 +73,7 @@ const fetchExchangeRate = async (): Promise<number> => {
 
 const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tokenIDs: string[], assetType: AssetType): Promise<T[]> => {
 
-
+  let d: T[] = [];
   // use passed in type instead 
   switch (assetType) {
     case AssetType.BSV20:
@@ -83,29 +83,30 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         // const lastSales = await fetchJSON<BSV20V1[]>(urlPrice);
         // console.log({ lastSales })
         const urlDetails = `${API_HOST}/api/bsv20/tick/${id}?refresh=false`;
-        const details = await fetchJSON<BSV20V1Details>(urlDetails)
+        const details = await fetchJSON<T>(urlDetails)
 
         // add listings
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1&tick=${id}`;
         details.listings = await fetchJSON<BSV20V1[]>(urlListings)
-        return details
+        d.push(details)
       })
       break;
     case AssetType.BSV20V2:
       tokenIDs.forEach(async (id) => {
         const url = `${API_HOST}/api/bsv20/id/${id}?refresh=false`;
-        const details = await fetchJSON<BSV20V2Details>(url)
+        const details = await fetchJSON<T>(url)
 
         // add listings
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v2&id=${id}`;
         details.listings = await fetchJSON<BSV20V2[]>(urlListings)
-        return details
+        d.push(details)
       })
 
       break;
     default:
       break;
   }
+  return d
 }
 
 // Function to fetch and process market data
@@ -156,7 +157,5 @@ const fetchMarketData = async (assetType: AssetType) => {
       return [];
   }
 };
-
-
 
 const expirateionTime = 60 * 3; // 3 minutes
