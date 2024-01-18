@@ -2,7 +2,7 @@ import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
 import { uniqBy } from 'lodash';
 import { API_HOST, AssetType } from './constants';
-import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV2 } from './types/bsv20';
+import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV1, ListingsV2 } from './types/bsv20';
 
 const redis = new Redis(`${process.env.REDIS_URL}`);
 
@@ -84,11 +84,11 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
 
         // add listings
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1&tick=${id}`;
-        details.listings = await fetchJSON<BSV20V1[]>(urlListings)
+        details.listings = await fetchJSON<ListingsV1[]>(urlListings)
 
         // add sales
         const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&type=v1&tick=${id}`;
-        details.sales = await fetchJSON<BSV20V1[]>(urlSales)
+        details.sales = await fetchJSON<ListingsV1[]>(urlSales)
 
         d.push(details)
       }
@@ -127,15 +127,19 @@ const fetchMarketData = async (assetType: AssetType) => {
       const detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
       console.log({ detailedTokensV1 })
       return detailedTokensV1.map(ticker => {
-        // Convert price from token sale price to USD
-        const priceUSD = parseFloat(ticker.fundTotal) * exchangeRate;
 
-        // Calculate market cap
-        const marketCap = priceUSD * parseFloat(ticker.max);
+        const totalSales = ticker.sales.reduce((acc, sale) => {
+          return acc + parseInt(sale.price)
+        }, 0);
+        const totalAmount = ticker.sales.reduce((acc, sale) => {
+          return acc + parseInt(sale.amt)
+        }, 0);
+        const price = totalSales / totalAmount;
+        const marketCap = calculateMarketCap(price, parseFloat(ticker.max));
         const holders = ticker.accounts;
         return {
           tick: ticker.tick,
-          price: priceUSD,
+          price,
           marketCap,
           holders,
           listings: ticker.listings

@@ -24,7 +24,8 @@ export interface BSV20V1 extends BaseTxo {
   status?: number;
   included: boolean;
   tick: string;
-  max: string; // Total supply
+  max: string; // Total supply populated on deployment only
+  amt: string; // Total supply
   lim?: string;
   dec: number;
   supply: string; // Current supply
@@ -60,13 +61,24 @@ export interface ListingsV2 extends BSV20V2 {
   spendIdx: string;
   spendHeight: string;
 }
+export interface ListingsV1 extends BSV20V1 {
+  price: string;
+  pricePer: string;
+  owner: string;
+  sale: boolean;
+  payout: string; // base64 encoded
+  script: string; // base64 encoded
+  spend: string;
+  spendIdx: string;
+  spendHeight: string;
+}
 
 export interface BSV20V1Details extends BSV20V1 {
   accounts: string; // string number of holders
   pending: string;
   pendingOps: string;
-  listings: BSV20V1[];
-  sales: BSV20V1[];
+  listings: ListingsV1[];
+  sales: ListingsV1[];
 }
 export interface BSV20V2Details extends BSV20V2 {
   accounts: string; // string number of holders
