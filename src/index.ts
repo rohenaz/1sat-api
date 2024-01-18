@@ -162,7 +162,7 @@ const fetchMarketData = async (assetType: AssetType) => {
           return acc + parseInt(sale.amt) / 10 ** ticker.dec
         }, 0);
         const price = totalSales / totalAmount;
-        const marketCap = calculateMarketCap(price, parseFloat(ticker.amt));
+        const marketCap = calculateMarketCap(price, parseFloat(ticker.amt) / 10 ** ticker.dec);
         const holders = ticker.accounts;
         return {
           tick: ticker.sym,
