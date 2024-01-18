@@ -19,17 +19,22 @@ const app = new Elysia().get("/", ({ set }) => {
   |_______||__| |__|  |___|  |_______||_______||_______||_______||_______||_______|
   </pre>
   `;
-}).get('/market/:assetType', async ({ params }) => {
+}).get('/market/:assetType', async ({ set, params }) => {
   // check cache for results
   console.log(params.assetType)
-  let market = await redis.get(`market-${params.assetType}`);
+  try {
 
-  // if not cached or expired, hit several market endpoints and return the aggregated data
-  if (!market) {
-    // store results in cache with 
-    const marketData = await fetchMarketData(params.assetType as AssetType);
-    redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", expirateionTime);
-    return marketData;
+    let market = await redis.get(`market-${params.assetType}`);
+    console.log("In cache?", market)
+    // if not cached or expired, hit several market endpoints and return the aggregated data
+    if (!market) {
+      // store results in cache with 
+      const marketData = await fetchMarketData(params.assetType as AssetType);
+      redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", expirateionTime);
+      return marketData;
+    }
+  } catch (e) {
+    set.status = 500;
   }
 }, {
   params: t.Object({
