@@ -3,5 +3,8 @@
 		"source.organizeImports.biome": "always"
 	},
 	"editor.defaultFormatter": "biomejs.biome",
-	"editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  }
 }
