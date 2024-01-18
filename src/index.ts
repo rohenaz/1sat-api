@@ -5,7 +5,7 @@ import { BSV20TXO } from './types/ordinals';
 
 // redis via url new Redis("redis://:authpassword@127.0.0.1:6380/4");
 const redis = new Redis(`${process.env.REDIS_PRIVATE_URL}`);
-
+await redis.connect()
 
 const app = new Elysia().get("/", () => {
 
