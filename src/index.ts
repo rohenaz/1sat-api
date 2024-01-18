@@ -19,7 +19,6 @@ const app = new Elysia().get("/", ({ set }) => {
     console.log("In cache?", market)
     if (!market) {
       const marketData = await fetchMarketData(params.assetType as AssetType);
-      console.log("Market data", marketData)
       if (marketData) {
         redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", expirateionTime);
       }
