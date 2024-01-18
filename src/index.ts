@@ -15,11 +15,14 @@ const app = new Elysia().get("/", ({ set }) => {
 }).get('/market/:assetType', async ({ set, params }) => {
   console.log(params.assetType)
   try {
-    let market = await redis.get(`market-${params.assetType}`);
+    let market = await redis.get(`markett-${params.assetType}`);
     console.log("In cache?", market)
     if (!market) {
       const marketData = await fetchMarketData(params.assetType as AssetType);
-      redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", expirateionTime);
+      console.log("Market data", marketData)
+      if (marketData) {
+        redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", expirateionTime);
+      }
       return marketData;
     }
     return JSON.parse(market);
@@ -38,9 +41,12 @@ console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
 );
 // Helper function to fetch JSON
-const fetchJSON = async (url: string) => {
+const fetchJSON = async <T>(url: string): Promise<T> => {
   const response = await fetch(url);
-  return response.json();
+
+  const res = await response.json() as T;
+  console.log({ res, url })
+  return res;
 };
 
 // Helper function to calculate market cap
@@ -63,16 +69,23 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
   // use passed in type instead 
   switch (assetType) {
     case AssetType.BSV20:
+      // get the last sale price
       tokensDetails = await Promise.all(tokenIDs.map(async (id) => {
+        const urlPrice = `${API_HOST}/bsv20/market?sort=price_per_token&dir=asc&limit=1&offset=0&type=all&tick=${id}`;
+        const lastSales = await fetchJSON<BSV20V1[]>(urlPrice);
+        console.log({ lastSales })
         const url = `${API_HOST}/bsv20/tick/FIRE?refresh=false${id}`;
-        return await fetchJSON(url) as T;
+        const details = await fetchJSON(url) as T;
+        return details
       }));
       break;
     case AssetType.BSV20V2:
-      tokensDetails = await Promise.all(tokenIDs.map(async (id) => {
-        const url = `${API_HOST}/bsv20/id/${id}?refresh=false`;
-        return await fetchJSON(url) as T;
-      }));
+      let promises: Promise<T>[] = [];
+      tokenIDs.forEach(id => {
+        const url = `${API_HOST}/api/bsv20/id/${id}?refresh=false`;
+        promises.push(fetchJSON<T>(url))
+      })
+      tokensDetails = await Promise.all<T>(promises);
       break;
     default:
       break;
@@ -88,11 +101,11 @@ const fetchMarketData = async (assetType: AssetType) => {
   switch (assetType) {
     case AssetType.BSV20:
       const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
-      const tickersV1 = await fetchJSON(urlV1Tokens) as BSV20V1[];
+      const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
       const t1 = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
-      const defailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
+      const detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
 
-      return defailedTokensV1.map(ticker => {
+      return detailedTokensV1.map(ticker => {
         // Convert price from token sale price to USD
         const priceUSD = parseFloat(ticker.fundTotal) * exchangeRate;
 
@@ -106,11 +119,16 @@ const fetchMarketData = async (assetType: AssetType) => {
         };
       });
     case AssetType.BSV20V2:
+
+
       const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
-      const tickersV2 = await fetchJSON(urlV2Tokens) as BSV20V2[];
-      const t2 = uniqBy(tickersV2, 'sym').map(ticker => ticker.sym);
-      const defailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(t2, assetType);
-      return defailedTokensV2.map(ticker => {
+      const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
+
+      const tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
+      console.log({ tokenIds })
+      const detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(tokenIds, assetType);
+      console.log({ detailedTokensV2 })
+      return detailedTokensV2.map(ticker => {
         const amount = parseFloat(ticker.amt) / Math.pow(10, ticker.dec || 0);
         const price = parseFloat(ticker.fundTotal) * exchangeRate / amount;
         const marketCap = calculateMarketCap(price, amount);
