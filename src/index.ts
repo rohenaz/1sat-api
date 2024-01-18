@@ -1,4 +1,4 @@
-import { Elysia } from 'elysia';
+import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
 import { API_HOST, AssetType } from './constants';
 import { BSV20TXO } from './types/ordinals';
@@ -29,6 +29,10 @@ const app = new Elysia().get("/", () => {
     const marketData = await fetchMarketData(params.assetType as AssetType);
     redis.set("market", JSON.stringify(marketData), "EX", expirateionTime);
   }
+}, {
+  params: t.Object({
+    assetType: t.String()
+  })
 }).listen(process.env.PORT ?? 3000);
 
 console.log(
