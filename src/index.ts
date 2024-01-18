@@ -135,6 +135,7 @@ const fetchMarketData = async (assetType: AssetType) => {
           price: priceUSD,
           marketCap,
           holders,
+          listings: ticker.listings
         };
       });
     case AssetType.BSV20V2:
@@ -152,6 +153,7 @@ const fetchMarketData = async (assetType: AssetType) => {
           price: price,
           marketCap: marketCap,
           holders,
+          listings: ticker.listings
         };
       });
 
