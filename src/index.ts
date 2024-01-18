@@ -8,24 +8,24 @@ const redis = new Redis(`${process.env.REDIS_PRIVATE_URL}`);
 const app = new Elysia().get("/", ({ set }) => {
   set.headers["Content-Type"] = "text/plain";
   // sweet ascii art from the 90s
-  console.log(`
+  return `
   ██████╗ ██████╗ ███████╗██╗   ██╗███████╗██████╗ ███████╗██████╗
   ██╔══██╗██╔══██╗██╔════╝██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗
   ██████╔╝██████╔╝█████╗  ██║   ██║█████╗  ██████╔╝█████╗  ██████╔╝
   ██╔══██╗██╔══██╗██╔══╝  ╚██╗ ██╔╝██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗
   ██████╔╝██║  ██║███████╗ ╚████╔╝ ███████╗██║  ██║███████╗██║  ██║
   ╚═════╝ ╚═╝  ╚═╝╚══════╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
-  `);
+  `;
 }).get('/market/:assetType', async ({ params }) => {
   // check cache for results
-
-  let market = await redis.get("market")
+  console.log(params.assetType)
+  let market = await redis.get(`market-${params.assetType}`);
 
   // if not cached or expired, hit several market endpoints and return the aggregated data
   if (!market) {
     // store results in cache with 
     const marketData = await fetchMarketData(params.assetType as AssetType);
-    redis.set("market", JSON.stringify(marketData), "EX", expirateionTime);
+    redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", expirateionTime);
   }
 }, {
   params: t.Object({
