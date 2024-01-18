@@ -12,15 +12,7 @@ const app = new Elysia().get("/", ({ set }) => {
   set.headers["Content-Type"] = "text/html";
   // sweet ascii art from the 90s
   return `
-  <pre>
-  _______  _______  _______  _______  _______  _______  _______  _______  _______
-  |       ||   _   ||       ||       ||       ||       ||       ||       ||       |
-  |    ___||  |_|  ||_     _||    ___||    ___||       ||       ||    ___||  _____|
-  |   | __ |       |  |   |  |   |___ |   |___ |       ||       ||   |___ | |_____
-  |   ||  ||       |  |   |  |    ___||    ___||      _||      _||    ___||_____  |
-  |   |_| ||   _   |  |   |  |   |___ |   |___ |     |_ |     |_ |   |___  _____| |
-  |_______||__| |__|  |___|  |_______||_______||_______||_______||_______||_______|
-  </pre>
+  :)
   `;
 }).get('/market/:assetType', async ({ set, params }) => {
   // check cache for results
@@ -51,16 +43,18 @@ console.log(
 const fetchMarketData = async (assetType: AssetType) => {
   switch (assetType) {
     case AssetType.BSV20:
-      const urlV1Tokens = `${API_HOST}/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
+      // const urlV1Tokens = `${API_HOST}/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
+      const urlV1Tokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1`;
+
       const respV1 = await fetch(urlV1Tokens);
-      const listingsV1 = await respV1.json() as BSV20TXO[];
+      const tickersV1 = await respV1.json() as BSV20TXO[];
 
       // aggregate data
-      const marketDataV1 = listingsV1.map(listing => {
+      const marketDataV1 = tickersV1.map(ticker => {
         return {
-          tick: listing.tick,
-          price: listing.price,
-          cap: listing.amt,
+          tick: ticker.tick,
+          price: ticker.price,
+          cap: ticker.amt,
           holders: 0,
         }
       })
@@ -68,14 +62,14 @@ const fetchMarketData = async (assetType: AssetType) => {
     case AssetType.BSV20V2:
       const urlV2Tokens = `${API_HOST}/api/bsv20/v2?sort=fund_total&dir=desc&limit=20&offset=0&included=true`;
       const resp = await fetch(urlV2Tokens);
-      const listings = await resp.json() as BSV20TXO[];
+      const tickers = await resp.json() as BSV20TXO[];
 
       // aggregate data
-      return listings.map(listing => {
+      return tickers.map(ticker => {
         return {
-          tick: listing.tick,
-          price: listing.price,
-          cap: listing.amt,
+          tick: ticker.sym,
+          price: 0,
+          cap: 0,
           holders: 0,
         }
       })
