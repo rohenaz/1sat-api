@@ -3,7 +3,10 @@ import Redis from "ioredis";
 import { API_HOST, AssetType } from './constants';
 import { BSV20TXO } from './types/ordinals';
 
-const redis = new Redis(`${process.env.REDIS_PRIVATE_URL}`);
+const redis = new Redis(`${process.env.REDIS_URL}`);
+
+redis.on("connect", () => console.log("Connected to Redis"));
+redis.on("error", (err) => console.error("Redis Error", err));
 
 const app = new Elysia().get("/", ({ set }) => {
   set.headers["Content-Type"] = "text/html";
@@ -23,7 +26,6 @@ const app = new Elysia().get("/", ({ set }) => {
   // check cache for results
   console.log(params.assetType)
   try {
-
     let market = await redis.get(`market-${params.assetType}`);
     console.log("In cache?", market)
     // if not cached or expired, hit several market endpoints and return the aggregated data
