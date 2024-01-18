@@ -1,5 +1,6 @@
 import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
+import { uniqBy } from 'lodash';
 import { API_HOST, AssetType } from './constants';
 import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details } from './types/bsv20';
 
