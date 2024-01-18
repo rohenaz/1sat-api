@@ -108,9 +108,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
     default:
       break;
   }
-
-
-  return tokensDetails;
+  return tokensDetails as T[];
 }
 
 // Function to fetch and process market data
