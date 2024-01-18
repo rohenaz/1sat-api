@@ -43,10 +43,7 @@ console.log(
 // Helper function to fetch JSON
 const fetchJSON = async <T>(url: string): Promise<T> => {
   const response = await fetch(url);
-
-  const res = await response.json() as T;
-  console.log({ res, url })
-  return res;
+  return await response.json() as T;
 };
 
 // Helper function to calculate market cap
@@ -74,7 +71,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         const urlPrice = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=1&offset=0&type=all&tick=${id}`;
         const lastSales = await fetchJSON<BSV20V1[]>(urlPrice);
         console.log({ lastSales })
-        const url = `${API_HOST}/api/bsv20/tick/FIRE?refresh=false${id}`;
+        const url = `${API_HOST}/api/bsv20/tick/${id}?refresh=false`;
         const details = await fetchJSON(url) as T;
         return details
       }));
@@ -120,11 +117,8 @@ const fetchMarketData = async (assetType: AssetType) => {
     case AssetType.BSV20V2:
       const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
       const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
-
       const tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
-      console.log({ tokenIds })
       const detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(tokenIds, assetType);
-      console.log({ detailedTokensV2 })
       return detailedTokensV2.map(ticker => {
         const amount = parseFloat(ticker.amt) / Math.pow(10, ticker.dec || 0);
         const price = parseFloat(ticker.fundTotal) * exchangeRate / amount;
