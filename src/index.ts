@@ -103,7 +103,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         details.listings = await fetchJSON<ListingsV2[]>(urlListings)
 
         // add sales
-        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=1&offset=0&type=v2&id=${id}`;
+        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&type=v2&id=${id}`;
         details.sales = await fetchJSON<ListingsV2[]>(urlSales)
 
         d.push(details)
