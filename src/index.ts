@@ -26,6 +26,7 @@ const app = new Elysia().get("/", ({ set }) => {
     // store results in cache with 
     const marketData = await fetchMarketData(params.assetType as AssetType);
     redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", expirateionTime);
+    return marketData;
   }
 }, {
   params: t.Object({
