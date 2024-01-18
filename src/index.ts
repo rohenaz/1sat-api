@@ -132,11 +132,12 @@ const fetchMarketData = async (assetType: AssetType) => {
         const amount = parseFloat(ticker.amt) / Math.pow(10, ticker.dec || 0);
         const price = parseFloat(ticker.fundTotal) * exchangeRate / amount;
         const marketCap = calculateMarketCap(price, amount);
+        const holders = ticker.accounts;
         return {
           tick: ticker.sym,
           price: price,
           marketCap: marketCap,
-          holders: 0, // Replace with actual data if available
+          holders, // Replace with actual data if available
         };
       });
 
