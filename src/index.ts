@@ -71,10 +71,10 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
     case AssetType.BSV20:
       // get the last sale price
       tokensDetails = await Promise.all(tokenIDs.map(async (id) => {
-        const urlPrice = `${API_HOST}/bsv20/market?sort=price_per_token&dir=asc&limit=1&offset=0&type=all&tick=${id}`;
+        const urlPrice = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=1&offset=0&type=all&tick=${id}`;
         const lastSales = await fetchJSON<BSV20V1[]>(urlPrice);
         console.log({ lastSales })
-        const url = `${API_HOST}/bsv20/tick/FIRE?refresh=false${id}`;
+        const url = `${API_HOST}/api/bsv20/tick/FIRE?refresh=false${id}`;
         const details = await fetchJSON(url) as T;
         return details
       }));
