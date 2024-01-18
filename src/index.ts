@@ -56,7 +56,19 @@ const fetchExchangeRate = async (): Promise<number> => {
   return exchangeRateData.rate;
 };
 
-// add generic type
+
+// if (type === AssetType.BSV20V2) {
+//   const urlTokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1`;
+//   const { promise: promiseBsv20 } = http.customFetch<BSV20TXO[]>(urlTokens);
+//   marketData.listings = await promiseBsv20;
+// } else {
+//   const urlV2Tokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v2`;
+//   const { promise: promiseBsv20v2 } =
+//     http.customFetch<BSV20TXO[]>(urlV2Tokens);
+//   listings = await promiseBsv20v2;
+// }
+
+
 
 const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tokenIDs: string[], assetType: AssetType): Promise<T[]> => {
   // promise all passed in
@@ -78,64 +90,72 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
     case AssetType.BSV20V2:
       let promises: Promise<T>[] = [];
       tokenIDs.forEach(id => {
+        const urlTokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1`;
         const url = `${API_HOST}/api/bsv20/id/${id}?refresh=false`;
-        promises.push(fetchJSON<T>(url))
+
+        promises.push(new Promise((res, rej) => {
+          const listings = await fetchJSON<BSV20V2[]>(urlTokens);
+          try {
+            const response = await fetchJSON<T>(url)
+            response.listings = listings;
+            res(response)
+          } catch (e) {
+            rej(e)
+          }
+        }));
+        tokensDetails = await Promise.all<T>(promises);
+        break;
       })
-      tokensDetails = await Promise.all<T>(promises);
-      break;
-    default:
-      break;
+      return tokensDetails;
   }
-  return tokensDetails;
-}
 
-// Function to fetch and process market data
-const fetchMarketData = async (assetType: AssetType) => {
-  const exchangeRate = await fetchExchangeRate();
-  switch (assetType) {
-    case AssetType.BSV20:
-      const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
-      const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
-      const t1 = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
-      const detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
+  // Function to fetch and process market data
+  const fetchMarketData = async (assetType: AssetType) => {
+    const exchangeRate = await fetchExchangeRate();
+    switch (assetType) {
+      case AssetType.BSV20:
+        const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
+        const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
+        const t1 = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
+        const detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
 
-      return detailedTokensV1.map(ticker => {
-        // Convert price from token sale price to USD
-        const priceUSD = parseFloat(ticker.fundTotal) * exchangeRate;
+        return detailedTokensV1.map(ticker => {
+          // Convert price from token sale price to USD
+          const priceUSD = parseFloat(ticker.fundTotal) * exchangeRate;
 
-        // Calculate market cap
-        const marketCap = priceUSD * parseFloat(ticker.max);
-        const holders = ticker.accounts;
-        return {
-          tick: ticker.tick,
-          price: priceUSD,
-          marketCap,
-          holders,
-        };
-      });
-    case AssetType.BSV20V2:
-      const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
-      const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
-      const tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
-      const detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(tokenIds, assetType);
-      return detailedTokensV2.map(ticker => {
-        const amount = parseFloat(ticker.amt) / Math.pow(10, ticker.dec || 0);
-        const price = parseFloat(ticker.fundTotal) * exchangeRate / amount;
-        const marketCap = calculateMarketCap(price, amount);
-        const holders = ticker.accounts;
-        return {
-          tick: ticker.sym,
-          price: price,
-          marketCap: marketCap,
-          holders,
-        };
-      });
+          // Calculate market cap
+          const marketCap = priceUSD * parseFloat(ticker.max);
+          const holders = ticker.accounts;
+          return {
+            tick: ticker.tick,
+            price: priceUSD,
+            marketCap,
+            holders,
+          };
+        });
+      case AssetType.BSV20V2:
+        const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
+        const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
+        const tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
+        const detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(tokenIds, assetType);
+        return detailedTokensV2.map(ticker => {
+          const amount = parseFloat(ticker.amt) / Math.pow(10, ticker.dec || 0);
+          const price = parseFloat(ticker.fundTotal) * exchangeRate / amount;
+          const marketCap = calculateMarketCap(price, amount);
+          const holders = ticker.accounts;
+          return {
+            tick: ticker.sym,
+            price: price,
+            marketCap: marketCap,
+            holders,
+          };
+        });
 
-    default:
-      return [];
-  }
-};
+      default:
+        return [];
+    }
+  };
 
 
 
-const expirateionTime = 60 * 3; // 3 minutes
+  const expirateionTime = 60 * 3; // 3 minutes

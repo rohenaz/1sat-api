@@ -52,12 +52,13 @@ export interface BSV20V2 extends BaseTxo {
 export interface BSV20V1Details extends BSV20V1 {
   accounts: string; // string number of holders
   pending: string;
-  pendingOps
-  : string;
+  pendingOps: string;
+  listings: BSV20V1[];
 }
 export interface BSV20V2Details extends BSV20V2 {
   accounts: string; // string number of holders
   pending: string;
+  listings: BSV20V2[];
 }
 
 // Adjust the BSV20TXO type if needed
