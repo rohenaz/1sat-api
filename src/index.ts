@@ -100,8 +100,9 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
       const listings = await Promise.all<BSV20V2>(listingsPromises);
 
       // add listings to tokensDetails
-      tokensDetails.forEach((token) => {
+      tokensDetails.map((token) => {
         token.listings = listings.filter((listing) => listing.id === `${token.txid}_${token.vout}`)
+        return token
       })
       break;
     default:
