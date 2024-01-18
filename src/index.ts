@@ -7,19 +7,29 @@ import { BSV20TXO } from './types/ordinals';
 const redis = new Redis(`${process.env.REDIS_PRIVATE_URL}`);
 
 
-const app = new Elysia()
-  .get('/market/:assetType', async ({ params }) => {
-    // check cache for results
+const app = new Elysia().get("/", () => {
 
-    let market = await redis.get("market")
+  // sweet ascii art from the 90s
+  console.log(`
+  ██████╗ ██████╗ ███████╗██╗   ██╗███████╗██████╗ ███████╗██████╗
+  ██╔══██╗██╔══██╗██╔════╝██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗
+  ██████╔╝██████╔╝█████╗  ██║   ██║█████╗  ██████╔╝█████╗  ██████╔╝
+  ██╔══██╗██╔══██╗██╔══╝  ╚██╗ ██╔╝██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗
+  ██████╔╝██║  ██║███████╗ ╚████╔╝ ███████╗██║  ██║███████╗██║  ██║
+  ╚═════╝ ╚═╝  ╚═╝╚══════╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+  `);
+}).get('/market/:assetType', async ({ params }) => {
+  // check cache for results
 
-    // if not cached or expired, hit several market endpoints and return the aggregated data
-    if (!market) {
-      // store results in cache with 
-      const marketData = await fetchMarketData(params.assetType as AssetType);
-      redis.set("market", JSON.stringify(marketData), "EX", expirateionTime);
-    }
-  }).listen(process.env.PORT ?? 3000);
+  let market = await redis.get("market")
+
+  // if not cached or expired, hit several market endpoints and return the aggregated data
+  if (!market) {
+    // store results in cache with 
+    const marketData = await fetchMarketData(params.assetType as AssetType);
+    redis.set("market", JSON.stringify(marketData), "EX", expirateionTime);
+  }
+}).listen(process.env.PORT ?? 3000);
 
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
