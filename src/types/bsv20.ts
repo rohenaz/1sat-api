@@ -18,13 +18,36 @@ export interface BSV20 extends BaseTxo {
   status?: Bsv20Status;
 }
 
-export interface Ticker extends BSV20 {
-  accounts: number;
+
+// For BSV20V1 Data
+export interface BSV20V1 extends BaseTxo {
+  status?: number;
   included: boolean;
+  tick: string;
+  max: string; // Total supply
+  lim?: string;
+  dec: number;
+  supply: string; // Current supply
+  available?: string;
+  pctMinted?: string;
   fundAddress: string;
+  fundTotal: string; // Total value in satoshis
+  fundUsed?: string;
   fundBalance: string;
-  fundTotal: string;
-  fundUsed: string;
-  pendingOps: string;
 }
 
+// For BSV20V2 Data
+export interface BSV20V2 extends BaseTxo {
+  id: string;
+  sym: string; // Symbol
+  icon?: string;
+  amt: string; // Total amount
+  dec: number; // Decimal places
+  fundAddress: string;
+  fundTotal: string; // Total value in satoshis
+  fundUsed?: string;
+  fundBalance: string;
+}
+
+// Adjust the BSV20TXO type if needed
+export type BSV20TXO = BSV20V1 | BSV20V2;
