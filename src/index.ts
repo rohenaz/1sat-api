@@ -78,7 +78,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
   switch (assetType) {
     case AssetType.BSV20:
       // get the last sale price
-      tokenIDs.map(async (id) => {
+      for (const id of tokenIDs) {
         // const urlPrice = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=1&offset=0&type=v1&tick=${id}`;
         // const lastSales = await fetchJSON<BSV20V1[]>(urlPrice);
         // console.log({ lastSales })
@@ -89,10 +89,10 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1&tick=${id}`;
         details.listings = await fetchJSON<BSV20V1[]>(urlListings)
         d.push(details)
-      })
+      }
       break;
     case AssetType.BSV20V2:
-      tokenIDs.forEach(async (id) => {
+      for (const id of tokenIDs) {
         const url = `${API_HOST}/api/bsv20/id/${id}?refresh=false`;
         const details = await fetchJSON<T>(url)
 
@@ -102,12 +102,14 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
 
         details.listings = listings
         d.push(details)
-      })
+        console.log({ d })
+      }
       break;
     default:
       break;
   }
-  return d
+
+  return d;
 }
 
 // Function to fetch and process market data

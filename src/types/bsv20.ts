@@ -70,7 +70,7 @@ export interface BSV20V1Details extends BSV20V1 {
 export interface BSV20V2Details extends BSV20V2 {
   accounts: string; // string number of holders
   pending: string;
-  listings: BSV20V2[];
+  listings: ListingsV2[];
 }
 
 // Adjust the BSV20TXO type if needed
