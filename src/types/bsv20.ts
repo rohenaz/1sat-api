@@ -41,12 +41,23 @@ export interface BSV20V2 extends BaseTxo {
   id: string;
   sym: string; // Symbol
   icon?: string;
-  amt: string; // Total amount
-  dec: number; // Decimal places
+  amt: string; // Total supply
+  dec: number; // Decimal places (display only)
   fundAddress: string;
   fundTotal: string; // Total value in satoshis
   fundUsed?: string;
   fundBalance: string;
+}
+
+export interface BSV20V1Details extends BSV20V1 {
+  accounts: string; // string number of holders
+  pending: string;
+  pendingOps
+  : string;
+}
+export interface BSV20V2Details extends BSV20V2 {
+  accounts: string; // string number of holders
+  pending: string;
 }
 
 // Adjust the BSV20TXO type if needed
