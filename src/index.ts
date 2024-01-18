@@ -79,15 +79,17 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
     case AssetType.BSV20:
       // get the last sale price
       for (const id of tokenIDs) {
-        // const urlPrice = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=1&offset=0&type=v1&tick=${id}`;
-        // const lastSales = await fetchJSON<BSV20V1[]>(urlPrice);
-        // console.log({ lastSales })
         const urlDetails = `${API_HOST}/api/bsv20/tick/${id}?refresh=false`;
         const details = await fetchJSON<T>(urlDetails)
 
         // add listings
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1&tick=${id}`;
         details.listings = await fetchJSON<BSV20V1[]>(urlListings)
+
+        // add sales
+        const urlSales = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1&sale=true&tick=${id}`;
+        details.sales = await fetchJSON<BSV20V2[]>(urlSales)
+
         d.push(details)
       }
       break;
@@ -98,11 +100,13 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
 
         // add listings
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v2&id=${id}`;
-        const listings = await fetchJSON<ListingsV2[]>(urlListings)
+        details.listings = await fetchJSON<ListingsV2[]>(urlListings)
 
-        details.listings = listings
+        // add sales
+        const urlSales = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v2&sale=true&id=${id}`;
+        details.sales = await fetchJSON<BSV20V2[]>(urlSales)
+
         d.push(details)
-        console.log({ d })
       }
       break;
     default:
