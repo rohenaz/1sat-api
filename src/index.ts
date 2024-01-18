@@ -60,7 +60,7 @@ const fetchMarketData = async (assetType: AssetType) => {
       const listings = await resp.json() as BSV20TXO[];
 
       // aggregate data
-      const marketData = listings.map(listing => {
+      return listings.map(listing => {
         return {
           tick: listing.tick,
           price: listing.price,
