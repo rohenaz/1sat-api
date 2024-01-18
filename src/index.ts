@@ -146,7 +146,7 @@ const fetchMarketData = async (assetType: AssetType) => {
         };
       });
     case AssetType.BSV20V2:
-      const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
+      const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=1&offset=0&sort=fund_total&dir=desc&included=true`;
       const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
       const tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
       const detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(tokenIds, assetType);
@@ -159,7 +159,7 @@ const fetchMarketData = async (assetType: AssetType) => {
           return acc + parseInt(sale.price)
         }, 0);
         const totalAmount = ticker.sales.reduce((acc, sale) => {
-          return acc + parseInt(sale.amt) * 10 ** ticker.dec
+          return acc + parseInt(sale.amt) / 10 ** ticker.dec
         }, 0);
         const price = totalSales / totalAmount;
         const marketCap = calculateMarketCap(price, parseFloat(ticker.amt));
