@@ -71,7 +71,7 @@ const fetchExchangeRate = async (): Promise<number> => {
 
 const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tokenIDs: string[], assetType: AssetType): Promise<T[]> => {
   // promise all passed in
-  let tokensDetails: T[] = [];
+  let tokensDetails: BSV20V1Details[] | BSV20V2Details[] = [];
 
   // use passed in type instead 
   switch (assetType) {
@@ -82,21 +82,21 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         const lastSales = await fetchJSON<BSV20V1[]>(urlPrice);
         console.log({ lastSales })
         const url = `${API_HOST}/api/bsv20/tick/${id}?refresh=false`;
-        const details = await fetchJSON(url) as T;
+        const details = await fetchJSON<BSV20V2Details>(url)
         return details
       }));
       break;
     case AssetType.BSV20V2:
-      let detailsPromises: Promise<T>[] = [];
+      let detailsPromises: Promise<BSV20V2Details>[] = [];
       let listingsPromises: Promise<BSV20V2>[] = [];
       tokenIDs.forEach(id => {
         const url = `${API_HOST}/api/bsv20/id/${id}?refresh=false`;
-        detailsPromises.push(fetchJSON<T>(url))
+        detailsPromises.push(fetchJSON<BSV20V2Details>(url))
         // add listings
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v2`;
         listingsPromises.push(fetchJSON<BSV20V2>(urlListings))
       })
-      tokensDetails = await Promise.all<T>(detailsPromises);
+      tokensDetails = await Promise.all<BSV20V2Details>(detailsPromises);
       const listings = await Promise.all<BSV20V2>(listingsPromises);
 
       // add listings to tokensDetails
