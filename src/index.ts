@@ -127,7 +127,6 @@ const fetchMarketData = async (assetType: AssetType) => {
       const detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
       console.log({ detailedTokensV1 })
       return detailedTokensV1.map(ticker => {
-
         const totalSales = ticker.sales.reduce((acc, sale) => {
           return acc + parseInt(sale.price)
         }, 0);
@@ -177,4 +176,4 @@ const fetchMarketData = async (assetType: AssetType) => {
   }
 };
 
-const expirateionTime = 60 * 3; // 3 minutes
+const expirateionTime = 60 * 10; // 10 minutes
