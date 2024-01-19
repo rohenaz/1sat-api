@@ -152,7 +152,7 @@ const fetchMarketData = async (assetType: AssetType) => {
       const detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(tokenIds, assetType);
       return detailedTokensV2.map(ticker => {
         // average price per unit bassed on last 10 sales
-        console.log({ sales: ticker.sales })
+
 
         // add up total price and divide by the amount to get an average price
         const totalSales = ticker.sales.reduce((acc, sale) => {
@@ -164,6 +164,7 @@ const fetchMarketData = async (assetType: AssetType) => {
         const price = totalAmount > 0 ? totalSales / totalAmount : 0;
         const marketCap = calculateMarketCap(price, parseFloat(ticker.amt) / 10 ** ticker.dec);
         const holders = ticker.accounts;
+        console.log({ totalSales, totalAmount, price, marketCap, holders, symbol: ticker.sym })
         return {
           tick: ticker.sym,
           price,
