@@ -138,10 +138,10 @@ const fetchMarketData = async (assetType: AssetType) => {
         const marketCap = calculateMarketCap(price, parseFloat(ticker.max) / 10 ** ticker.dec);
         const holders = ticker.accounts;
         return {
+          ...ticker,
           price,
           marketCap,
           holders,
-          ...ticker
         };
       });
     case AssetType.BSV20V2:
@@ -164,12 +164,11 @@ const fetchMarketData = async (assetType: AssetType) => {
         const holders = ticker.accounts;
         console.log({ totalSales, totalAmount, price, marketCap, holders, symbol: ticker.sym, dec: ticker.dec, amt: ticker.amt })
         return {
+          ...ticker,
           tick: ticker.sym,
           price,
           marketCap: marketCap,
           holders,
-          listings: ticker.listings,
-          sales: ticker.sales
         };
       });
 
