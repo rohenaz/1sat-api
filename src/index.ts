@@ -142,9 +142,18 @@ const fetchMarketData = async (assetType: AssetType) => {
   const exchangeRate = await fetchExchangeRate();
   switch (assetType) {
     case AssetType.BSV20:
-      const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
-      const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
-      const t1 = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
+      // check cache
+      const cached = await redis.get(`ids-${assetType}`);
+      let t1: string[] = [];
+      if (cached) {
+        t1 = JSON.parse(cached);
+      } else {
+        const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
+        const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
+        t1 = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
+        // cache
+        redis.set(`ids-${assetType}`, JSON.stringify(t1), "EX", expirateionTime);
+      }
       const detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
       console.log({ detailedTokensV1 })
       return detailedTokensV1.map(ticker => {
@@ -165,9 +174,18 @@ const fetchMarketData = async (assetType: AssetType) => {
         };
       });
     case AssetType.BSV20V2:
-      const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
-      const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
-      const tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
+      // check cache
+      let tokenIds: string[] = [];
+      const cachedIds = await redis.get(`ids-${assetType}`);
+      if (cachedIds) {
+        tokenIds = JSON.parse(cachedIds);
+      } else {
+        const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
+        const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
+        tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
+        redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", expirateionTime);
+      }
+
       const detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(tokenIds, assetType);
       return detailedTokensV2.map(ticker => {
         // average price per unit bassed on last 10 sales
