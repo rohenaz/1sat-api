@@ -53,7 +53,13 @@ const calculateMarketCap = (price: number, amount: number): number => {
 
 // Function to fetch exchange rate
 const fetchExchangeRate = async (): Promise<number> => {
+  // check cache
+  const cached = await redis.get(`exchangeRate`);
+  if (cached) {
+    return JSON.parse(cached).rate;
+  }
   const exchangeRateData = await fetchJSON("https://api.whatsonchain.com/v1/bsv/main/exchangerate") as { rate: number };
+  redis.set(`exchangeRate`, JSON.stringify(exchangeRateData), "EX", expirateionTime);
   return exchangeRateData.rate;
 };
 
@@ -171,6 +177,7 @@ const fetchMarketData = async (assetType: AssetType) => {
           price,
           marketCap,
           holders,
+          exchangeRate
         };
       });
     case AssetType.BSV20V2:
