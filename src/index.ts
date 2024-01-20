@@ -15,7 +15,7 @@ const app = new Elysia().get("/", ({ set }) => {
 }).get('/market/:assetType', async ({ set, params }) => {
   console.log(params.assetType)
   try {
-    let market = await redis.get(`markes-${params.assetType}`);
+    let market = await redis.get(`market-${params.assetType}`);
     console.log("In cache?", market)
     if (!market) {
       const marketData = await fetchMarketData(params.assetType as AssetType);
@@ -79,6 +79,14 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
     case AssetType.BSV20:
       // get the last sale price
       for (const id of tokenIDs) {
+
+        // check cache
+        const cached = await redis.get(`token-${id}`);
+        if (cached) {
+          d.push(JSON.parse(cached));
+          continue;
+        }
+
         const urlDetails = `${API_HOST}/api/bsv20/tick/${id}?refresh=false`;
         const details = await fetchJSON<T>(urlDetails)
 
@@ -90,11 +98,21 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&type=v1&tick=${id}`;
         details.sales = await fetchJSON<ListingsV1[]>(urlSales)
 
+        // cache
+        redis.set(`token-${id}`, JSON.stringify(details), "EX", expirateionTime);
+
         d.push(details)
       }
       break;
     case AssetType.BSV20V2:
       for (const id of tokenIDs) {
+        //check cache 
+        const cached = await redis.get(`token-${id}`);
+        if (cached) {
+          d.push(JSON.parse(cached));
+          continue;
+        }
+
         const url = `${API_HOST}/api/bsv20/id/${id}?refresh=false`;
         const details = await fetchJSON<T>(url)
 
@@ -105,6 +123,9 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         // add sales
         const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&type=v2&id=${id}`;
         details.sales = await fetchJSON<ListingsV2[]>(urlSales)
+
+        // cache
+        redis.set(`token-${id}`, JSON.stringify(details), "EX", expirateionTime);
 
         d.push(details)
       }
