@@ -34,6 +34,13 @@ const app = new Elysia().get("/", ({ set }) => {
   params: t.Object({
     assetType: t.String()
   })
+}).get("/status", async ({ set }) => {
+  const chainInfo = await fetchChainInfo();
+  const exchangeRate = await fetchExchangeRate();
+  return {
+    chainInfo,
+    exchangeRate
+  };
 }).listen(process.env.PORT ?? 3000);
 
 console.log(
@@ -50,6 +57,18 @@ const fetchJSON = async <T>(url: string): Promise<T> => {
 const calculateMarketCap = (price: number, amount: number): number => {
   return price * amount;
 };
+
+const fetchChainInfo = async () => {
+  // check cache
+  const cached = await redis.get(`chainInfo`);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+  const url = `https://api.whatsonchain.com/v1/bsv/main/chain/info`;
+  const chainInfo = await fetchJSON(url);
+  redis.set(`chainInfo`, JSON.stringify(chainInfo), "EX", expirateionTime);
+  return chainInfo;
+}
 
 // Function to fetch exchange rate
 const fetchExchangeRate = async (): Promise<number> => {
@@ -161,7 +180,7 @@ const fetchMarketData = async (assetType: AssetType) => {
         redis.set(`ids-${assetType}`, JSON.stringify(t1), "EX", expirateionTime);
       }
       const detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
-      console.log({ detailedTokensV1 })
+
       return detailedTokensV1.map(ticker => {
         const totalSales = ticker.sales.reduce((acc, sale) => {
           return acc + parseInt(sale.price)
