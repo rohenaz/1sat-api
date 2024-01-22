@@ -34,6 +34,29 @@ const app = new Elysia().get("/", ({ set }) => {
   params: t.Object({
     assetType: t.String()
   })
+}).get("/market/:assetType/:id", async ({ set, params }) => {
+  console.log(params.assetType)
+  try {
+    let market = await redis.get(`market-${params.assetType}`);
+    console.log("In cache?", market)
+    if (!market) {
+      const marketData = await fetchMarketData(params.assetType as AssetType, params.id);
+      if (marketData) {
+        redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", expirateionTime);
+      }
+      return marketData;
+    }
+    return JSON.parse(market);
+  } catch (e) {
+    console.error("Error fetching market data:", e);
+    set.status = 500;
+    return {};
+  }
+}, {
+  params: t.Object({
+    assetType: t.String(),
+    id: t.String()
+  })
 }).get("/status", async ({ set }) => {
   const chainInfo = await fetchChainInfo();
   const exchangeRate = await fetchExchangeRate();
@@ -103,54 +126,54 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
   switch (assetType) {
     case AssetType.BSV20:
       // get the last sale price
-      for (const id of tokenIDs) {
+      for (const origin of tokenIDs) {
 
         // check cache
-        const cached = await redis.get(`token-${id}`);
+        const cached = await redis.get(`token-${origin}`);
         if (cached) {
           d.push(JSON.parse(cached));
           continue;
         }
 
-        const urlDetails = `${API_HOST}/api/bsv20/tick/${id}?refresh=false`;
+        const urlDetails = `${API_HOST}/api/bsv20/tick/${origin}?refresh=false`;
         const details = await fetchJSON<T>(urlDetails)
 
         // add listings
-        const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1&tick=${id}`;
+        const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1&tick=${origin}`;
         details.listings = await fetchJSON<ListingsV1[]>(urlListings)
 
         // add sales
-        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&type=v1&tick=${id}`;
+        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&type=v1&tick=${origin}`;
         details.sales = await fetchJSON<ListingsV1[]>(urlSales)
 
         // cache
-        redis.set(`token-${id}`, JSON.stringify(details), "EX", expirateionTime);
+        redis.set(`token-${origin}`, JSON.stringify(details), "EX", expirateionTime);
 
         d.push(details)
       }
       break;
     case AssetType.BSV20V2:
-      for (const id of tokenIDs) {
+      for (const origin of tokenIDs) {
         //check cache 
-        const cached = await redis.get(`token-${id}`);
+        const cached = await redis.get(`token-${origin}`);
         if (cached) {
           d.push(JSON.parse(cached));
           continue;
         }
 
-        const url = `${API_HOST}/api/bsv20/id/${id}?refresh=false`;
+        const url = `${API_HOST}/api/bsv20/id/${origin}?refresh=false`;
         const details = await fetchJSON<T>(url)
 
         // add listings
-        const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v2&id=${id}`;
+        const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v2&id=${origin}`;
         details.listings = await fetchJSON<ListingsV2[]>(urlListings)
 
         // add sales
-        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&type=v2&id=${id}`;
+        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&type=v2&id=${origin}`;
         details.sales = await fetchJSON<ListingsV2[]>(urlSales)
 
         // cache
-        redis.set(`token-${id}`, JSON.stringify(details), "EX", expirateionTime);
+        redis.set(`token-${origin}`, JSON.stringify(details), "EX", expirateionTime);
 
         d.push(details)
       }
@@ -163,23 +186,28 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
 }
 
 // Function to fetch and process market data
-const fetchMarketData = async (assetType: AssetType) => {
+const fetchMarketData = async (assetType: AssetType, origin?: string) => {
   const exchangeRate = await fetchExchangeRate();
   switch (assetType) {
     case AssetType.BSV20:
-      // check cache
-      const cached = await redis.get(`ids-${assetType}`);
-      let t1: string[] = [];
-      if (cached) {
-        t1 = JSON.parse(cached);
+      let detailedTokensV1: BSV20V1Details[] = [];
+      if (origin) {
+        detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>([origin], assetType);
       } else {
-        const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
-        const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
-        t1 = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
-        // cache
-        redis.set(`ids-${assetType}`, JSON.stringify(t1), "EX", expirateionTime);
+        // check cache
+        const cached = await redis.get(`ids-${assetType}`);
+        let t1: string[] = [];
+        if (cached) {
+          t1 = JSON.parse(cached);
+        } else {
+          const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
+          const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
+          t1 = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
+          // cache
+          redis.set(`ids-${assetType}`, JSON.stringify(t1), "EX", expirateionTime);
+        }
+        detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
       }
-      const detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
 
       return detailedTokensV1.map(ticker => {
         const totalSales = ticker.sales.reduce((acc, sale) => {
@@ -200,19 +228,24 @@ const fetchMarketData = async (assetType: AssetType) => {
         };
       });
     case AssetType.BSV20V2:
-      // check cache
-      let tokenIds: string[] = [];
-      const cachedIds = await redis.get(`ids-${assetType}`);
-      if (cachedIds) {
-        tokenIds = JSON.parse(cachedIds);
+      let detailedTokensV2: BSV20V2Details[] = [];
+      if (origin) {
+        detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>([origin], assetType);
       } else {
-        const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
-        const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
-        tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
-        redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", expirateionTime);
-      }
+        let tokenIds: string[] = [];
+        // check cache
+        const cachedIds = await redis.get(`ids-${assetType}`);
+        if (cachedIds) {
+          tokenIds = JSON.parse(cachedIds);
+        } else {
+          const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
+          const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
+          tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
+          redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", expirateionTime);
+        }
 
-      const detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(tokenIds, assetType);
+        detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(tokenIds, assetType);
+      }
       return detailedTokensV2.map(ticker => {
         // average price per unit bassed on last 10 sales
 
@@ -231,8 +264,9 @@ const fetchMarketData = async (assetType: AssetType) => {
           ...ticker,
           tick: ticker.sym,
           price,
-          marketCap: marketCap,
+          marketCap,
           holders,
+          exchangeRate
         };
       });
 
