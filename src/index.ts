@@ -343,7 +343,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
           ...ticker,
         }
         // check cache for sales token-${assetType}-${tick}
-        const cached = await redis.get(`token-${assetType}-${ticker.tick}`);
+        const cached = await redis.get(`token-${assetType}-${ticker.tick.toLowerCase()}`);
         if (cached) {
           // load values to tick
           Object.assign(tick, JSON.parse(cached))
