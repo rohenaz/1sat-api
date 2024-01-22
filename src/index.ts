@@ -81,16 +81,29 @@ const calculateMarketCap = (price: number, amount: number): number => {
   return price * amount;
 };
 
-const fetchChainInfo = async () => {
+// {"chain":"main","blocks":828211,"headers":661647,"bestblockhash":"000000000000000004aa4c183384a0bf13a49e6726fcc7bb7fb8c9bc9594b2f2","difficulty":119016070306.9696,"mediantime":1705928988,"verificationprogress":0.9999961584631301,"pruned":false,"chainwork":"00000000000000000000000000000000000000000150caf5c43a1446f852c8fe"}
+export type ChainInfo = {
+  chain: string,
+  blocks: number,
+  headers: number,
+  bestblockhash: string,
+  difficulty: number,
+  mediantime: number,
+  verificationprogress: number,
+  pruned: boolean,
+  chainwork: string,
+}
+
+const fetchChainInfo = async (): Promise<ChainInfo> => {
   // check cache
   const cached = await redis.get(`chainInfo`);
   if (cached) {
-    return JSON.parse(cached);
+    return JSON.parse(cached) as ChainInfo;
   }
   const url = `https://api.whatsonchain.com/v1/bsv/main/chain/info`;
   const chainInfo = await fetchJSON(url);
   await redis.set(`chainInfo`, JSON.stringify(chainInfo), "EX", defaults.expirationTime);
-  return chainInfo;
+  return chainInfo as ChainInfo;
 }
 
 // Function to fetch exchange rate
@@ -247,7 +260,9 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
 
         detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(tokenIds, assetType);
       }
-      return detailedTokensV2.map(ticker => {
+
+      const info = await fetchChainInfo()
+      return detailedTokensV2.map(async (ticker) => {
         // average price per unit bassed on last 10 sales
 
         // add up total price and divide by the amount to get an average price
@@ -262,7 +277,8 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
         const holders = ticker.accounts;
         console.log({ totalSales, totalAmount, price, marketCap, holders, symbol: ticker.sym, dec: ticker.dec, amt: ticker.amt })
 
-        const pctChange = calculatePctChange({ ticker, sale: ticker.sales[0], currentHeight: 0 });
+
+        const pctChange = await calculatePctChange({ id: ticker.id, sales: ticker.sales, currentHeight: info.blocks });
 
         return {
           ...ticker,
@@ -292,7 +308,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
 
         return tickersV1.map(ticker => {
-          const pctChange = calculatePctChange({ ticker });
+          const pctChange = calculatePctChange({ id: ticker.tick, currentHeight: 0 });
           return {
             ...ticker,
             price: 0,
@@ -331,35 +347,36 @@ const defaults = {
 
 // pasing in sales will save the value to cache
 // omitting sales will check cache for value
-const calculatePctChange = async ({ id, sales, currentHeight }: { id: string, currentHeight: number, sales: ListingsV1[] | ListingsV2[] }) => {
-
-  // check cache
-  const cached = await redis.get(`pct-${timeframes[4].label}-${id}`);
-  if (cached) {
-    return JSON.parse(cached);
-  }
-
-  const cutoffs = timeframes.map((tf) => currentHeight - tf.value * 144);
-  // assuming 144 blocks from current height "currentHeight" is 1 day, calculate cutoffs for each timeframe
-
-  // Filter out sales that are older than the cutoff
-  let filteredSales = sales.filter((sale) => sale.height >= cutoffs[4]);
-  if (filteredSales.length === 0) {
-
-    return 0;
+const calculatePctChange = async ({ id, sales, currentHeight }: { id: string, currentHeight: number, sales?: ListingsV1[] | ListingsV2[] }) => {
+  if (!sales) {
+    // check cache
+    const cached = await redis.get(`pct-${timeframes[4].label}-${id}`);
+    if (cached) {
+      return JSON.parse(cached);
+    }
   } else {
-    // Parse the price of the most recent sale
-    const lastPrice = parseFloat(sales[0].pricePer);
-    // Parse the price of the oldest sale
-    const firstPrice = parseFloat(
-      sales[sales.length - 1].pricePer
-    );
-    const pctChange = ((lastPrice - firstPrice) / firstPrice) * 100;
-    console.log({ lastPrice, firstPrice, pctChange });
-    // cache the pct for the ticker
-    await redis.set(`pct-${timeframes[4].label}-${id}`, pctChange, "EX", defaults.expirationTime);
-    // Calculate the percentage change
-    return pctChange;
+    const cutoffs = timeframes.map((tf) => currentHeight - tf.value * 144);
+    // assuming 144 blocks from current height "currentHeight" is 1 day, calculate cutoffs for each timeframe
+
+    // Filter out sales that are older than the cutoff
+    let filteredSales = sales.filter((sale) => sale.height >= cutoffs[4]);
+    if (filteredSales.length === 0) {
+
+      return 0;
+    } else {
+      // Parse the price of the most recent sale
+      const lastPrice = parseFloat(sales[0].pricePer);
+      // Parse the price of the oldest sale
+      const firstPrice = parseFloat(
+        sales[sales.length - 1].pricePer
+      );
+      const pctChange = ((lastPrice - firstPrice) / firstPrice) * 100;
+      console.log({ lastPrice, firstPrice, pctChange });
+      // cache the pct for the ticker
+      await redis.set(`pct-${timeframes[4].label}-${id}`, pctChange, "EX", defaults.expirationTime);
+      // Calculate the percentage change
+      return pctChange;
+    }
   }
 }
 
