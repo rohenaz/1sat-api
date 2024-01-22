@@ -308,9 +308,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           pctChange,
         });
       });
-      return tokens.sort((a, b) => {
-        return b.marketCap - a.marketCap;
-      });
+      return tokens
 
     default:
       return [];
@@ -351,9 +349,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         // cache
         await redis.set(`tickers-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
 
-        return tickers.sort((a, b) => {
-          return b.marketCap - a.marketCap;
-        });
+        return tickers
       }
       break;
     case AssetType.BSV20V2:
