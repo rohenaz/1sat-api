@@ -237,7 +237,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
       }
 
       let tokensV1: MarketDataV1[] = [];
-      detailedTokensV1.forEach(async (ticker) => {
+      for (const ticker of detailedTokensV1) {
         const totalSales = ticker.sales.reduce((acc, sale) => {
           return acc + parseInt(sale.price)
         }, 0);
@@ -256,7 +256,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           pctChange,
         });
       }
-      );
+
       return tokensV1.sort((a, b) => {
         return b.marketCap - a.marketCap;
       });
