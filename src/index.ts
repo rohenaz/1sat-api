@@ -296,13 +296,26 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
             pctChange: 15,
           };
         }
+        );
       }
       break;
     case AssetType.BSV20V2:
+      let tokenIds: string[] = [];
+      // check cache
+      const cachedIds = await redis.get(`ids-${assetType}`);
+      if (cachedIds) {
+        tokenIds = JSON.parse(cachedIds);
+      } else {
+        const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
+        const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
+        tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
+        redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", defaults.expirationTime);
+      }
       break;
     default:
       break;
   }
+  return [];
 }
 
 const defaults = {
