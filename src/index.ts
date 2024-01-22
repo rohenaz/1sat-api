@@ -321,9 +321,9 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       let tickers: MarketDataV1[] = [];
       // check cache
       const cached = await redis.get(`tickers-${assetType}`);
-      let t1: string[] = [];
+
       if (cached) {
-        t1 = JSON.parse(cached);
+        tickers = JSON.parse(cached);
       } else {
         const urlV1Tokens = `${API_HOST}/api/bsv20?limit=20&offset=0&sort=height&dir=desc&included=true`;
         const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
