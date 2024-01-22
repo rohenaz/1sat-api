@@ -348,9 +348,8 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         }
         // cache
         await redis.set(`tickers-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
-
-        return tickers
       }
+      return tickers
       break;
     case AssetType.BSV20V2:
       let tickersV2: MarketDataV2[] = [];
