@@ -386,7 +386,7 @@ const defaults = {
 const calculatePctChange = async ({ id, sales, currentHeight }: { id: string, currentHeight: number, sales?: ListingsV1[] | ListingsV2[] }) => {
   if (!sales) {
     // check cache
-    const cached = await redis.get(`pct-${timeframes[4].label}-${id}`);
+    const cached = await redis.get(`pct-${timeframes[4].label.toLowerCase()}-${id.toLowerCase()}`);
     if (cached) {
       return JSON.parse(cached);
     }
@@ -409,7 +409,7 @@ const calculatePctChange = async ({ id, sales, currentHeight }: { id: string, cu
       const pctChange = ((lastPrice - firstPrice) / firstPrice) * 100;
       console.log({ lastPrice, firstPrice, pctChange });
       // cache the pct for the ticker
-      await redis.set(`pct-${timeframes[4].label}-${id}`, pctChange, "EX", defaults.expirationTime);
+      await redis.set(`pct-${timeframes[4].label.toLowerCase()}-${id.toLowerCase()}`, pctChange, "EX", defaults.expirationTime);
       // Calculate the percentage change
       return pctChange;
     }
