@@ -262,7 +262,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
       }
 
       const info = await fetchChainInfo()
-      return detailedTokensV2.map(async (ticker) => {
+      return detailedTokensV2.forEach((ticker) => {
         // average price per unit bassed on last 10 sales
 
         // add up total price and divide by the amount to get an average price
@@ -307,7 +307,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         const urlV1Tokens = `${API_HOST}/api/bsv20?limit=20&offset=0&sort=height&dir=desc&included=true`;
         const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
 
-        return tickersV1.map(async (ticker) => {
+        return tickersV1.forEach(async (ticker) => {
           const pctChange = await calculatePctChange({ id: ticker.tick, currentHeight: 0 });
           return {
             ...ticker,
