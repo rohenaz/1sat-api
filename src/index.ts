@@ -330,22 +330,30 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
       // const info = await fetchChainInfo()
       for (const ticker of tickersV1) {
-        // TODO: Set price
-        const price = 0
-        const marketCap = calculateMarketCap(price, parseFloat(ticker.max) / 10 ** ticker.dec);
-        const pctChange = await getPctChange(ticker.tick);
 
-        tickers.push({
-          price,
-          marketCap,
+        let tick = {
+          price: 0,
+          pctChange: 0,
+          marketCap: 0,
           accounts: '',
           pending: '',
           pendingOps: '',
           listings: [],
           sales: [],
           ...ticker,
-          pctChange,
-        });
+        }
+        // check cache for sales token-${assetType}-${tick}
+        const cached = await redis.get(`token-${assetType}-${ticker.tick}`);
+        if (cached) {
+          // load values to tick
+          Object.assign(tick, JSON.parse(cached))
+        }
+        // TODO: Set price
+        tick.price = tick.sales.length > 0 ? parseFloat((tick.sales[0] as ListingsV1)?.pricePer) : 0;
+        tick.marketCap = calculateMarketCap(tick.price, parseFloat(ticker.max) / 10 ** ticker.dec);
+        tick.pctChange = await getPctChange(ticker.tick);
+
+        tickers.push(tick);
       }
       // cache
       // await redis.set(`tickers-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
