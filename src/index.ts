@@ -20,7 +20,7 @@ const app = new Elysia().get("/", ({ set }) => {
     if (!market) {
       const marketData = await fetchMarketData(params.assetType as AssetType);
       if (marketData) {
-        redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", expirationTime);
+        redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
       }
       return marketData;
     }
@@ -42,7 +42,7 @@ const app = new Elysia().get("/", ({ set }) => {
     if (!market) {
       const marketData = await fetchMarketData(params.assetType as AssetType, params.origin);
       if (marketData) {
-        redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", expirationTime);
+        redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
       }
       return marketData;
     }
@@ -89,7 +89,7 @@ const fetchChainInfo = async () => {
   }
   const url = `https://api.whatsonchain.com/v1/bsv/main/chain/info`;
   const chainInfo = await fetchJSON(url);
-  redis.set(`chainInfo`, JSON.stringify(chainInfo), "EX", expirationTime);
+  redis.set(`chainInfo`, JSON.stringify(chainInfo), "EX", defaults.expirationTime);
   return chainInfo;
 }
 
@@ -101,7 +101,7 @@ const fetchExchangeRate = async (): Promise<number> => {
     return JSON.parse(cached).rate;
   }
   const exchangeRateData = await fetchJSON("https://api.whatsonchain.com/v1/bsv/main/exchangerate") as { rate: number };
-  redis.set(`exchangeRate`, JSON.stringify(exchangeRateData), "EX", expirationTime);
+  redis.set(`exchangeRate`, JSON.stringify(exchangeRateData), "EX", defaults.expirationTime);
   return exchangeRateData.rate;
 };
 
@@ -147,7 +147,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         details.sales = await fetchJSON<ListingsV1[]>(urlSales)
 
         // cache
-        redis.set(`token-${origin}`, JSON.stringify(details), "EX", expirationTime);
+        redis.set(`token-${origin}`, JSON.stringify(details), "EX", defaults.expirationTime);
 
         d.push(details)
       }
@@ -173,7 +173,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         details.sales = await fetchJSON<ListingsV2[]>(urlSales)
 
         // cache
-        redis.set(`token-${origin}`, JSON.stringify(details), "EX", expirationTime);
+        redis.set(`token-${origin}`, JSON.stringify(details), "EX", defaults.expirationTime);
 
         d.push(details)
       }
@@ -187,7 +187,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
 
 // Function to fetch and process market data
 const fetchMarketData = async (assetType: AssetType, origin?: string) => {
-  const exchangeRate = await fetchExchangeRate();
+
   switch (assetType) {
     case AssetType.BSV20:
       let detailedTokensV1: BSV20V1Details[] = [];
@@ -205,7 +205,7 @@ const fetchMarketData = async (assetType: AssetType, origin?: string) => {
           const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
           t1 = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
           // cache
-          redis.set(`ids-${assetType}`, JSON.stringify(t1), "EX", expirationTime);
+          redis.set(`ids-${assetType}`, JSON.stringify(t1), "EX", defaults.expirationTime);
         }
         detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
       }
@@ -225,7 +225,6 @@ const fetchMarketData = async (assetType: AssetType, origin?: string) => {
           price,
           marketCap,
           holders,
-          exchangeRate
         };
       });
     case AssetType.BSV20V2:
@@ -242,7 +241,7 @@ const fetchMarketData = async (assetType: AssetType, origin?: string) => {
           const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
           const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
           tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
-          redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", expirationTime);
+          redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", defaults.expirationTime);
         }
 
         detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(tokenIds, assetType);
@@ -267,7 +266,6 @@ const fetchMarketData = async (assetType: AssetType, origin?: string) => {
           price,
           marketCap,
           holders,
-          exchangeRate
         };
       });
 
@@ -276,4 +274,7 @@ const fetchMarketData = async (assetType: AssetType, origin?: string) => {
   }
 };
 
-const expirationTime = 60 * 10; // 10 minutes
+const defaults = {
+  expirationTime: 60 * 10, // 10 minutes
+  resultsPerPage: 20
+}
