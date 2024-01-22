@@ -18,7 +18,7 @@ const app = new Elysia().get("/", ({ set }) => {
     let market = await redis.get(`market-${params.assetType}`);
     console.log("In cache?", market)
     if (!market) {
-      const marketData = await fetchMarketData(params.assetType as AssetType);
+      const marketData = await fetchShallowMarketData(params.assetType as AssetType);
       if (marketData) {
         redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
       }
@@ -187,7 +187,6 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
 
 // Function to fetch and process market data
 const fetchMarketData = async (assetType: AssetType, id?: string) => {
-
   switch (assetType) {
     case AssetType.BSV20:
       let detailedTokensV1: BSV20V1Details[] = [];
@@ -225,6 +224,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           price,
           marketCap,
           holders,
+          pctChange: 15,
         };
       });
     case AssetType.BSV20V2:
@@ -275,6 +275,35 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
       return [];
   }
 };
+
+const fetchShallowMarketData = async (assetType: AssetType) => {
+  switch (assetType) {
+    case AssetType.BSV20:
+      // check cache
+      const cached = await redis.get(`tickers-${assetType}`);
+      let t1: string[] = [];
+      if (cached) {
+        t1 = JSON.parse(cached);
+      } else {
+        const urlV1Tokens = `${API_HOST}/api/bsv20?limit=20&offset=0&sort=height&dir=desc&included=true`;
+        const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
+        return tickersV1.map(ticker => {
+          return {
+            ...ticker,
+            price: 0,
+            marketCap: 0,
+            holders: 0,
+            pctChange: 15,
+          };
+        }
+      }
+      break;
+    case AssetType.BSV20V2:
+      break;
+    default:
+      break;
+  }
+}
 
 const defaults = {
   expirationTime: 60 * 10, // 10 minutes
