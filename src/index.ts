@@ -164,11 +164,11 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         const details = await fetchJSON<T>(urlDetails)
 
         // add listings
-        const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1&tick=${tick}`;
+        const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
         details.listings = await fetchJSON<ListingsV1[]>(urlListings)
 
         // add sales
-        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&type=v1&tick=${tick}`;
+        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
         details.sales = await fetchJSON<ListingsV1[]>(urlSales)
 
         // cache
