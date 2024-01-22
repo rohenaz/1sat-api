@@ -31,9 +31,10 @@ const app = new Elysia().get("/", ({ set }) => {
     // console.log("In cache?", market)
     // if (!market) {
     const marketData = await fetchShallowMarketData(params.assetType as AssetType);
-    if (marketData) {
-      await redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
-    }
+    // if (marketData) {
+    //   await redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
+    // }
+    console.log("marketData", marketData)
     return marketData;
     //}
     //return JSON.parse(market);
@@ -329,7 +330,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         const urlV1Tokens = `${API_HOST}/api/bsv20?limit=20&offset=0&sort=height&dir=desc&included=true`;
         const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
         const info = await fetchChainInfo()
-        tickersV1.forEach(async (ticker) => {
+        for (const ticker of tickersV1) {
           // TODO: Set price
           const price = 0
           const marketCap = calculateMarketCap(price, parseFloat(ticker.max) / 10 ** ticker.dec);
@@ -346,7 +347,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
             ...ticker,
             pctChange,
           });
-        });
+        }
         // cache
         await redis.set(`tickers-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
 
