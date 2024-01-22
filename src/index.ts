@@ -9,6 +9,18 @@ const redis = new Redis(`${process.env.REDIS_URL}`);
 redis.on("connect", () => console.log("Connected to Redis"));
 redis.on("error", (err) => console.error("Redis Error", err));
 
+interface MarketDataV2 extends BSV20V2Details {
+  price: number;
+  marketCap: number;
+  pctChange: number;
+}
+
+interface MarketDataV1 extends BSV20V1Details {
+  price: number;
+  marketCap: number;
+  pctChange: number;
+}
+
 const app = new Elysia().get("/", ({ set }) => {
   set.headers["Content-Type"] = "text/html";
   return `:)`;
@@ -214,7 +226,8 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
         detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
       }
 
-      return detailedTokensV1.map(ticker => {
+      let tokensV1: MarketDataV1[] = [];
+      detailedTokensV1.forEach(async (ticker) => {
         const totalSales = ticker.sales.reduce((acc, sale) => {
           return acc + parseInt(sale.price)
         }, 0);
@@ -223,14 +236,19 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
         }, 0);
         const price = totalAmount > 0 ? totalSales / totalAmount : 0;
         const marketCap = calculateMarketCap(price, parseFloat(ticker.max) / 10 ** ticker.dec);
-        const holders = ticker.accounts;
-        return {
+
+        const pctChange = await calculatePctChange({ id: ticker.tick, sales: ticker.sales, currentHeight: 0 });
+
+        tokensV1.push({
           ...ticker,
           price,
           marketCap,
-          holders,
-          pctChange: 15,
-        };
+          pctChange,
+        });
+      }
+      );
+      return tokensV1.sort((a, b) => {
+        return b.marketCap - a.marketCap;
       });
     case AssetType.BSV20V2:
       let detailedTokensV2: BSV20V2Details[] = [];
@@ -254,7 +272,8 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
       }
 
       const info = await fetchChainInfo()
-      return detailedTokensV2.forEach(async (ticker) => {
+      let tokens: MarketDataV2[] = [];
+      detailedTokensV2.forEach(async (ticker) => {
         // average price per unit bassed on last 10 sales
 
         // add up total price and divide by the amount to get an average price
@@ -266,20 +285,20 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
         }, 0);
         const price = totalAmount > 0 ? totalSales / totalAmount : 0;
         const marketCap = calculateMarketCap(price, parseFloat(ticker.amt) / 10 ** ticker.dec);
-        const holders = ticker.accounts;
-        console.log({ totalSales, totalAmount, price, marketCap, holders, symbol: ticker.sym, dec: ticker.dec, amt: ticker.amt })
+        console.log({ totalSales, totalAmount, price, marketCap, symbol: ticker.sym, dec: ticker.dec, amt: ticker.amt })
 
 
         const pctChange = await calculatePctChange({ id: ticker.id, sales: ticker.sales, currentHeight: info.blocks });
 
-        return {
+        tokens.push({
           ...ticker,
-          tick: ticker.sym,
           price,
           marketCap,
-          holders,
           pctChange,
-        };
+        });
+      });
+      return tokens.sort((a, b) => {
+        return b.marketCap - a.marketCap;
       });
 
     default:
