@@ -213,6 +213,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
 
 // Function to fetch and process market data
 const fetchMarketData = async (assetType: AssetType, id?: string) => {
+  id = id?.toLowerCase();
   switch (assetType) {
     case AssetType.BSV20:
       let detailedTokensV1: BSV20V1Details[] = [];
@@ -273,7 +274,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
         } else {
           const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
           const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
-          tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
+          tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id.toLowerCase());
           await redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", defaults.expirationTime);
         }
 
