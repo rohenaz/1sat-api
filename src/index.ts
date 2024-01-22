@@ -321,35 +321,35 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
     case AssetType.BSV20:
       let tickers: MarketDataV1[] = [];
       // check cache
-      const cached = await redis.get(`tickers-${assetType}`);
+      // const cached = await redis.get(`tickers-${assetType}`);
 
-      if (cached) {
-        tickers = JSON.parse(cached);
-      } else {
-        const urlV1Tokens = `${API_HOST}/api/bsv20?limit=20&offset=0&sort=height&dir=desc&included=true`;
-        const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
-        // const info = await fetchChainInfo()
-        for (const ticker of tickersV1) {
-          // TODO: Set price
-          const price = 0
-          const marketCap = calculateMarketCap(price, parseFloat(ticker.max) / 10 ** ticker.dec);
-          const pctChange = await getPctChange(ticker.tick);
+      // if (cached) {
+      //   tickers = JSON.parse(cached);
+      // } else {
+      const urlV1Tokens = `${API_HOST}/api/bsv20?limit=20&offset=0&sort=height&dir=desc&included=true`;
+      const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
+      // const info = await fetchChainInfo()
+      for (const ticker of tickersV1) {
+        // TODO: Set price
+        const price = 0
+        const marketCap = calculateMarketCap(price, parseFloat(ticker.max) / 10 ** ticker.dec);
+        const pctChange = await getPctChange(ticker.tick);
 
-          tickers.push({
-            price,
-            marketCap,
-            accounts: '',
-            pending: '',
-            pendingOps: '',
-            listings: [],
-            sales: [],
-            ...ticker,
-            pctChange,
-          });
-        }
-        // cache
-        await redis.set(`tickers-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
+        tickers.push({
+          price,
+          marketCap,
+          accounts: '',
+          pending: '',
+          pendingOps: '',
+          listings: [],
+          sales: [],
+          ...ticker,
+          pctChange,
+        });
       }
+      // cache
+      // await redis.set(`tickers-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
+      // }
       return tickers
     case AssetType.BSV20V2:
       let tickersV2: MarketDataV2[] = [];
