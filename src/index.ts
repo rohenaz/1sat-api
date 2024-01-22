@@ -57,6 +57,9 @@ const app = new Elysia().get("/", ({ set }) => {
     return {};
   }
 }, {
+  transform({ params }) {
+    params.id = params.id.toLowerCase();
+  },
   params: t.Object({
     assetType: t.String(),
     id: t.String()
