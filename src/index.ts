@@ -318,12 +318,12 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       } else {
         const urlV1Tokens = `${API_HOST}/api/bsv20?limit=20&offset=0&sort=height&dir=desc&included=true`;
         const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
-
+        const info = await fetchChainInfo()
         tickersV1.forEach(async (ticker) => {
           // TODO: Set price
           const price = 0
           const marketCap = calculateMarketCap(price, parseFloat(ticker.max) / 10 ** ticker.dec);
-          const pctChange = await calculatePctChange({ id: ticker.tick, currentHeight: 0 });
+          const pctChange = await calculatePctChange({ id: ticker.tick, currentHeight: info.blocks });
 
           tickers.push({
             price,
