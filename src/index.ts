@@ -43,6 +43,9 @@ const app = new Elysia().get("/", ({ set }) => {
     return {};
   }
 }, {
+  transform({ params }) {
+    params.assetType = params.assetType.toLowerCase();
+  },
   params: t.Object({
     assetType: t.String()
   })
