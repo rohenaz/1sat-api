@@ -153,7 +153,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
       for (const tick of tokenIDs) {
 
         // check cache
-        const cached = await redis.get(`token-${tick}`);
+        const cached = await redis.get(`token-${assetType}-${tick}`);
         if (cached) {
           console.log("data from cache")
           d.push(JSON.parse(cached));
@@ -172,7 +172,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         details.sales = await fetchJSON<ListingsV1[]>(urlSales)
 
         // cache
-        await redis.set(`token-${tick}`, JSON.stringify(details), "EX", defaults.expirationTime);
+        await redis.set(`token-${assetType}-${tick}`, JSON.stringify(details), "EX", defaults.expirationTime);
 
         console.log({ details, urlDetails, urlListings, urlSales })
         d.push(details)
@@ -181,7 +181,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
     case AssetType.BSV20V2:
       for (const origin of tokenIDs) {
         //check cache 
-        const cached = await redis.get(`token-${origin}`);
+        const cached = await redis.get(`token-${assetType}-${origin}`);
         if (cached) {
           d.push(JSON.parse(cached));
           continue;
@@ -199,7 +199,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         details.sales = await fetchJSON<ListingsV2[]>(urlSales)
 
         // cache
-        await redis.set(`token-${origin}`, JSON.stringify(details), "EX", defaults.expirationTime);
+        await redis.set(`token-${assetType}-${origin}`, JSON.stringify(details), "EX", defaults.expirationTime);
 
         d.push(details)
       }
