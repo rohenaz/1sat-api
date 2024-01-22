@@ -309,6 +309,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
 const fetchShallowMarketData = async (assetType: AssetType) => {
   switch (assetType) {
     case AssetType.BSV20:
+      let tickers: MarketDataV1[] = [];
       // check cache
       const cached = await redis.get(`tickers-${assetType}`);
       let t1: string[] = [];
@@ -318,20 +319,34 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         const urlV1Tokens = `${API_HOST}/api/bsv20?limit=20&offset=0&sort=height&dir=desc&included=true`;
         const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
 
-        return tickersV1.forEach(async (ticker) => {
+        tickersV1.forEach(async (ticker) => {
+          // TODO: Set price
+          const price = 0
+          const marketCap = calculateMarketCap(price, parseFloat(ticker.max) / 10 ** ticker.dec);
           const pctChange = await calculatePctChange({ id: ticker.tick, currentHeight: 0 });
-          return {
+
+          tickers.push({
+            price,
+            marketCap,
+            accounts: '',
+            pending: '',
+            pendingOps: '',
+            listings: [],
+            sales: [],
             ...ticker,
-            price: 0,
-            marketCap: 0,
-            holders: 0,
             pctChange,
-          };
-        }
-        );
+          });
+        });
+        // cache
+        await redis.set(`tickers-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
+
+        return tickers.sort((a, b) => {
+          return b.marketCap - a.marketCap;
+        });
       }
       break;
     case AssetType.BSV20V2:
+      let tickersV2: MarketDataV2[] = [];
       let tokenIds: string[] = [];
       // check cache
       const cachedIds = await redis.get(`ids-${assetType}`);
@@ -342,12 +357,13 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
         tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
         await redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", defaults.expirationTime);
+
       }
-      break;
+      return tickersV2;
+
     default:
       break;
   }
-  return [];
 }
 
 const defaults = {
