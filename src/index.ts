@@ -350,7 +350,6 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         await redis.set(`tickers-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
       }
       return tickers
-      break;
     case AssetType.BSV20V2:
       let tickersV2: MarketDataV2[] = [];
       let tokenIds: string[] = [];
@@ -366,7 +365,6 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
 
       }
       return tickersV2;
-
     default:
       break;
   }
@@ -398,10 +396,10 @@ const calculatePctChange = async ({ id, sales, currentHeight }: { id: string, cu
       return 0;
     } else {
       // Parse the price of the most recent sale
-      const lastPrice = parseFloat(sales[0].pricePer);
+      const lastPrice = parseFloat(filteredSales[0].pricePer);
       // Parse the price of the oldest sale
       const firstPrice = parseFloat(
-        sales[sales.length - 1].pricePer
+        filteredSales[filteredSales.length - 1].pricePer
       );
       const pctChange = ((lastPrice - firstPrice) / firstPrice) * 100;
       console.log({ lastPrice, firstPrice, pctChange });
@@ -413,7 +411,12 @@ const calculatePctChange = async ({ id, sales, currentHeight }: { id: string, cu
   }
 }
 
-const timeframes = [
+type Timeframe = {
+  label: string;
+  value: number;
+};
+
+const timeframes: Timeframe[] = [
   { label: "1H", value: 0.041667 },
   { label: "3H", value: 0.125 },
   { label: "1D", value: 1 },
