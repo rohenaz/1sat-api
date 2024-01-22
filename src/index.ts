@@ -307,8 +307,8 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         const urlV1Tokens = `${API_HOST}/api/bsv20?limit=20&offset=0&sort=height&dir=desc&included=true`;
         const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
 
-        return tickersV1.map(ticker => {
-          const pctChange = calculatePctChange({ id: ticker.tick, currentHeight: 0 });
+        return tickersV1.map(async (ticker) => {
+          const pctChange = await calculatePctChange({ id: ticker.tick, currentHeight: 0 });
           return {
             ...ticker,
             price: 0,
