@@ -174,7 +174,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         // cache
         await redis.set(`token-${tick}`, JSON.stringify(details), "EX", defaults.expirationTime);
 
-        console.log({ details })
+        console.log({ details, urlDetails, urlListings, urlSales })
         d.push(details)
       }
       break;
