@@ -35,18 +35,10 @@ const app = new Elysia().get("/", ({ set }) => {
     assetType: t.String()
   })
 }).get("/market/:assetType/:id", async ({ set, params }) => {
-  console.log(params.assetType)
+  console.log("WITH ID", params.assetType, params.id)
   try {
-    let market = await redis.get(`market-${params.assetType}`);
-    console.log("In cache?", market)
-    if (!market) {
-      const marketData = await fetchMarketData(params.assetType as AssetType, params.id);
-      if (marketData) {
-        await redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
-      }
-      return marketData;
-    }
-    return JSON.parse(market);
+    const marketData = await fetchMarketData(params.assetType as AssetType, params.id);
+    return marketData;
   } catch (e) {
     console.error("Error fetching market data:", e);
     set.status = 500;
