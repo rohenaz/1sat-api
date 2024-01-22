@@ -267,6 +267,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           price,
           marketCap,
           holders,
+          pctChange: 15,
         };
       });
 
