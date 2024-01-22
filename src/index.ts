@@ -147,10 +147,10 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
 
         // check cache
         const cached = await redis.get(`token-${tick}`);
-        if (cached) {
-          d.push(JSON.parse(cached));
-          continue;
-        }
+        // if (cached) {
+        //   d.push(JSON.parse(cached));
+        //   continue;
+        // }
 
         const urlDetails = `${API_HOST}/api/bsv20/tick/${tick}?refresh=false`;
         const details = await fetchJSON<T>(urlDetails)
