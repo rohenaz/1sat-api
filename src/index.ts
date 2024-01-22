@@ -20,7 +20,7 @@ const app = new Elysia().get("/", ({ set }) => {
     if (!market) {
       const marketData = await fetchShallowMarketData(params.assetType as AssetType);
       if (marketData) {
-        redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
+        await redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
       }
       return marketData;
     }
@@ -42,7 +42,7 @@ const app = new Elysia().get("/", ({ set }) => {
     if (!market) {
       const marketData = await fetchMarketData(params.assetType as AssetType, params.id);
       if (marketData) {
-        redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
+        await redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
       }
       return marketData;
     }
@@ -89,7 +89,7 @@ const fetchChainInfo = async () => {
   }
   const url = `https://api.whatsonchain.com/v1/bsv/main/chain/info`;
   const chainInfo = await fetchJSON(url);
-  redis.set(`chainInfo`, JSON.stringify(chainInfo), "EX", defaults.expirationTime);
+  await redis.set(`chainInfo`, JSON.stringify(chainInfo), "EX", defaults.expirationTime);
   return chainInfo;
 }
 
@@ -101,7 +101,7 @@ const fetchExchangeRate = async (): Promise<number> => {
     return JSON.parse(cached).rate;
   }
   const exchangeRateData = await fetchJSON("https://api.whatsonchain.com/v1/bsv/main/exchangerate") as { rate: number };
-  redis.set(`exchangeRate`, JSON.stringify(exchangeRateData), "EX", defaults.expirationTime);
+  await redis.set(`exchangeRate`, JSON.stringify(exchangeRateData), "EX", defaults.expirationTime);
   return exchangeRateData.rate;
 };
 
@@ -147,7 +147,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         details.sales = await fetchJSON<ListingsV1[]>(urlSales)
 
         // cache
-        redis.set(`token-${tick}`, JSON.stringify(details), "EX", defaults.expirationTime);
+        await redis.set(`token-${tick}`, JSON.stringify(details), "EX", defaults.expirationTime);
 
         d.push(details)
       }
@@ -173,7 +173,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         details.sales = await fetchJSON<ListingsV2[]>(urlSales)
 
         // cache
-        redis.set(`token-${origin}`, JSON.stringify(details), "EX", defaults.expirationTime);
+        await redis.set(`token-${origin}`, JSON.stringify(details), "EX", defaults.expirationTime);
 
         d.push(details)
       }
@@ -204,7 +204,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
           t1 = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
           // cache
-          redis.set(`ids-${assetType}`, JSON.stringify(t1), "EX", defaults.expirationTime);
+          await redis.set(`ids-${assetType}`, JSON.stringify(t1), "EX", defaults.expirationTime);
         }
         detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(t1, assetType);
       }
@@ -242,7 +242,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
           const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
           tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
-          redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", defaults.expirationTime);
+          await redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", defaults.expirationTime);
         }
 
         detailedTokensV2 = await fetchTokensDetails<BSV20V2Details>(tokenIds, assetType);
@@ -261,13 +261,16 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
         const marketCap = calculateMarketCap(price, parseFloat(ticker.amt) / 10 ** ticker.dec);
         const holders = ticker.accounts;
         console.log({ totalSales, totalAmount, price, marketCap, holders, symbol: ticker.sym, dec: ticker.dec, amt: ticker.amt })
+
+        const pctChange = calculatePctChange({ ticker, sale: ticker.sales[0], currentHeight: 0 });
+
         return {
           ...ticker,
           tick: ticker.sym,
           price,
           marketCap,
           holders,
-          pctChange: 15,
+          pctChange,
         };
       });
 
@@ -287,7 +290,9 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       } else {
         const urlV1Tokens = `${API_HOST}/api/bsv20?limit=20&offset=0&sort=height&dir=desc&included=true`;
         const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
+
         return tickersV1.map(ticker => {
+          const pctChange = calculatePctChange({ ticker });
           return {
             ...ticker,
             price: 0,
@@ -309,7 +314,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
         const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
         tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
-        redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", defaults.expirationTime);
+        await redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", defaults.expirationTime);
       }
       break;
     default:
@@ -322,3 +327,48 @@ const defaults = {
   expirationTime: 60 * 10, // 10 minutes
   resultsPerPage: 20
 }
+
+
+// pasing in sales will save the value to cache
+// omitting sales will check cache for value
+const calculatePctChange = async ({ id, sales, currentHeight }: { id: string, currentHeight: number, sales: ListingsV1[] | ListingsV2[] }) => {
+
+  // check cache
+  const cached = await redis.get(`pct-${timeframes[4].label}-${id}`);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  const cutoffs = timeframes.map((tf) => currentHeight - tf.value * 144);
+  // assuming 144 blocks from current height "currentHeight" is 1 day, calculate cutoffs for each timeframe
+
+  // Filter out sales that are older than the cutoff
+  let filteredSales = sales.filter((sale) => sale.height >= cutoffs[4]);
+  if (filteredSales.length === 0) {
+
+    return 0;
+  } else {
+    // Parse the price of the most recent sale
+    const lastPrice = parseFloat(sales[0].pricePer);
+    // Parse the price of the oldest sale
+    const firstPrice = parseFloat(
+      sales[sales.length - 1].pricePer
+    );
+    const pctChange = ((lastPrice - firstPrice) / firstPrice) * 100;
+    console.log({ lastPrice, firstPrice, pctChange });
+    // cache the pct for the ticker
+    await redis.set(`pct-${timeframes[4].label}-${id}`, pctChange, "EX", defaults.expirationTime);
+    // Calculate the percentage change
+    return pctChange;
+  }
+}
+
+const timeframes = [
+  { label: "1H", value: 0.041667 },
+  { label: "3H", value: 0.125 },
+  { label: "1D", value: 1 },
+  { label: "1W", value: 7 },
+  { label: "1M", value: 30 },
+  { label: "1Y", value: 365 },
+  { label: "ALL", value: 9999 },
+];
