@@ -300,7 +300,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
         console.log({ totalSales, totalAmount, price, marketCap, symbol: ticker.sym, dec: ticker.dec, amt: ticker.amt })
 
 
-        const pctChange = await calculatePctChange({ id: ticker.id, sales: ticker.sales, currentHeight: info.blocks });
+        const pctChange = await setPctChange(ticker.id, ticker.sales, info.blocks);
 
         tokens.push({
           ...ticker,
@@ -328,12 +328,12 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       } else {
         const urlV1Tokens = `${API_HOST}/api/bsv20?limit=20&offset=0&sort=height&dir=desc&included=true`;
         const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
-        const info = await fetchChainInfo()
+        // const info = await fetchChainInfo()
         for (const ticker of tickersV1) {
           // TODO: Set price
           const price = 0
           const marketCap = calculateMarketCap(price, parseFloat(ticker.max) / 10 ** ticker.dec);
-          const pctChange = await getPctChange(ticker.tick, info.blocks);
+          const pctChange = await getPctChange(ticker.tick);
 
           tickers.push({
             price,
