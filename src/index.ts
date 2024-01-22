@@ -314,7 +314,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
             price: 0,
             marketCap: 0,
             holders: 0,
-            pctChange: 15,
+            pctChange,
           };
         }
         );
