@@ -262,7 +262,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
       }
 
       const info = await fetchChainInfo()
-      return detailedTokensV2.forEach((ticker) => {
+      return detailedTokensV2.forEach(async (ticker) => {
         // average price per unit bassed on last 10 sales
 
         // add up total price and divide by the amount to get an average price
