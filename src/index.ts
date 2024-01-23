@@ -396,6 +396,8 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         tick.price = tick.sales.length > 0 ? parseFloat((tick.sales[0] as ListingsV2)?.pricePer) : 0;
         tick.marketCap = calculateMarketCap(tick.price, parseFloat(ticker.amt) / 10 ** ticker.dec);
         tick.pctChange = await getPctChange(ticker.id);
+
+        tv2.push(tick);
       }
       // }
       return tv2;
