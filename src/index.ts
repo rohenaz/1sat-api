@@ -360,7 +360,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       // }
       return tickers
     case AssetType.BSV20V2:
-      let tickersV2: MarketDataV2[] = [];
+      let tv2: MarketDataV2[] = [];
       let tokenIds: string[] = [];
       // check cache
       // const cachedIds = await redis.get(`ids-${assetType}`);
@@ -368,11 +368,11 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       //   tokenIds = JSON.parse(cachedIds);
       // } else {
       const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
-      const tv2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
-      tokenIds = uniqBy(tv2, 'id').map(ticker => ticker.id);
+      const tickersv2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
+      // tokenIds = uniqBy(tv2, 'id').map(ticker => ticker.id);
       await redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", defaults.expirationTime);
 
-      for (const ticker of tv2) {
+      for (const ticker of tickersv2) {
         let tick = {
           price: 0,
           pctChange: 0,
@@ -396,7 +396,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         tick.pctChange = await getPctChange(ticker.id);
       }
       // }
-      return tickersV2;
+      return tv2;
     default:
       break;
   }
