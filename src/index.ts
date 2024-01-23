@@ -285,7 +285,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
 
       const info = await fetchChainInfo()
       let tokens: MarketDataV2[] = [];
-      detailedTokensV2.forEach(async (ticker) => {
+      for (const ticker of detailedTokensV2) {
         // average price per unit bassed on last 10 sales
 
         // add up total price and divide by the amount to get an average price
@@ -308,7 +308,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           marketCap,
           pctChange,
         });
-      });
+      }
       return tokens
 
     default:
@@ -361,7 +361,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       return tickers
     case AssetType.BSV20V2:
       let tv2: MarketDataV2[] = [];
-      let tokenIds: string[] = [];
+      // let tokenIds: string[] = [];
       // check cache
       // const cachedIds = await redis.get(`ids-${assetType}`);
       // if (cachedIds) {
@@ -370,7 +370,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
       const tickersv2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
       // tokenIds = uniqBy(tv2, 'id').map(ticker => ticker.id);
-      await redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", defaults.expirationTime);
+      // await redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", defaults.expirationTime);
 
       for (const ticker of tickersv2) {
         let tick = {
@@ -391,6 +391,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
           Object.assign(tick, JSON.parse(cached))
         }
 
+        // TODO: Set price
         tick.price = tick.sales.length > 0 ? parseFloat((tick.sales[0] as ListingsV2)?.pricePer) : 0;
         tick.marketCap = calculateMarketCap(tick.price, parseFloat(ticker.amt) / 10 ** ticker.dec);
         tick.pctChange = await getPctChange(ticker.id);
