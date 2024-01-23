@@ -363,16 +363,39 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       let tickersV2: MarketDataV2[] = [];
       let tokenIds: string[] = [];
       // check cache
-      const cachedIds = await redis.get(`ids-${assetType}`);
-      if (cachedIds) {
-        tokenIds = JSON.parse(cachedIds);
-      } else {
-        const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
-        const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
-        tokenIds = uniqBy(tickersV2, 'id').map(ticker => ticker.id);
-        await redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", defaults.expirationTime);
+      // const cachedIds = await redis.get(`ids-${assetType}`);
+      // if (cachedIds) {
+      //   tokenIds = JSON.parse(cachedIds);
+      // } else {
+      const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
+      const tv2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
+      tokenIds = uniqBy(tv2, 'id').map(ticker => ticker.id);
+      await redis.set(`ids-${assetType}`, JSON.stringify(tokenIds), "EX", defaults.expirationTime);
 
+      for (const ticker of tv2) {
+        let tick = {
+          price: 0,
+          pctChange: 0,
+          marketCap: 0,
+          accounts: '',
+          pending: '',
+          pendingOps: '',
+          listings: [],
+          sales: [],
+          ...ticker,
+        }
+        // check cache for sales token-${assetType}-${tick}
+        const cached = await redis.get(`token-${assetType}-${ticker.id.toLowerCase()}`);
+        if (cached) {
+          // load values to tick
+          Object.assign(tick, JSON.parse(cached))
+        }
+
+        tick.price = tick.sales.length > 0 ? parseFloat((tick.sales[0] as ListingsV2)?.pricePer) : 0;
+        tick.marketCap = calculateMarketCap(tick.price, parseFloat(ticker.amt) / 10 ** ticker.dec);
+        tick.pctChange = await getPctChange(ticker.id);
       }
+      // }
       return tickersV2;
     default:
       break;
