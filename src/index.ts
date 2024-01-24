@@ -199,6 +199,7 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&id=${id}`;
         details.sales = await fetchJSON<ListingsV2[]>(urlSales)
 
+        console.log({ details, url, urlListings, urlSales })
         // cache
         await redis.set(`token-${assetType}-${id}`, JSON.stringify(details), "EX", defaults.expirationTime);
 
