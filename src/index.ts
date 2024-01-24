@@ -13,6 +13,7 @@ interface MarketDataV2 extends BSV20V2Details {
   price: number;
   marketCap: number;
   pctChange: number;
+  included: true;
 }
 
 interface MarketDataV1 extends BSV20V1Details {
@@ -304,6 +305,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
         const pctChange = await setPctChange(ticker.id, ticker.sales, info.blocks);
 
         tokens.push({
+          included: true,
           ...ticker,
           price,
           marketCap,
