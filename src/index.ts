@@ -329,7 +329,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       // if (cached) {
       //   tickers = JSON.parse(cached);
       // } else {
-      const urlV1Tokens = `${API_HOST}/api/bsv20?limit=20&offset=0&sort=height&dir=desc&included=true`;
+      const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
       const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
       // const info = await fetchChainInfo()
       for (const ticker of tickersV1) {
@@ -370,7 +370,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       // if (cachedIds) {
       //   tokenIds = JSON.parse(cachedIds);
       // } else {
-      const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=20&offset=0&sort=fund_total&dir=desc&included=true`;
+      const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=100&offset=0&sort=fund_total&dir=desc&included=true`;
       const tickersv2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
 
       // EXAMPLE
