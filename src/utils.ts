@@ -1,6 +1,6 @@
 import { ChainInfo, redis } from ".";
-import { defaults } from "./constants";
-import { ListingsV1, ListingsV2 } from "./types/bsv20";
+import { API_HOST, AssetType, defaults } from "./constants";
+import { BSV20V1Details, BSV20V2Details, ListingsV1, ListingsV2 } from "./types/bsv20";
 
 type Timeframe = {
   label: string;
@@ -90,3 +90,72 @@ export const fetchExchangeRate = async (): Promise<number> => {
   await redis.set(`exchangeRate`, JSON.stringify(exchangeRateData), "EX", defaults.expirationTime);
   return exchangeRateData.rate;
 };
+
+export const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tokenIDs: string[], assetType: AssetType): Promise<T[]> => {
+
+  let d: T[] = [];
+  // use passed in type instead 
+  switch (assetType) {
+    case AssetType.BSV20:
+      // get the last sale price
+      for (const tick of tokenIDs) {
+
+        // check cache
+        const cached = await redis.get(`token-${assetType}-${tick}`);
+        if (cached) {
+          console.log("data from cache")
+          d.push(JSON.parse(cached));
+          continue;
+        }
+
+        const urlDetails = `${API_HOST}/api/bsv20/tick/${tick}?refresh=false`;
+        const details = await fetchJSON<T>(urlDetails)
+
+        // add listings
+        const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
+        details.listings = await fetchJSON<ListingsV1[]>(urlListings)
+
+        // add sales
+        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
+        details.sales = await fetchJSON<ListingsV1[]>(urlSales)
+
+        // cache
+        await redis.set(`token-${assetType}-${tick}`, JSON.stringify(details), "EX", defaults.expirationTime);
+
+        console.log({ details, urlDetails, urlListings, urlSales })
+        d.push(details)
+      }
+      break;
+    case AssetType.BSV20V2:
+      for (const id of tokenIDs) {
+        //check cache 
+        const cached = await redis.get(`token-${assetType}-${id}`);
+        if (cached) {
+          d.push(JSON.parse(cached));
+          continue;
+        }
+
+        const url = `${API_HOST}/api/bsv20/id/${id}?refresh=false`;
+        const details = await fetchJSON<T>(url)
+
+        // add listings
+        const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&id=${id}`;
+        details.listings = await fetchJSON<ListingsV2[]>(urlListings)
+
+        // add sales
+        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&id=${id}`;
+        details.sales = await fetchJSON<ListingsV2[]>(urlSales)
+
+        // cache
+        await redis.set(`token-${assetType}-${id}`, JSON.stringify(details), "EX", defaults.expirationTime);
+
+        console.log({ details, url, urlListings, urlSales })
+        d.push(details)
+      }
+      break;
+    default:
+      break;
+  }
+
+  return d;
+}

@@ -1,7 +1,7 @@
-import { fetchTokensDetails, redis } from ".";
+import { redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
 import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details } from "./types/bsv20";
-import { fetchChainInfo, fetchJSON, setPctChange } from "./utils";
+import { fetchChainInfo, fetchJSON, fetchTokensDetails, setPctChange } from "./utils";
 
 // on boot up we get all the tickers and cache them
 export const loadV1Tickers = async () => {
