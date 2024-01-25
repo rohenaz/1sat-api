@@ -5,11 +5,6 @@ import { fetchChainInfo, fetchJSON, setPctChange } from "./utils";
 
 // on boot up we get all the tickers and cache them
 export const loadV1Tickers = async () => {
-  // check cache
-  const cached = await redis.get(`tickers-${AssetType.BSV20}`);
-  if (cached) {
-    return;
-  }
   const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
   const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
   const info = await fetchChainInfo()
@@ -24,11 +19,6 @@ export const loadV1Tickers = async () => {
 }
 
 export const loadV2Tickers = async () => {
-  // check cache
-  const cached = await redis.get(`tickers-${AssetType.BSV20V2}`);
-  if (cached) {
-    return;
-  }
   const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=100&offset=0&included=true`;
   const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
   const info = await fetchChainInfo()
