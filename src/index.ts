@@ -91,7 +91,7 @@ console.log(
 
 // Helper function to calculate market cap
 const calculateMarketCap = (price: number, amount: number): number => {
-  return price * amount;
+  return (price * amount)
 };
 
 // {"chain":"main","blocks":828211,"headers":661647,"bestblockhash":"000000000000000004aa4c183384a0bf13a49e6726fcc7bb7fb8c9bc9594b2f2","difficulty":119016070306.9696,"mediantime":1705928988,"verificationprogress":0.9999961584631301,"pruned":false,"chainwork":"00000000000000000000000000000000000000000150caf5c43a1446f852c8fe"}
@@ -158,7 +158,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           return acc + parseInt(sale.amt) / 10 ** ticker.dec
         }, 0);
         const price = totalAmount > 0 ? totalSales / totalAmount : 0;
-        const marketCap = calculateMarketCap(price, parseFloat(ticker.max) / 10 ** ticker.dec);
+        const marketCap = calculateMarketCap(price, parseInt(ticker.max));
 
         const pctChange = await setPctChange(ticker.tick, ticker.sales, 0);
 
@@ -208,7 +208,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           return acc + parseInt(sale.amt) / 10 ** ticker.dec
         }, 0);
         const price = totalAmount > 0 ? totalSales / totalAmount : 0;
-        const marketCap = calculateMarketCap(price, parseFloat(ticker.amt) / 10 ** ticker.dec);
+        const marketCap = calculateMarketCap(price, parseFloat(ticker.amt));
         console.log({ totalSales, totalAmount, price, marketCap, symbol: ticker.sym, dec: ticker.dec, amt: ticker.amt })
 
 
