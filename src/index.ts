@@ -13,7 +13,7 @@ interface MarketDataV2 extends BSV20V2Details {
   price: number;
   marketCap: number;
   pctChange: number;
-  included: true;
+  included: boolean;
 }
 
 interface MarketDataV1 extends BSV20V1Details {
@@ -352,9 +352,9 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
           Object.assign(tick, JSON.parse(cached))
         }
         // TODO: Set price
-        tick.price = tick.sales.length > 0 ? parseFloat((tick.sales[0] as ListingsV1)?.pricePer) : 0;
+        tick.price = tick.sales.length > 0 ? parseFloat((tick.sales[0] as ListingsV1)?.pricePer) : tick.price;
         tick.marketCap = calculateMarketCap(tick.price, parseFloat(ticker.max) / 10 ** ticker.dec);
-        tick.pctChange = await getPctChange(ticker.tick);
+        tick.pctChange = tick.sales.length ? await getPctChange(ticker.tick) : tick.pctChange;
 
         tickers.push(tick);
       }
@@ -397,7 +397,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         }
 
         // TODO: Set price
-        tick.price = tick.sales.length > 0 ? parseFloat((tick.sales[0] as ListingsV2)?.pricePer) : 0;
+        tick.price = tick.sales.length > 0 ? parseFloat((tick.sales[0] as ListingsV2)?.pricePer) : tick.price;
         tick.marketCap = calculateMarketCap(tick.price, parseFloat(ticker.amt) / 10 ** ticker.dec);
         tick.pctChange = await getPctChange(ticker.id);
 
@@ -411,7 +411,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
 }
 
 const defaults = {
-  expirationTime: 60 * 10, // 10 minutes
+  expirationTime: 60 * 60 * 24, // 24 hours
   resultsPerPage: 20
 }
 
