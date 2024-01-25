@@ -89,3 +89,17 @@ export interface BSV20V2Details extends BSV20V2 {
 
 // Adjust the BSV20TXO type if needed
 export type BSV20TXO = BSV20V1 | BSV20V2;
+
+
+export interface MarketDataV2 extends BSV20V2Details {
+  price: number;
+  marketCap: number;
+  pctChange: number;
+  included: boolean;
+}
+
+export interface MarketDataV1 extends BSV20V1Details {
+  price: number;
+  marketCap: number;
+  pctChange: number;
+}

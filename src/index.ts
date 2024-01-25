@@ -3,26 +3,13 @@ import Redis from "ioredis";
 import { uniqBy } from 'lodash';
 import { API_HOST, AssetType, defaults } from './constants';
 import { loadV1Tickers, loadV2Tickers } from './init';
-import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV1, ListingsV2 } from './types/bsv20';
+import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV2, MarketDataV1, MarketDataV2 } from './types/bsv20';
 import { fetchChainInfo, fetchExchangeRate, fetchJSON, fetchTokensDetails, getPctChange, setPctChange } from './utils';
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
 
 redis.on("connect", () => console.log("Connected to Redis"));
 redis.on("error", (err) => console.error("Redis Error", err));
-
-interface MarketDataV2 extends BSV20V2Details {
-  price: number;
-  marketCap: number;
-  pctChange: number;
-  included: boolean;
-}
-
-interface MarketDataV1 extends BSV20V1Details {
-  price: number;
-  marketCap: number;
-  pctChange: number;
-}
 
 await loadV1Tickers();
 await loadV2Tickers();
@@ -231,41 +218,14 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
 const fetchShallowMarketData = async (assetType: AssetType) => {
   switch (assetType) {
     case AssetType.BSV20:
-      let tickers: MarketDataV1[] = [];
+      let tickers = await loadV1Tickers();
       // check cache
       // const cached = await redis.get(`tickers-${assetType}`);
 
       // if (cached) {
       //   tickers = JSON.parse(cached);
       // } else {
-      const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
-      const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
-      // const info = await fetchChainInfo()
-      for (const ticker of tickersV1) {
 
-        let tick = {
-          price: 0,
-          pctChange: 0,
-          marketCap: 0,
-          accounts: '',
-          pending: '',
-          pendingOps: '',
-          listings: [],
-          sales: [],
-          ...ticker,
-        }
-        // check cache for sales token-${assetType}-${tick}
-        const cached = await redis.get(`token-${assetType}-${ticker.tick.toLowerCase()}`);
-        if (cached) {
-          // load values to tick
-          Object.assign(tick, JSON.parse(cached))
-        }
-        tick.price = tick.sales.length > 0 ? parseFloat((tick.sales[0] as ListingsV1)?.pricePer) : tick.price;
-        tick.marketCap = calculateMarketCap(tick.price, parseInt(ticker.max) / 10 ** ticker.dec);
-        tick.pctChange = tick.sales.length ? await getPctChange(ticker.tick) : tick.pctChange;
-
-        tickers.push(tick);
-      }
       // cache
       // await redis.set(`tickers-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
       // }
