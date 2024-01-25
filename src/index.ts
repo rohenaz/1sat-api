@@ -1,10 +1,12 @@
 import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
 import { uniqBy } from 'lodash';
-import { API_HOST, AssetType } from './constants';
+import { API_HOST, AssetType, defaults } from './constants';
+import { loadV1Tickers, loadV2Tickers } from './init';
 import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV1, ListingsV2 } from './types/bsv20';
+import { fetchChainInfo, fetchExchangeRate, fetchJSON, getPctChange, setPctChange } from './utils';
 
-const redis = new Redis(`${process.env.REDIS_URL}`);
+export const redis = new Redis(`${process.env.REDIS_URL}`);
 
 redis.on("connect", () => console.log("Connected to Redis"));
 redis.on("error", (err) => console.error("Redis Error", err));
@@ -20,41 +22,6 @@ interface MarketDataV1 extends BSV20V1Details {
   price: number;
   marketCap: number;
   pctChange: number;
-}
-
-// on boot up we get all the tickers and cache them
-const loadV1Tickers = async () => {
-  // check cache
-  const cached = await redis.get(`tickers-${AssetType.BSV20}`);
-  if (cached) {
-    return;
-  }
-  const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
-  const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
-  const info = await fetchChainInfo()
-  for (const ticker of tickersV1) {
-    const pctChange = await setPctChange(ticker.tick, [], info.blocks);
-    await redis.set(`pctChange-${ticker.tick}`, pctChange, "EX", defaults.expirationTime);
-  }
-  // cache
-  await redis.set(`tickers-${AssetType.BSV20}`, JSON.stringify(tickersV1), "EX", defaults.expirationTime);
-}
-
-const loadV2Tickers = async () => {
-  // check cache
-  const cached = await redis.get(`tickers-${AssetType.BSV20V2}`);
-  if (cached) {
-    return;
-  }
-  const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=100&offset=0&included=true`;
-  const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
-  const info = await fetchChainInfo()
-  for (const ticker of tickersV2) {
-    const pctChange = await setPctChange(ticker.id, [], info.blocks);
-    await redis.set(`pctChange-${ticker.id}`, pctChange, "EX", defaults.expirationTime);
-  }
-  // cache
-  await redis.set(`tickers-${AssetType.BSV20V2}`, JSON.stringify(tickersV2), "EX", defaults.expirationTime);
 }
 
 await loadV1Tickers();
@@ -121,11 +88,6 @@ console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
 );
 
-// Helper function to fetch JSON
-const fetchJSON = async <T>(url: string): Promise<T> => {
-  const response = await fetch(url);
-  return await response.json() as T;
-};
 
 // Helper function to calculate market cap
 const calculateMarketCap = (price: number, amount: number): number => {
@@ -145,30 +107,6 @@ export type ChainInfo = {
   chainwork: string,
 }
 
-const fetchChainInfo = async (): Promise<ChainInfo> => {
-  // check cache
-  const cached = await redis.get(`chainInfo`);
-  if (cached) {
-    return JSON.parse(cached) as ChainInfo;
-  }
-  // TODO: We have an endpoint for this now https://junglebus.gorillapool.io/v1/block_header/tip
-  const url = `https://api.whatsonchain.com/v1/bsv/main/chain/info`;
-  const chainInfo = await fetchJSON(url);
-  await redis.set(`chainInfo`, JSON.stringify(chainInfo), "EX", defaults.expirationTime);
-  return chainInfo as ChainInfo;
-}
-
-// Function to fetch exchange rate
-const fetchExchangeRate = async (): Promise<number> => {
-  // check cache
-  const cached = await redis.get(`exchangeRate`);
-  if (cached) {
-    return JSON.parse(cached).rate;
-  }
-  const exchangeRateData = await fetchJSON("https://api.whatsonchain.com/v1/bsv/main/exchangerate") as { rate: number };
-  await redis.set(`exchangeRate`, JSON.stringify(exchangeRateData), "EX", defaults.expirationTime);
-  return exchangeRateData.rate;
-};
 
 
 // if (type === AssetType.BSV20V2) {
@@ -449,60 +387,3 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
   }
 }
 
-const defaults = {
-  expirationTime: 60 * 60 * 24 * 30, // 30 days
-  resultsPerPage: 20
-}
-
-
-const setPctChange = async (id: string, sales: ListingsV1[] | ListingsV2[], currentHeight: number) => {
-  const cutoffs = timeframes.map((tf) => currentHeight - tf.value * 144);
-  // assuming 144 blocks from current height "currentHeight" is 1 day, calculate cutoffs for each timeframe
-
-  // Filter out sales that are older than the cutoff
-  let filteredSales = sales.filter((sale) => sale.height >= cutoffs[4]);
-  if (filteredSales.length > 0) {
-    // Parse the price of the most recent sale
-    const lastPrice = parseFloat(filteredSales[0].pricePer);
-    // Parse the price of the oldest sale
-    const firstPrice = parseFloat(
-      filteredSales[filteredSales.length - 1].pricePer
-    );
-    const pctChange = ((lastPrice - firstPrice) / firstPrice) * 100;
-    console.log({ lastPrice, firstPrice, pctChange });
-    // cache the pct for the ticker
-    await redis.set(`pct-${timeframes[4].label.toLowerCase()}-${id.toLowerCase()}`, pctChange, "EX", defaults.expirationTime);
-    // Calculate the percentage change
-    return pctChange;
-  }
-  return 0;
-}
-
-// pasing in sales will save the value to cache
-// omitting sales will check cache for value
-const getPctChange = async (id: string) => {
-
-  const timeframe = timeframes[4].label.toLowerCase();
-
-  // check cache
-  const cached = await redis.get(`pct-${timeframe}-${id.toLowerCase()}`);
-  if (cached) {
-    return JSON.parse(cached);
-  }
-
-}
-
-type Timeframe = {
-  label: string;
-  value: number;
-};
-
-const timeframes: Timeframe[] = [
-  { label: "1H", value: 0.041667 },
-  { label: "3H", value: 0.125 },
-  { label: "1D", value: 1 },
-  { label: "1W", value: 7 },
-  { label: "1M", value: 30 },
-  { label: "1Y", value: 365 },
-  { label: "ALL", value: 9999 },
-];
