@@ -156,3 +156,9 @@ export const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Detai
 
   return d;
 }
+
+
+// Helper function to calculate market cap
+export const calculateMarketCap = (price: number, amount: number): number => {
+  return (price * amount)
+};

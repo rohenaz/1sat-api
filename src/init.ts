@@ -1,7 +1,7 @@
 import { redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
 import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV1, MarketDataV1 } from "./types/bsv20";
-import { fetchChainInfo, fetchJSON, fetchTokensDetails, setPctChange } from "./utils";
+import { calculateMarketCap, fetchChainInfo, fetchJSON, fetchTokensDetails, setPctChange } from "./utils";
 
 // on boot up we get all the tickers and cache them
 export const loadV1Tickers = async (): Promise<MarketDataV1[]> => {
@@ -21,7 +21,7 @@ export const loadV1Tickers = async (): Promise<MarketDataV1[]> => {
       Object.assign(ticker, JSON.parse(cached))
     }
     const price = ticker.sales.length > 0 ? parseFloat((ticker.sales[0] as ListingsV1)?.pricePer) : 0;
-    const marketCap = calculateMarketCap(price, parseInt(ticker.max), ticker.dec);
+    const marketCap = calculateMarketCap(price, parseInt(ticker.max));
     const pctChange = await setPctChange(ticker.tick, [], info.blocks);
 
     results.push({
@@ -52,8 +52,3 @@ export const loadV2Tickers = async () => {
   // cache
   await redis.set(`tickers-${AssetType.BSV20V2}`, JSON.stringify(details), "EX", defaults.expirationTime);
 }
-
-
-const calculateMarketCap = (price: number, amount: number, dec: number): number => {
-  return (price * amount) / 10 ** dec;
-};

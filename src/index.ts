@@ -4,7 +4,7 @@ import { uniqBy } from 'lodash';
 import { API_HOST, AssetType, defaults } from './constants';
 import { loadV1Tickers, loadV2Tickers } from './init';
 import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV2, MarketDataV1, MarketDataV2 } from './types/bsv20';
-import { fetchChainInfo, fetchExchangeRate, fetchJSON, fetchTokensDetails, getPctChange, setPctChange } from './utils';
+import { calculateMarketCap, fetchChainInfo, fetchExchangeRate, fetchJSON, fetchTokensDetails, getPctChange, setPctChange } from './utils';
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
 
@@ -75,12 +75,6 @@ console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
 );
 
-
-// Helper function to calculate market cap
-const calculateMarketCap = (price: number, amount: number): number => {
-  return (price * amount)
-};
-
 // {"chain":"main","blocks":828211,"headers":661647,"bestblockhash":"000000000000000004aa4c183384a0bf13a49e6726fcc7bb7fb8c9bc9594b2f2","difficulty":119016070306.9696,"mediantime":1705928988,"verificationprogress":0.9999961584631301,"pruned":false,"chainwork":"00000000000000000000000000000000000000000150caf5c43a1446f852c8fe"}
 export type ChainInfo = {
   chain: string,
@@ -145,7 +139,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           return acc + parseInt(sale.amt) / 10 ** ticker.dec
         }, 0);
         const price = totalAmount > 0 ? totalSales / totalAmount : 0;
-        const marketCap = calculateMarketCap(price, parseInt(ticker.max) / 10 ** ticker.dec);
+        const marketCap = calculateMarketCap(price, parseInt(ticker.max));
 
         const pctChange = await setPctChange(ticker.tick, ticker.sales, 0);
 
