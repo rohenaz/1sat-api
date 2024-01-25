@@ -200,10 +200,10 @@ const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tok
         const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&id=${id}`;
         details.sales = await fetchJSON<ListingsV2[]>(urlSales)
 
-        console.log({ details, url, urlListings, urlSales })
         // cache
         await redis.set(`token-${assetType}-${id}`, JSON.stringify(details), "EX", defaults.expirationTime);
 
+        console.log({ details, url, urlListings, urlSales })
         d.push(details)
       }
       break;
@@ -370,7 +370,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       // if (cachedIds) {
       //   tokenIds = JSON.parse(cachedIds);
       // } else {
-      const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=100&offset=0&sort=fund_total&dir=desc&included=true`;
+      const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=100&offset=0&included=true`;
       const tickersv2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
 
       // EXAMPLE
@@ -389,14 +389,14 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
           included: true,
           ...ticker,
         }
-        // check cache for sales token-${assetType}-${tick}
+        // check cache for sales
         const cached = await redis.get(`token-${assetType}-${ticker.id.toLowerCase()}`);
         if (cached) {
           // load values to tick
           Object.assign(tick, JSON.parse(cached))
         }
 
-        // TODO: Set price
+        // price is based on last sale
         tick.price = tick.sales.length > 0 ? parseFloat((tick.sales[0] as ListingsV2)?.pricePer) : tick.price;
         tick.marketCap = calculateMarketCap(tick.price, parseFloat(ticker.amt) / 10 ** ticker.dec);
         tick.pctChange = await getPctChange(ticker.id);
@@ -411,7 +411,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
 }
 
 const defaults = {
-  expirationTime: 60 * 60 * 24, // 24 hours
+  expirationTime: 60 * 60 * 24 * 30, // 30 days
   resultsPerPage: 20
 }
 
