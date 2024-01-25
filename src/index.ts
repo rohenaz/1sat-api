@@ -211,7 +211,6 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
         const marketCap = calculateMarketCap(price, parseFloat(ticker.amt) / 10 ** ticker.dec);
         console.log({ totalSales, totalAmount, price, marketCap, symbol: ticker.sym, dec: ticker.dec, amt: ticker.amt })
 
-
         const pctChange = await setPctChange(ticker.id, ticker.sales, info.blocks);
 
         tokens.push({
@@ -261,9 +260,8 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
           // load values to tick
           Object.assign(tick, JSON.parse(cached))
         }
-        // TODO: Set price
         tick.price = tick.sales.length > 0 ? parseFloat((tick.sales[0] as ListingsV1)?.pricePer) : tick.price;
-        tick.marketCap = calculateMarketCap(tick.price, parseFloat(ticker.max) / 10 ** ticker.dec);
+        tick.marketCap = calculateMarketCap(tick.price, parseInt(ticker.max) / 10 ** ticker.dec);
         tick.pctChange = tick.sales.length ? await getPctChange(ticker.tick) : tick.pctChange;
 
         tickers.push(tick);
@@ -308,7 +306,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
 
         // price is based on last sale
         tick.price = tick.sales.length > 0 ? parseFloat((tick.sales[0] as ListingsV2)?.pricePer) : tick.price;
-        tick.marketCap = calculateMarketCap(tick.price, parseFloat(ticker.amt) / 10 ** ticker.dec);
+        tick.marketCap = calculateMarketCap(tick.price, parseInt(ticker.amt) / 10 ** ticker.dec);
         tick.pctChange = await getPctChange(ticker.id);
 
         tv2.push(tick);
