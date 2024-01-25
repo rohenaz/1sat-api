@@ -122,7 +122,7 @@ export type ChainInfo = {
 
 
 
-const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tokenIDs: string[], assetType: AssetType): Promise<T[]> => {
+export const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tokenIDs: string[], assetType: AssetType): Promise<T[]> => {
 
   let d: T[] = [];
   // use passed in type instead 

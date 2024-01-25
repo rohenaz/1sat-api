@@ -1,6 +1,6 @@
-import { redis } from ".";
+import { fetchTokensDetails, redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
-import { BSV20V1, BSV20V2 } from "./types/bsv20";
+import { BSV20V1, BSV20V2, BSV20V2Details } from "./types/bsv20";
 import { fetchChainInfo, fetchJSON, setPctChange } from "./utils";
 
 // on boot up we get all the tickers and cache them
@@ -30,10 +30,13 @@ export const loadV2Tickers = async () => {
   const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=100&offset=0&included=true`;
   const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
   const info = await fetchChainInfo()
-  for (const ticker of tickersV2) {
+  const tickers = tickersV2.map((t) => t.id);
+  const details = await fetchTokensDetails<BSV20V2Details>(tickers, AssetType.BSV20V2);
+
+  for (const ticker of details) {
     const pctChange = await setPctChange(ticker.id, [], info.blocks);
     await redis.set(`pctChange-${ticker.id}`, pctChange, "EX", defaults.expirationTime);
   }
   // cache
-  await redis.set(`tickers-${AssetType.BSV20V2}`, JSON.stringify(tickersV2), "EX", defaults.expirationTime);
+  await redis.set(`tickers-${AssetType.BSV20V2}`, JSON.stringify(details), "EX", defaults.expirationTime);
 }
