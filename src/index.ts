@@ -218,17 +218,15 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
 const fetchShallowMarketData = async (assetType: AssetType) => {
   switch (assetType) {
     case AssetType.BSV20:
-      let tickers = await loadV1Tickers();
       // check cache
-      // const cached = await redis.get(`tickers-${assetType}`);
+      const cached = await redis.get(`tickers-${assetType}`);
 
-      // if (cached) {
-      //   tickers = JSON.parse(cached);
-      // } else {
-
-      // cache
-      // await redis.set(`tickers-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
-      // }
+      let tickers: MarketDataV1[] = [];
+      if (cached) {
+        tickers = JSON.parse(cached);
+      } else {
+        tickers = await loadV1Tickers();
+      }
       return tickers
     case AssetType.BSV20V2:
       let tv2: MarketDataV2[] = [];

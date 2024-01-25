@@ -103,7 +103,6 @@ export const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Detai
         // check cache
         const cached = await redis.get(`token-${assetType}-${tick}`);
         if (cached) {
-          console.log("data from cache")
           d.push(JSON.parse(cached));
           continue;
         }
@@ -122,7 +121,6 @@ export const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Detai
         // cache
         await redis.set(`token-${assetType}-${tick}`, JSON.stringify(details), "EX", defaults.expirationTime);
 
-        console.log({ details, urlDetails, urlListings, urlSales })
         d.push(details)
       }
       break;
@@ -149,7 +147,6 @@ export const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Detai
         // cache
         await redis.set(`token-${assetType}-${id}`, JSON.stringify(details), "EX", defaults.expirationTime);
 
-        console.log({ details, url, urlListings, urlSales })
         d.push(details)
       }
       break;

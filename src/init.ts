@@ -1,19 +1,17 @@
 import { redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
-import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV1 } from "./types/bsv20";
+import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV1, MarketDataV1 } from "./types/bsv20";
 import { fetchChainInfo, fetchJSON, fetchTokensDetails, setPctChange } from "./utils";
 
 // on boot up we get all the tickers and cache them
-export const loadV1Tickers = async () => {
-
-
+export const loadV1Tickers = async (): Promise<MarketDataV1[]> => {
   const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
   const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
   const info = await fetchChainInfo()
   const tickers = tickersV1.map((t) => t.tick);
   const details = await fetchTokensDetails<BSV20V1Details>(tickers, AssetType.BSV20);
 
-  const results: any[] = [];
+  const results: MarketDataV1[] = [];
   for (const ticker of details) {
 
     // check cache for sales token-${assetType}-${tick}
@@ -36,7 +34,7 @@ export const loadV1Tickers = async () => {
 
   await redis.set(`tickers-${AssetType.BSV20}`, JSON.stringify(results), "EX", defaults.expirationTime);
 
-  return results;
+  return results
 }
 
 export const loadV2Tickers = async () => {
