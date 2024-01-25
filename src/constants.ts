@@ -13,7 +13,7 @@ export enum Bsv20Status {
 }
 
 export const defaults = {
-  expirationTime: 60 * 60 * 24 * 30, // 30 days
+  expirationTime: 60 * 15, // 15 minutes
   resultsPerPage: 20
 }
 
