@@ -158,7 +158,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           return acc + parseInt(sale.amt) / 10 ** ticker.dec
         }, 0);
         const price = totalAmount > 0 ? totalSales / totalAmount : 0;
-        const marketCap = calculateMarketCap(price, parseInt(ticker.max));
+        const marketCap = calculateMarketCap(price, parseInt(ticker.max) / 10 ** ticker.dec);
 
         const pctChange = await setPctChange(ticker.tick, ticker.sales, 0);
 
@@ -208,7 +208,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           return acc + parseInt(sale.amt) / 10 ** ticker.dec
         }, 0);
         const price = totalAmount > 0 ? totalSales / totalAmount : 0;
-        const marketCap = calculateMarketCap(price, parseFloat(ticker.amt));
+        const marketCap = calculateMarketCap(price, parseFloat(ticker.amt) / 10 ** ticker.dec);
         console.log({ totalSales, totalAmount, price, marketCap, symbol: ticker.sym, dec: ticker.dec, amt: ticker.amt })
 
 
