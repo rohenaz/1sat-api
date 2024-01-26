@@ -1,3 +1,4 @@
+import { cors } from '@elysiajs/cors';
 import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
 import { uniqBy } from 'lodash';
@@ -14,7 +15,7 @@ redis.on("error", (err) => console.error("Redis Error", err));
 await loadV1Tickers();
 await loadV2Tickers();
 
-const app = new Elysia().get("/", ({ set }) => {
+const app = new Elysia().use(cors()).get("/", ({ set }) => {
   set.headers["Content-Type"] = "text/html";
   return `:)`;
 }).get('/market/:assetType', async ({ set, params }) => {
