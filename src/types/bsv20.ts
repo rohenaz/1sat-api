@@ -48,6 +48,7 @@ export interface BSV20V2 extends BaseTxo {
   fundTotal: string; // Total value in satoshis
   fundUsed?: string;
   fundBalance: string;
+  included: boolean;
 }
 
 export interface ListingsV2 extends BSV20V2 {
@@ -95,7 +96,6 @@ export interface MarketDataV2 extends BSV20V2Details {
   price: number;
   marketCap: number;
   pctChange: number;
-  included: boolean;
 }
 
 export interface MarketDataV1 extends BSV20V1Details {

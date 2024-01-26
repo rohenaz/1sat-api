@@ -197,7 +197,6 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
         const pctChange = await setPctChange(ticker.id, ticker.sales, info.blocks);
 
         tokens.push({
-          included: true,
           ...ticker,
           price,
           marketCap,
