@@ -37,6 +37,38 @@ export const loadV1Tickers = async (): Promise<MarketDataV1[]> => {
   return results
 }
 
+
+
+// const knownV1Tickers = useSignal(["FIRE", "PEPE", "LOVE"]);
+// const knownV2Tickers = useSignal(["1bff350b55a113f7da23eaba1dc40a7c5b486d3e1017cda79dbe6bd42e001c81_0"]);
+// let loadedKnownTickers = useSignal(false);
+
+// const fire = async () => {
+//   const url = `${API_HOST}/api/bsv20?limit=20&sort=pct_minted&dir=desc&included=true`;
+
+//   const resp = await fetchJSON<BSV20V1[]>(url);
+//   knownV1Tickers.value = resp.map((t: any) => t.tick);
+//   // now add unincluded
+//   const urlUnincluded = `${API_HOST}/api/bsv20?limit=1000&sort=pct_minted&dir=desc&included=false`;
+//   const { promise: promiseUnincluded } = http.customFetch<any>(
+//     urlUnincluded
+//   );
+//   const respUnincluded = await promiseUnincluded;
+//   knownV1Tickers.value = knownV1Tickers.value.concat(
+//     respUnincluded.map((t: any) => t.tick)
+//   );
+
+//   // now add the v2 tokens
+//   const urlV2 = `${API_HOST}/api/bsv20/v2?limit=200&sort=fund_balance&dir=desc`;
+//   const { promise: promiseV2 } = http.customFetch<any>(urlV2);
+//   const respV2 = await promiseV2;
+//   knownV2Tickers.value = knownV2Tickers.value.concat(
+//     respV2.map((t: any) => t.id)
+//   );
+//   // log the total length
+//   console.log("Known tickers: ", knownV1Tickers.value.join(" "));
+// };
+
 export const loadV2Tickers = async () => {
   const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=100&offset=0&included=true`;
   const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);

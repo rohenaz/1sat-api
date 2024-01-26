@@ -63,6 +63,7 @@ const app = new Elysia().get("/", ({ set }) => {
     id: t.String()
   })
 }).get("/status", async ({ set }) => {
+  set.headers["Content-Type"] = "application/json";
   const chainInfo = await fetchChainInfo();
   const exchangeRate = await fetchExchangeRate();
   return {
