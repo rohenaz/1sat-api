@@ -247,7 +247,6 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
           pendingOps: '',
           listings: [],
           sales: [],
-          included: true,
           ...ticker,
         }
         // check cache for sales
