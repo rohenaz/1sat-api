@@ -3,21 +3,32 @@ import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
 import { uniqBy } from 'lodash';
 import { API_HOST, AssetType, defaults } from './constants';
-import { loadV1Tickers, loadV2Tickers } from './init';
+import { findMatchingKeys } from './db';
+import { loadAllV1Names, loadV1Tickers, loadV2Tickers } from './init';
 import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV2, MarketDataV1, MarketDataV2 } from './types/bsv20';
 import { calculateMarketCap, fetchChainInfo, fetchExchangeRate, fetchJSON, fetchTokensDetails, getPctChange, setPctChange } from './utils';
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
 
+// TODO: make process to get all the tickers and then an endpoint for autocomplete ticker names
 redis.on("connect", () => console.log("Connected to Redis"));
 redis.on("error", (err) => console.error("Redis Error", err));
 
 await loadV1Tickers();
 await loadV2Tickers();
+await loadAllV1Names();
 
 const app = new Elysia().use(cors()).get("/", ({ set }) => {
   set.headers["Content-Type"] = "text/html";
   return `:)`;
+}).get('/ticker/autofill/:assetType/:id', async ({ params }) => {
+  // autofill endpoint for ticker id
+  const type = params.assetType
+  const id = params.id
+
+  const results = await findMatchingKeys(redis, id)
+  console.log({ results })
+  return results
 }).get('/market/:assetType', async ({ set, params }) => {
   console.log(params.assetType)
   try {

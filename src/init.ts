@@ -37,7 +37,84 @@ export const loadV1Tickers = async (): Promise<MarketDataV1[]> => {
   return results
 }
 
+type TickerName = {
+  tick: string, // tick || sym
+  id: string, // tick || id
+  type: 'bsv20' | 'bsv21',
+  icon?: string
+}
 
+const fetchV1TickerNames = async (offset: number, resultsPerPage: number, included: boolean) => {
+  const url = `${API_HOST}/api/bsv20/limit=${resultsPerPage}&offset=${offset}&included=${included}`
+  const response = await fetch(url)
+  const ticker = await response.json() as BSV20V1[]
+  return ticker.map((t) => {
+    const v1 = t as BSV20V1
+    return {
+      tick: v1.tick,
+      id: v1.tick,
+      type: 'bsv20'
+    } as TickerName
+  })
+}
+
+const fetchV2TickerNames = async (offset: number, resultsPerPage: number) => {
+  const url = `${API_HOST}/api/bsv20/v2/limit=${resultsPerPage}&offset=${offset}`
+  const response = await fetch(url)
+  const ticker = await response.json() as BSV20V2[]
+  return ticker.map((t) => {
+    const v2 = t as BSV20V2
+    return {
+      tick: v2.sym,
+      id: v2.id,
+      icon: v2.icon,
+      type: 'bsv21'
+    } as TickerName
+  })
+}
+
+export const loadAllV1Names = async (): Promise<void> => {
+  // hit the list endpoint over and over
+  let page = 0;
+  let includedCount = 0
+  let resultsPerPage = 200;
+
+  let done = false
+  while (!done) {
+    const offset = page * resultsPerPage;
+    let results = await fetchV1TickerNames(offset, resultsPerPage, true)
+    page++
+    if (!results || !results.length) {
+      done = true
+      continue
+    }
+    includedCount += results.length
+    for (const result of results) {
+      await redis.set(`autofill-${result.tick}`, JSON.stringify(result));
+    }
+  }
+
+  // reset flags
+  page = 0;
+  done = false;
+
+  let unincludedCount = 0;
+  while (!done) {
+    const offset = page * resultsPerPage;
+    let results = await fetchV1TickerNames(offset, resultsPerPage, false)
+    page++
+    if (!results || !results.length) {
+      done = true;
+      continue
+    }
+    unincludedCount += results.length
+
+    for (const result of results) {
+      await redis.set(`autofill-${result.tick}`, JSON.stringify(result));
+    }
+  }
+  console.log("All tickers cached for autofill", includedCount, unincludedCount)
+}
 
 // const knownV1Tickers = useSignal(["FIRE", "PEPE", "LOVE"]);
 // const knownV2Tickers = useSignal(["1bff350b55a113f7da23eaba1dc40a7c5b486d3e1017cda79dbe6bd42e001c81_0"]);
