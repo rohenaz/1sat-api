@@ -45,10 +45,10 @@ type TickerName = {
 }
 
 const fetchV1TickerNames = async (offset: number, resultsPerPage: number, included: boolean) => {
-  const url = `${API_HOST}/api/bsv20/limit=${resultsPerPage}&offset=${offset}&included=${included}`
+  const url = `${API_HOST}/api/bsv20?limit=${resultsPerPage}&offset=${offset}&included=${included}`
   const response = await fetch(url)
   const ticker = await response.json() as BSV20V1[]
-  return ticker.map((t) => {
+  return (ticker || []).map((t) => {
     const v1 = t as BSV20V1
     return {
       tick: v1.tick,
@@ -59,10 +59,10 @@ const fetchV1TickerNames = async (offset: number, resultsPerPage: number, includ
 }
 
 const fetchV2TickerNames = async (offset: number, resultsPerPage: number) => {
-  const url = `${API_HOST}/api/bsv20/v2/limit=${resultsPerPage}&offset=${offset}`
+  const url = `${API_HOST}/api/bsv20/v2?limit=${resultsPerPage}&offset=${offset}`
   const response = await fetch(url)
-  const ticker = await response.json() as BSV20V2[]
-  return ticker.map((t) => {
+  const ticker = (await response.json()) as BSV20V2[]
+  return (ticker || []).map((t) => {
     const v2 = t as BSV20V2
     return {
       tick: v2.sym,
