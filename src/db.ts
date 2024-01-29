@@ -6,7 +6,7 @@ export const findMatchingKeys = async (redis: Redis, partial: string) => {
   let results = [];
 
   do {
-    const reply = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+    const reply = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 20);
     cursor = reply[0];
     const keys = reply[1];
 
