@@ -40,7 +40,7 @@ export const loadV1Tickers = async (): Promise<MarketDataV1[]> => {
 type TickerName = {
   tick: string, // tick || sym
   id: string, // tick || id
-  type: 'bsv20' | 'bsv21',
+  type: AssetType.BSV20 | AssetType.BSV20V2
   icon?: string
 }
 
@@ -53,7 +53,7 @@ const fetchV1TickerNames = async (offset: number, resultsPerPage: number, includ
     return {
       tick: v1.tick,
       id: v1.tick,
-      type: 'bsv20'
+      type: AssetType.BSV20
     } as TickerName
   })
 }
@@ -68,7 +68,7 @@ const fetchV2TickerNames = async (offset: number, resultsPerPage: number) => {
       tick: v2.sym,
       id: v2.id,
       icon: v2.icon,
-      type: 'bsv21'
+      type: AssetType.BSV20V2
     } as TickerName
   })
 }

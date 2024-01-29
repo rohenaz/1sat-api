@@ -3,14 +3,21 @@ import { Redis } from "ioredis";
 export const findMatchingKeys = async (redis: Redis, partial: string) => {
   const pattern = `autofill-${partial}*`;
   let cursor = '0';
-  let keys = [];
+  let results = [];
 
   do {
-    // Using SCAN command to find keys that match the pattern
     const reply = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
     cursor = reply[0];
-    keys.push(...reply[1]);
+    const keys = reply[1];
+
+    // Fetch the value for each matching key
+    for (const key of keys) {
+      const value = await redis.get(key);
+      if (value) {
+        results.push({ key, value: JSON.parse(value) });
+      }
+    }
   } while (cursor !== '0');
 
-  return keys;
+  return results;
 }
