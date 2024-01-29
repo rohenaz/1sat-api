@@ -14,7 +14,7 @@ export const findMatchingKeys = async (redis: Redis, partial: string) => {
     for (const key of keys) {
       const value = await redis.get(key);
       if (value) {
-        results.push({ key, value: JSON.parse(value) });
+        results.push(JSON.parse(value));
       }
     }
   } while (cursor !== '0');
