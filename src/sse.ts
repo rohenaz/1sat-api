@@ -1,8 +1,10 @@
+import EventSource from "eventsource";
 import { redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
 import { BalanceUpdate } from "./types/bsv20";
 
 const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funding&channel=v2funding`);
+
 const sseInit = async () => {
   sse.addEventListener("v1funding", async (event) => {
     const assetType = AssetType.BSV20;
