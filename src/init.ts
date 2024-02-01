@@ -175,10 +175,10 @@ interface BalanceUpdate {
 export const sseInit = async () => {
   const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funding&channel=v2funding`);
   sse.addEventListener("v1funding", async (event) => {
+    const assetType = AssetType.BSV20;
     console.log("V1 Funding", event.data);
     const data = JSON.parse(event.data) as BalanceUpdate;
     const { tick, fundTotal, fundUsed, pendingOps } = data;
-    const assetType = AssetType.BSV20;
 
     const t = await redis.get(`token-${assetType}-${tick}`);
     const ticker = t ? JSON.parse(t) : null;
@@ -191,10 +191,10 @@ export const sseInit = async () => {
     }
   })
   sse.addEventListener("v2funding", async (event) => {
+    const assetType = AssetType.BSV20V2;
     console.log("V2 Funding", event.data);
     const data = JSON.parse(event.data) as BalanceUpdate;
     const { id, fundTotal, fundUsed, pendingOps } = data;
-    const assetType = AssetType.BSV20;
 
     const t = await redis.get(`token-${assetType}-${id}`);
     const ticker = t ? JSON.parse(t) : null;
