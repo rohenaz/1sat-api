@@ -1,3 +1,4 @@
+import EventSource from "eventsource";
 import { redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
 import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV1, MarketDataV1 } from "./types/bsv20";
