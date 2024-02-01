@@ -7,7 +7,7 @@ import { findMatchingKeys } from './db';
 import { loadAllV1Names, loadV1Tickers, loadV2Tickers } from './init';
 import { sseInit } from './sse';
 import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV2, MarketDataV1, MarketDataV2 } from './types/bsv20';
-import { calculateMarketCap, fetchChainInfo, fetchExchangeRate, fetchJSON, fetchTokensDetails, getPctChange, setPctChange } from './utils';
+import { calculateMarketCap, fetchChainInfo, fetchExchangeRate, fetchJSON, fetchStats, fetchTokensDetails, getPctChange, setPctChange } from './utils';
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
 
@@ -80,9 +80,11 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   set.headers["Content-Type"] = "application/json";
   const chainInfo = await fetchChainInfo();
   const exchangeRate = await fetchExchangeRate();
+  const indexers = await fetchStats()
   return {
     chainInfo,
-    exchangeRate
+    exchangeRate,
+    indexers
   };
 }).listen(process.env.PORT ?? 3000);
 

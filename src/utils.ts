@@ -79,6 +79,24 @@ export const fetchChainInfo = async (): Promise<ChainInfo> => {
   return chainInfo as ChainInfo;
 }
 
+// eg. {"bsv20-deploy":829674,"bsv20":829667,"market-spends":829674,"locks":829674,"opns":829674,"market":829674,"ord":829674}
+
+// each is a JB subscription
+interface Stats {
+  "bsv20-deploy": number,
+  "bsv20": number,
+  "market-spends": number,
+  "locks": number,
+  "opns": number,
+  "market": number,
+  "ord": number
+}
+
+export const fetchStats = () => {
+  const url = `${API_HOST}/api/stats`;
+  return fetchJSON<Stats>(url);
+}
+
 // Function to fetch exchange rate
 export const fetchExchangeRate = async (): Promise<number> => {
   // check cache
