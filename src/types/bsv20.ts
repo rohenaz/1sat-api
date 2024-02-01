@@ -103,3 +103,11 @@ export interface MarketDataV1 extends BSV20V1Details {
   marketCap: number;
   pctChange: number;
 }
+export interface BalanceUpdate {
+  tick?: string,
+  id?: string,
+  fundTotal: number,
+  pendingOps: number,
+  fundUsed: number,
+}
+

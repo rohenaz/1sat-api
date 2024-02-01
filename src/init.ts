@@ -1,4 +1,3 @@
-import EventSource from "eventsource";
 import { redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
 import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV1, MarketDataV1 } from "./types/bsv20";
@@ -164,58 +163,3 @@ export const loadV2Tickers = async () => {
   await redis.set(`tickers-${AssetType.BSV20V2}`, JSON.stringify(details), "EX", defaults.expirationTime);
 }
 
-interface BalanceUpdate {
-  tick?: string,
-  id?: string,
-  fundTotal: number,
-  pendingOps: number,
-  fundUsed: number,
-}
-
-export const sseInit = async () => {
-  const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funding&channel=v2funding`);
-  sse.addEventListener("v1funding", async (event) => {
-    const assetType = AssetType.BSV20;
-    console.log("V1 Funding", event.data);
-    const data = JSON.parse(event.data) as BalanceUpdate;
-    const { tick, fundTotal, fundUsed, pendingOps } = data;
-
-    const t = await redis.get(`token-${assetType}-${tick}`);
-    const ticker = t ? JSON.parse(t) : null;
-    if (ticker) {
-      ticker.fundTotal = fundTotal;
-      ticker.pendingOps = pendingOps;
-      ticker.fundUsed = fundUsed;
-      ticker.fundBalance = (fundTotal - fundUsed).toString();
-      await redis.set(`token-${AssetType.BSV20}-${tick}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
-    }
-  })
-  sse.addEventListener("v2funding", async (event) => {
-    const assetType = AssetType.BSV20V2;
-    console.log("V2 Funding", event.data);
-    const data = JSON.parse(event.data) as BalanceUpdate;
-    const { id, fundTotal, fundUsed, pendingOps } = data;
-
-    const t = await redis.get(`token-${assetType}-${id}`);
-    const ticker = t ? JSON.parse(t) : null;
-    if (ticker) {
-      ticker.fundTotal = fundTotal;
-      ticker.pendingOps = pendingOps;
-      ticker.fundUsed = fundUsed;
-      ticker.fundBalance = (fundTotal - fundUsed).toString();
-      await redis.set(`token-${AssetType.BSV20V2}-${id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
-    }
-  })
-  sse.onopen = (event) => {
-    console.log("SSE Open", event);
-  }
-  sse.onmessage = (event) => {
-    console.log("SSE", event.data);
-
-
-  };
-  sse.onerror = (event) => {
-    console.error("SSE Error", event);
-  };
-  return sse;
-}
