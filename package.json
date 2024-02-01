@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@elysiajs/cors": "^0.8.0",
-    "@types/eventsource": "^1.1.15",
     "@types/lodash": "^4.14.202",
     "elysia": "^0.8.13",
     "eventsource": "^2.0.2",
