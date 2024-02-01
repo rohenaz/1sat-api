@@ -4,7 +4,7 @@ import Redis from "ioredis";
 import { uniqBy } from 'lodash';
 import { API_HOST, AssetType, defaults } from './constants';
 import { findMatchingKeys } from './db';
-import { loadAllV1Names, loadV1Tickers, loadV2Tickers } from './init';
+import { loadAllV1Names, loadV1Tickers, loadV2Tickers, sseInit } from './init';
 import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV2, MarketDataV1, MarketDataV2 } from './types/bsv20';
 import { calculateMarketCap, fetchChainInfo, fetchExchangeRate, fetchJSON, fetchTokensDetails, getPctChange, setPctChange } from './utils';
 
@@ -17,6 +17,7 @@ redis.on("error", (err) => console.error("Redis Error", err));
 await loadV1Tickers();
 await loadV2Tickers();
 await loadAllV1Names();
+await sseInit()
 
 const app = new Elysia().use(cors()).get("/", ({ set }) => {
   set.headers["Content-Type"] = "text/html";

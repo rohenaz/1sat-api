@@ -161,3 +161,14 @@ export const loadV2Tickers = async () => {
   // cache
   await redis.set(`tickers-${AssetType.BSV20V2}`, JSON.stringify(details), "EX", defaults.expirationTime);
 }
+
+export const sseInit = async () => {
+  const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funding&channel=v2funding`);
+  sse.onmessage = (event) => {
+    console.log("SSE", event.data);
+  };
+  sse.onerror = (event) => {
+    console.error("SSE Error", event);
+  };
+  return sse;
+}
