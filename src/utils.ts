@@ -137,7 +137,7 @@ export const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Detai
         details.sales = await fetchJSON<ListingsV1[]>(urlSales)
 
         // add holders
-        const urlHolders = `${API_HOST}/api/bsv20/holders?limit=20&offset=0&tick=${tick}`;
+        const urlHolders = `${API_HOST}/api/bsv20/tick/${tick}/holders?limit=20&offset=0`;
         details.holders = await fetchJSON(urlHolders)
 
         // cache
@@ -161,6 +161,10 @@ export const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Detai
         // add listings
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&id=${id}`;
         details.listings = await fetchJSON<ListingsV2[]>(urlListings)
+
+        // add holders
+        const urlHolders = `${API_HOST}/api/bsv20/id/${id}/holders?limit=20&offset=0`;
+        details.holders = await fetchJSON(urlHolders)
 
         // add sales
         const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&id=${id}`;
