@@ -75,6 +75,7 @@ export interface ListingsV1 extends BSV20V1 {
 }
 
 export interface BSV20V1Details extends BSV20V1 {
+  accounts: number;
   holders: Holder[];
   pending: string;
   pendingOps: number;
@@ -88,6 +89,7 @@ export interface Holder {
 }
 
 export interface BSV20V2Details extends BSV20V2 {
+  accounts: number;
   holders: Holder[];
   pendingOps: number;
   listings: ListingsV2[];
