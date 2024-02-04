@@ -71,7 +71,7 @@ const sseInit = async () => {
       ticker.fundBalance = (fundTotal - fundUsed).toString();
       await redis.set(`token-${AssetType.BSV20}-${tick}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
     }
-    if (ticker.included && !wasIncluded) {
+    if (ticker?.included && !wasIncluded) {
       // when ticker is included we need to also update the ticker list
       const tickers = await redis.get(`tickers-${assetType}`);
       let list = tickers ? JSON.parse(tickers) : [];
