@@ -27,6 +27,8 @@ const sseInit = async () => {
       ticker = { listings: [data] };
       await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
     }
+
+    await loadV1TickerDetails([ticker]);
   })
 
   sse.addEventListener("bsv20sales", async (event) => {
