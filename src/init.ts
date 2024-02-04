@@ -133,6 +133,7 @@ export const loadV2TickerDetails = async (tickersV2: BSV20V2[]) => {
 export const loadV1TickerDetails = async (tickersV1: BSV20V1[]) => {
   const info = await fetchChainInfo()
   const tickers = tickersV1.map((t) => t.tick);
+  console.log("Loading v1 ticker details for", tickers)
   const details = await fetchTokensDetails<BSV20V1Details>(tickers, AssetType.BSV20);
   console.log("Fetch v1 ticker details", details.length, tickers.length, tickersV1.length)
   // merge back in passed in values
