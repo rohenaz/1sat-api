@@ -2,6 +2,7 @@ import EventSource from "eventsource";
 import { find } from "lodash";
 import { redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
+import { loadV1TickerDetails, loadV2TickerDetails } from "./init";
 import { BalanceUpdate } from "./types/bsv20";
 
 const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funds&channel=v2funds&channel=bsv20listings&channel=bsv20sales`);
@@ -69,21 +70,22 @@ const sseInit = async () => {
       ticker.pendingOps = pendingOps;
       ticker.fundUsed = fundUsed;
       ticker.fundBalance = (fundTotal - fundUsed).toString();
-      await redis.set(`token-${AssetType.BSV20}-${tick}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
-      if (included && !wasIncluded) {
-        // when ticker is included we need to also update the ticker list
-        const tickers = await redis.get(`tickers-${assetType}`);
-        let list = tickers ? JSON.parse(tickers) : [];
-        list = list.map((t: any) => {
-          if (t.tick === tick) {
-            t.included = true;
-          }
-          return t;
-        }
-        );
-        await redis.set(`tickers-${assetType}`, JSON.stringify(list), "EX", defaults.expirationTime);
-        console.log("Ticker set to included", tick)
-      }
+      // await redis.set(`token-${AssetType.BSV20}-${tick}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+      // if (included === true && !wasIncluded) {
+      //   // when ticker is included we need to also update the ticker list
+      //   const tickers = await redis.get(`tickers-${assetType}`);
+      //   let list = tickers ? JSON.parse(tickers) : [];
+      //   list = list.map((t: any) => {
+      //     if (t.tick === tick) {
+      //       t.included = true;
+      //     }
+      //     return t;
+      //   }
+      //   );
+      //   await redis.set(`tickers-${assetType}`, JSON.stringify(list), "EX", defaults.expirationTime);
+      //   console.log("Ticker set to included", tick)
+      // }
+      await loadV1TickerDetails([ticker]);
     }
 
   })
@@ -102,20 +104,21 @@ const sseInit = async () => {
       ticker.pendingOps = pendingOps;
       ticker.fundUsed = fundUsed;
       ticker.fundBalance = (fundTotal - fundUsed).toString();
-      await redis.set(`token-${AssetType.BSV20V2}-${id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
-      if (included && !wasIncluded) {
-        // when ticker is included we need to also update the ticker list
-        const tickers = await redis.get(`tickers-${assetType}`);
-        let list = tickers ? JSON.parse(tickers) : [];
-        list = list.map((t: any) => {
-          if (t.id === id) {
-            t.included = true;
-          }
-          return t;
-        });
-        await redis.set(`tickers-${assetType}`, JSON.stringify(list), "EX", defaults.expirationTime);
-        console.log("Ticker set to included", id)
-      }
+      // await redis.set(`token-${AssetType.BSV20V2}-${id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+      await loadV2TickerDetails([ticker]);
+      // if (included === true && !wasIncluded) {
+      //   // when ticker is included we need to also update the ticker list
+      //   const tickers = await redis.get(`tickers-${assetType}`);
+      //   let list = tickers ? JSON.parse(tickers) : [];
+      //   list = list.map((t: any) => {
+      //     if (t.id === id) {
+      //       t.included = true;
+      //     }
+      //     return t;
+      //   });
+      //   await redis.set(`tickers-${assetType}`, JSON.stringify(list), "EX", defaults.expirationTime);
+      //   console.log("Ticker set to included", id)
+      // }
     }
 
   })
