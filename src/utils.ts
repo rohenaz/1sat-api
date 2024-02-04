@@ -20,9 +20,15 @@ const timeframes: Timeframe[] = [
 
 
 // Helper function to fetch JSON
-export const fetchJSON = async <T>(url: string): Promise<T> => {
-  const response = await fetch(url);
-  return await response.json() as T;
+export const fetchJSON = async <T>(url: string): Promise<T | null> => {
+  try {
+
+    const response = await fetch(url);
+    return await response.json() as T;
+  } catch (e) {
+    console.log("Fetch error", e);
+    return null;
+  }
 };
 
 
@@ -127,23 +133,27 @@ export const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Detai
 
         const urlDetails = `${API_HOST}/api/bsv20/tick/${tick}?refresh=false`;
         const details = await fetchJSON<T>(urlDetails)
+        if (!details) {
+          continue;
+        }
 
         // add listings
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
-        details.listings = await fetchJSON<ListingsV1[]>(urlListings)
+        details.listings = (await fetchJSON<ListingsV1[]>(urlListings) || [])
 
         // add sales
         const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
-        details.sales = await fetchJSON<ListingsV1[]>(urlSales)
+        details.sales = (await fetchJSON<ListingsV1[]>(urlSales) || [])
 
         // add holders
         const urlHolders = `${API_HOST}/api/bsv20/tick/${tick}/holders?limit=20&offset=0`;
-        details.holders = await fetchJSON(urlHolders)
+        details.holders = (await fetchJSON(urlHolders) || [])
 
         // cache
         await redis.set(`token-${assetType}-${tick}`, JSON.stringify(details), "EX", defaults.expirationTime);
 
         d.push(details)
+
       }
       break;
     case AssetType.BSV20V2:
@@ -157,18 +167,21 @@ export const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Detai
 
         const url = `${API_HOST}/api/bsv20/id/${id}?refresh=false`;
         const details = await fetchJSON<T>(url)
+        if (!details) {
+          continue;
+        }
 
         // add listings
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&id=${id}`;
-        details.listings = await fetchJSON<ListingsV2[]>(urlListings)
+        details.listings = (await fetchJSON<ListingsV2[]>(urlListings) || [])
 
         // add holders
         const urlHolders = `${API_HOST}/api/bsv20/id/${id}/holders?limit=20&offset=0`;
-        details.holders = await fetchJSON(urlHolders)
+        details.holders = (await fetchJSON(urlHolders) || [])
 
         // add sales
         const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&id=${id}`;
-        details.sales = await fetchJSON<ListingsV2[]>(urlSales)
+        details.sales = (await fetchJSON<ListingsV2[]>(urlSales) || [])
 
         // cache
         await redis.set(`token-${assetType}-${id}`, JSON.stringify(details), "EX", defaults.expirationTime);
