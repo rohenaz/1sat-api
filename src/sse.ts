@@ -16,12 +16,12 @@ const sseInit = async () => {
     const ticker = t ? JSON.parse(t) : null;
     if (ticker) {
       const tokenDetails = await redis.get(`token-${assetType}-${tick || id}`);
-      const token = tokenDetails ? JSON.parse(tokenDetails) : null;
+      let token = tokenDetails ? JSON.parse(tokenDetails) : null;
       if (token) {
         token.listings = token.listings.unshift(data);
         await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(token), "EX", defaults.expirationTime);
       } else {
-        ticker.listings.push(data);
+        token = { listings: [data] };
         await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
       }
     }
