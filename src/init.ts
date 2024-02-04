@@ -130,18 +130,18 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[]) => {
   const details = await fetchTokensDetails<BSV20V1Details>(tickers, AssetType.BSV20);
 
   // merge back in passed in values
-  let merged: BSV20V1Details[] = [];
-  for (const ticker of details) {
-    let t = tickersV1.find((t) => t.tick === ticker.tick);
-    if (t) {
-      t = Object.assign(ticker, t);
-      merged.push(t as BSV20V1Details);
-    }
-  }
+  // let merged: BSV20V1Details[] = [];
+  // for (const ticker of details) {
+  //   let t = tickersV1.find((t) => t.tick === ticker.tick);
+  //   if (t) {
+  //     t = Object.assign(ticker, t);
+  //     merged.push(t as BSV20V1Details);
+  //   }
+  // }
 
   const results: MarketDataV1[] = [];
 
-  for (const ticker of merged) {
+  for (const ticker of details) {
     // check cache for sales token-${assetType}-${tick}
     const cached = await redis.get(`token-${AssetType.BSV20}-${ticker.tick.toLowerCase()}`);
     if (cached) {
