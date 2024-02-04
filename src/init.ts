@@ -146,6 +146,9 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[]) => {
   const results: MarketDataV1[] = [];
 
   for (const ticker of details) {
+    if (!ticker) {
+      continue;
+    }
     // check cache for sales token-${assetType}-${tick}
     const cached = await redis.get(`token-${AssetType.BSV20}-${ticker.tick.toLowerCase()}`);
     if (cached) {
