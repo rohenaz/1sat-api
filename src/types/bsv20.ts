@@ -117,5 +117,6 @@ export interface BalanceUpdate {
   fundTotal: number,
   pendingOps: number,
   fundUsed: number,
+  included: boolean
 }
 

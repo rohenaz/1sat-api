@@ -58,11 +58,12 @@ const sseInit = async () => {
     const assetType = AssetType.BSV20;
     console.log("V1 Funds", event.data);
     const data = JSON.parse(event.data) as BalanceUpdate;
-    const { tick, fundTotal, fundUsed, pendingOps } = data;
+    const { tick, fundTotal, fundUsed, pendingOps, included } = data;
 
     const t = await redis.get(`token-${assetType}-${tick}`);
     const ticker = t ? JSON.parse(t) : null;
     if (ticker) {
+      ticker.included = included;
       ticker.fundTotal = fundTotal;
       ticker.pendingOps = pendingOps;
       ticker.fundUsed = fundUsed;
@@ -74,11 +75,12 @@ const sseInit = async () => {
     const assetType = AssetType.BSV20V2;
     console.log("V2 Funds", event.data);
     const data = JSON.parse(event.data) as BalanceUpdate;
-    const { id, fundTotal, fundUsed, pendingOps } = data;
+    const { id, fundTotal, fundUsed, pendingOps, included } = data;
 
     const t = await redis.get(`token-${assetType}-${id}`);
     const ticker = t ? JSON.parse(t) : null;
     if (ticker) {
+      ticker.included = included;
       ticker.fundTotal = fundTotal;
       ticker.pendingOps = pendingOps;
       ticker.fundUsed = fundUsed;
