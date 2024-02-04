@@ -86,8 +86,13 @@ const sseInit = async () => {
       //   await redis.set(`tickers-${assetType}`, JSON.stringify(list), "EX", defaults.expirationTime);
       //   console.log("Ticker set to included", tick)
       // }
-      const tickers = redisTickers ? JSON.parse(redisTickers) : [];
-      tickers.push(ticker);
+      tickers = tickers.map((t: any) => {
+        // merge
+        if (t.tick === tick) {
+          t = Object.assign(t, ticker);
+        }
+        return t;
+      })
     }
     await loadV1TickerDetails(tickers);
 
