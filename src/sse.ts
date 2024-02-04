@@ -4,7 +4,7 @@ import { redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
 import { BalanceUpdate } from "./types/bsv20";
 
-const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funding&channel=v2funding`);
+const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funds&channel=v2funds&channel=bsv20listings&channel=bsv20sales`);
 
 const sseInit = async () => {
 
