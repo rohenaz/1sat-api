@@ -7,7 +7,7 @@ import { calculateMarketCap, fetchChainInfo, fetchJSON, fetchTokensDetails, setP
 // on boot up we get all the tickers and cache them
 export const fetchV1Tickers = async (): Promise<MarketDataV1[]> => {
   const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
-  const tickersV1 = (await fetchJSON<BSV20V1[]>(urlV1Tokens) || []);
+  const tickersV1 = (await fetchJSON<BSV20V1[]>(urlV1Tokens)) || [];
   console.log("Fetch v1 tickers", tickersV1.length)
   return await loadV1TickerDetails(tickersV1);
 }
