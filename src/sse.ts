@@ -10,17 +10,18 @@ const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funds&channel=v
 const sseInit = async () => {
 
   sse.addEventListener("bsv20listings", async (event) => {
-    console.log("Listings", event.data);
     const data = JSON.parse(event.data);
     const { id, tick } = data;
     const assetType = tick ? AssetType.BSV20 : AssetType.BSV20V2;
     const t = await redis.get(`token-${assetType}-${tick || id}`);
     let ticker = t ? JSON.parse(t) : null;
+    console.log("Adding listing", event.data);
     if (ticker) {
       if (!ticker.listings) {
         ticker.listings = [];
       }
       ticker.listings.unshift(data);
+      console.log("Added listing. New length:", ticker.listings.length);
       await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
     } else {
       ticker = { listings: [data] };
