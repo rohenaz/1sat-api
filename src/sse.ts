@@ -127,7 +127,7 @@ const sseInit = async () => {
       //   console.log("Ticker set to included", id)
       // }
     }
-    await loadV2TickerDetails([ticker]);
+    await loadV2TickerDetails(tickers);
 
   })
 
