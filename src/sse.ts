@@ -92,7 +92,7 @@ const sseInit = async () => {
       tickers = tickers.map((t: any) => {
         // merge
         if (t.tick === tick) {
-          t = Object.assign(t, ticker);
+          Object.assign(t, ticker);
         }
         return t;
       })

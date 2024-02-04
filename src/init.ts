@@ -115,8 +115,8 @@ export const loadV2TickerDetails = async (tickersV2: BSV20V2[]) => {
   for (const ticker of details) {
     let t = tickersV2.find((t) => t.id === ticker.id);
     if (t) {
-      t = Object.assign(ticker, t);
-      merged.push(t as BSV20V2Details);
+      Object.assign(ticker, t);
+      merged.push(ticker as BSV20V2Details);
     }
   }
   for (const ticker of merged) {
@@ -132,7 +132,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[]) => {
   const info = await fetchChainInfo()
   const tickers = tickersV1.map((t) => t.tick);
   const details = await fetchTokensDetails<BSV20V1Details>(tickers, AssetType.BSV20);
-  console.log("Fetch v1 tickers", details.length, tickers.length, tickersV1.length, details[0])
+  console.log("Fetch v1 ticker details", details.length, tickers.length, tickersV1.length, details[0])
   // merge back in passed in values
   // let merged: BSV20V1Details[] = [];
   // for (const ticker of details) {
@@ -150,7 +150,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[]) => {
     const cached = await redis.get(`token-${AssetType.BSV20}-${ticker.tick.toLowerCase()}`);
     if (cached) {
       // load values to tick
-      Object.assign(JSON.parse(cached), ticker);
+      Object.assign(ticker, JSON.parse(cached));
     }
     const price = ticker.sales.length > 0 ? parseFloat((ticker.sales[0] as ListingsV1)?.pricePer) : 0;
     const marketCap = calculateMarketCap(price, parseInt(ticker.max));
