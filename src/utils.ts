@@ -127,6 +127,7 @@ export const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Detai
         // check cache
         const cached = await redis.get(`token-${assetType}-${tick}`);
         if (cached) {
+          console.log("Details: Using cached values for", tick)
           d.push(JSON.parse(cached));
           continue;
         }
@@ -134,6 +135,7 @@ export const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Detai
         const urlDetails = `${API_HOST}/api/bsv20/tick/${tick}?refresh=false`;
         const details = await fetchJSON<T>(urlDetails)
         if (!details) {
+          console.log("Details: No details for", tick)
           continue;
         }
 
