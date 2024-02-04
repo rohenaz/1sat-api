@@ -116,15 +116,17 @@ export const loadV2TickerDetails = async (tickersV2: BSV20V2[]) => {
     let t = tickersV2.find((t) => t.id === ticker.id);
     if (t) {
       Object.assign(ticker, t);
-      merged.push(ticker as BSV20V2Details);
     }
+    merged.push(ticker as BSV20V2Details);
   }
   for (const ticker of merged) {
     const pctChange = await setPctChange(ticker.id, [], info.blocks);
     await redis.set(`pctChange-${ticker.id}`, pctChange, "EX", defaults.expirationTime);
   }
   // cache
-  await redis.set(`tickers-${AssetType.BSV20V2}`, JSON.stringify(merged), "EX", defaults.expirationTime);
+  if (merged.length > 0) {
+    await redis.set(`tickers-${AssetType.BSV20V2}`, JSON.stringify(merged), "EX", defaults.expirationTime);
+  }
   return merged;
 }
 
@@ -146,12 +148,11 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[]) => {
   const results: MarketDataV1[] = [];
 
   for (const ticker of details) {
-    if (!ticker) {
-      continue;
-    }
+    console.log("Processing", ticker)
     // check cache for sales token-${assetType}-${tick}
     const cached = await redis.get(`token-${AssetType.BSV20}-${ticker.tick.toLowerCase()}`);
     if (cached) {
+      console.log("Merging cached values for", ticker.tick)
       // load values to tick
       Object.assign(ticker, JSON.parse(cached));
     }

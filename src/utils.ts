@@ -22,7 +22,6 @@ const timeframes: Timeframe[] = [
 // Helper function to fetch JSON
 export const fetchJSON = async <T>(url: string): Promise<T | null> => {
   try {
-
     const response = await fetch(url);
     return await response.json() as T;
   } catch (e) {
