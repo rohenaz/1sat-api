@@ -147,7 +147,7 @@ export const loadAllV1Names = async (): Promise<void> => {
 //   console.log("Known tickers: ", knownV1Tickers.value.join(" "));
 // };
 
-export const loadV2Tickers = async () => {
+export const fetchV2Tickers = async () => {
   const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=100&offset=0&included=true`;
   const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
   await loadV2TickerDetails(tickersV2);

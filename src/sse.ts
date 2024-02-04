@@ -115,7 +115,6 @@ const sseInit = async () => {
       }
       );
       await redis.set(`tickers-${assetType}`, JSON.stringify(list), "EX", defaults.expirationTime);
-      console.log("Send notification");
     }
   })
 
