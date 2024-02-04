@@ -20,7 +20,8 @@ const sseInit = async () => {
       if (!ticker.listings) {
         ticker.listings = [];
       }
-      ticker.listings.unshift(data);
+      const newListing = Object.assign(ticker, data);
+      ticker.listings.unshift(newListing);
       console.log("Added listing. New length:", ticker.listings.length);
       await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
     } else {
