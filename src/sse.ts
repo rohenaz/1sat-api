@@ -83,7 +83,7 @@ const sseInit = async () => {
       }
       );
       await redis.set(`tickers-${assetType}`, JSON.stringify(list), "EX", defaults.expirationTime);
-      console.log("Send notification");
+      console.log("Ticker set to included", tick)
     }
   })
   sse.addEventListener("v2funds", async (event) => {
