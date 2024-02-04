@@ -163,7 +163,12 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[]) => {
       ...ticker,
     });
   }
+  // get the cachged tickers
+  const cached = await redis.get(`tickers-${AssetType.BSV20}`);
+  const cachedTickers = cached ? JSON.parse(cached) : [];
+  // merge them with results
+  const merged = [...cachedTickers, ...results];
   // cache
-  await redis.set(`tickers-${AssetType.BSV20}`, JSON.stringify(results), "EX", defaults.expirationTime);
+  await redis.set(`tickers-${AssetType.BSV20}`, JSON.stringify(merged), "EX", defaults.expirationTime);
   return results;
 }
