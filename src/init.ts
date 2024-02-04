@@ -111,7 +111,7 @@ export const loadV2TickerDetails = async (tickersV2: BSV20V2[]) => {
   for (const ticker of details) {
     let t = tickersV2.find((t) => t.id === ticker.id);
     if (t) {
-      t = Object.assign(t, ticker);
+      t = Object.assign(ticker, t);
       merged.push(t as BSV20V2Details);
     }
   }
@@ -134,7 +134,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[]) => {
   for (const ticker of details) {
     let t = tickersV1.find((t) => t.tick === ticker.tick);
     if (t) {
-      t = Object.assign(t, ticker);
+      t = Object.assign(ticker, t);
       merged.push(t as BSV20V1Details);
     }
   }
