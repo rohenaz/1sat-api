@@ -20,7 +20,10 @@ const sseInit = async () => {
       const tokenDetails = await redis.get(`token-${assetType}-${tick || id}`);
       let token = tokenDetails ? JSON.parse(tokenDetails) : null;
       if (token) {
-        token.listings = (token.listings || []).unshift(data);
+        if (!token.listings) {
+          token.listings = [];
+        }
+        token.listings = token.listings.unshift(data);
         await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(token), "EX", defaults.expirationTime);
       } else {
         token = { listings: [data] };
@@ -44,6 +47,9 @@ const sseInit = async () => {
         let listing = find(token.listings, (l: any) => l.outpoint === outpoint);
 
         if (sale) {
+          if (!token.sales) {
+            token.sales = [];
+          }
           token.sales = token.sales.unshift(listing);
         }
 
