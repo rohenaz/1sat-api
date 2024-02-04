@@ -107,13 +107,14 @@ export const loadV2TickerDetails = async (tickersV2: BSV20V2[]) => {
   const details = await fetchTokensDetails<BSV20V2Details>(tickers, AssetType.BSV20V2);
 
   // merge back in passed in values
+  let merged: BSV20V2Details[] = [];
   for (const ticker of details) {
-    const t = tickersV2.find((t) => t.id === ticker.id);
+    let t = tickersV2.find((t) => t.id === ticker.id);
     if (t) {
-      Object.assign(t, ticker);
+      t = Object.assign(t, ticker);
+      merged.push(t as BSV20V2Details);
     }
   }
-
   for (const ticker of details) {
     const pctChange = await setPctChange(ticker.id, [], info.blocks);
     await redis.set(`pctChange-${ticker.id}`, pctChange, "EX", defaults.expirationTime);
@@ -128,10 +129,12 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[]) => {
   const details = await fetchTokensDetails<BSV20V1Details>(tickers, AssetType.BSV20);
 
   // merge back in passed in values
+  let merged: BSV20V1Details[] = [];
   for (const ticker of details) {
-    const t = tickersV1.find((t) => t.tick === ticker.tick);
+    let t = tickersV1.find((t) => t.tick === ticker.tick);
     if (t) {
-      Object.assign(t, ticker);
+      t = Object.assign(t, ticker);
+      merged.push(t as BSV20V1Details);
     }
   }
 
