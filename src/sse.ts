@@ -6,18 +6,25 @@ import { BalanceUpdate } from "./types/bsv20";
 const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funding&channel=v2funding`);
 
 const sseInit = async () => {
-  sse.addEventListener("listings", async (event) => {
+
+  sse.addEventListener("bsv20Listings", async (event) => {
     console.log("Listings", event.data);
-    // const data = JSON.parse(event.data);
-    // const { listing } = data;
-    // const tick = listing.tick || listing.id;
-    // const assetType = listing.tick ? AssetType.BSV20 : AssetType.BSV20V2;
-    // const t = await redis.get(`token-${assetType}-${tick}`);
-    // const ticker = t ? JSON.parse(t) : null;
-    // if (ticker) {
-    //   ticker.listings = ticker.listings.unshift(listing);
-    //   await redis.set(`token-${AssetType.BSV20}-${tick}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
-    // }
+    const data = JSON.parse(event.data);
+    const { id, tick } = data;
+    const assetType = tick ? AssetType.BSV20 : AssetType.BSV20V2;
+    const t = await redis.get(`token-${assetType}-${tick || id}`);
+    const ticker = t ? JSON.parse(t) : null;
+    if (ticker) {
+      const tokenDetails = await redis.get(`token-${assetType}-${tick || id}`);
+      const token = tokenDetails ? JSON.parse(tokenDetails) : null;
+      if (token) {
+        token.listings = token.listings.unshift(data);
+        await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(token), "EX", defaults.expirationTime);
+      } else {
+        ticker.listings.push(data);
+        await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+      }
+    }
   })
 
   sse.addEventListener("sales", async (event) => {
