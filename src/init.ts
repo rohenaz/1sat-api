@@ -8,6 +8,7 @@ import { calculateMarketCap, fetchChainInfo, fetchJSON, fetchTokensDetails, setP
 export const fetchV1Tickers = async (): Promise<MarketDataV1[]> => {
   const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
   const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
+  console.log("Fetch v1 tickers", tickersV1.length)
   return await loadV1TickerDetails(tickersV1);
 }
 
@@ -131,7 +132,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[]) => {
   const info = await fetchChainInfo()
   const tickers = tickersV1.map((t) => t.tick);
   const details = await fetchTokensDetails<BSV20V1Details>(tickers, AssetType.BSV20);
-
+  console.log("Fetch v1 tickers", details.length, tickers.length, tickersV1.length, details[0])
   // merge back in passed in values
   // let merged: BSV20V1Details[] = [];
   // for (const ticker of details) {
