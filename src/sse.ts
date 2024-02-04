@@ -1,4 +1,5 @@
 import EventSource from "eventsource";
+import { find } from "lodash";
 import { redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
 import { BalanceUpdate } from "./types/bsv20";
@@ -7,7 +8,7 @@ const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funding&channel
 
 const sseInit = async () => {
 
-  sse.addEventListener("bsv20Listings", async (event) => {
+  sse.addEventListener("bsv20listings", async (event) => {
     console.log("Listings", event.data);
     const data = JSON.parse(event.data);
     const { id, tick } = data;
@@ -27,8 +28,30 @@ const sseInit = async () => {
     }
   })
 
-  sse.addEventListener("sales", async (event) => {
-    console.log("Sales", event.data);
+  sse.addEventListener("bsv20sales", async (event) => {
+    console.log("Sale or cencel", event.data);
+    const { id, tick, outpoint, txid, sale } = event.data;
+    // txid is the txid from which is was spend
+    const assetType = tick ? AssetType.BSV20 : AssetType.BSV20V2;
+    const s = await redis.get(`token-${assetType}-${tick || id}`);
+    const ticker = s ? JSON.parse(s) : null;
+    if (ticker) {
+      const tokenDetails = await redis.get(`token-${assetType}-${tick || id}`);
+      let token = tokenDetails ? JSON.parse(tokenDetails) : null;
+      if (token) {
+        // get the listing
+        let listing = find(token.listings, (l: any) => l.outpoint === outpoint);
+
+        if (sale) {
+          token.sales = token.sales.unshift(listing);
+        }
+
+        // remove the listing
+        token.listings = token.listings.filter((l: any) => l.outpoint !== outpoint);
+
+        await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(token), "EX", defaults.expirationTime);
+      }
+    }
   })
 
   sse.addEventListener("v1funds", async (event) => {
