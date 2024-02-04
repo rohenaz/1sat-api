@@ -4,7 +4,7 @@ import Redis from "ioredis";
 import { uniqBy } from 'lodash';
 import { API_HOST, AssetType, defaults } from './constants';
 import { findMatchingKeys } from './db';
-import { fetchV2Tickers, loadAllV1Names, loadV1Tickers } from './init';
+import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names } from './init';
 import { sseInit } from './sse';
 import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV2, MarketDataV1, MarketDataV2 } from './types/bsv20';
 import { calculateMarketCap, fetchChainInfo, fetchExchangeRate, fetchJSON, fetchStats, fetchTokensDetails, getPctChange, setPctChange } from './utils';
@@ -15,7 +15,7 @@ export const redis = new Redis(`${process.env.REDIS_URL}`);
 redis.on("connect", () => console.log("Connected to Redis"));
 redis.on("error", (err) => console.error("Redis Error", err));
 
-await loadV1Tickers();
+await fetchV1Tickers();
 await fetchV2Tickers();
 await loadAllV1Names();
 await sseInit()
@@ -235,7 +235,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       if (cached) {
         tickers = JSON.parse(cached);
       } else {
-        tickers = await loadV1Tickers();
+        tickers = await fetchV1Tickers();
       }
       return tickers
     case AssetType.BSV20V2:

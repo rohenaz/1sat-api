@@ -5,7 +5,7 @@ import { calculateMarketCap, fetchChainInfo, fetchJSON, fetchTokensDetails, setP
 
 
 // on boot up we get all the tickers and cache them
-export const loadV1Tickers = async (): Promise<MarketDataV1[]> => {
+export const fetchV1Tickers = async (): Promise<MarketDataV1[]> => {
   const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
   const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
   return await loadV1TickerDetails(tickersV1);
@@ -97,6 +97,9 @@ export const loadAllV2Names = async (): Promise<void> => {
 export const fetchV2Tickers = async () => {
   const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=100&offset=0&included=true`;
   const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
+  if (!tickersV2 || !tickersV2.length) {
+    return []
+  }
   return await loadV2TickerDetails(tickersV2);
 }
 
@@ -146,7 +149,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[]) => {
     const cached = await redis.get(`token-${AssetType.BSV20}-${ticker.tick.toLowerCase()}`);
     if (cached) {
       // load values to tick
-      Object.assign(ticker, JSON.parse(cached))
+      Object.assign(JSON.parse(cached), ticker);
     }
     const price = ticker.sales.length > 0 ? parseFloat((ticker.sales[0] as ListingsV1)?.pricePer) : 0;
     const marketCap = calculateMarketCap(price, parseInt(ticker.max));
