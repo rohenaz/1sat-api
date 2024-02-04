@@ -62,6 +62,7 @@ const sseInit = async () => {
 
     const t = await redis.get(`token-${assetType}-${tick}`);
     const ticker = t ? JSON.parse(t) : null;
+    const wasIncluded = ticker ? ticker.included : false;
     if (ticker) {
       ticker.included = included;
       ticker.fundTotal = fundTotal;
@@ -69,6 +70,20 @@ const sseInit = async () => {
       ticker.fundUsed = fundUsed;
       ticker.fundBalance = (fundTotal - fundUsed).toString();
       await redis.set(`token-${AssetType.BSV20}-${tick}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+    }
+    if (ticker.included && !wasIncluded) {
+      // when ticker is included we need to also update the ticker list
+      const tickers = await redis.get(`tickers-${assetType}`);
+      let list = tickers ? JSON.parse(tickers) : [];
+      list = list.map((t: any) => {
+        if (t.tick === tick) {
+          t.included = true;
+        }
+        return t;
+      }
+      );
+      await redis.set(`tickers-${assetType}`, JSON.stringify(list), "EX", defaults.expirationTime);
+      console.log("Send notification");
     }
   })
   sse.addEventListener("v2funds", async (event) => {
@@ -79,6 +94,7 @@ const sseInit = async () => {
 
     const t = await redis.get(`token-${assetType}-${id}`);
     const ticker = t ? JSON.parse(t) : null;
+    let wasIncluded = ticker ? ticker.included : false;
     if (ticker) {
       ticker.included = included;
       ticker.fundTotal = fundTotal;
@@ -86,6 +102,20 @@ const sseInit = async () => {
       ticker.fundUsed = fundUsed;
       ticker.fundBalance = (fundTotal - fundUsed).toString();
       await redis.set(`token-${AssetType.BSV20V2}-${id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+    }
+    if (ticker.included && !wasIncluded) {
+      // when ticker is included we need to also update the ticker list
+      const tickers = await redis.get(`tickers-${assetType}`);
+      let list = tickers ? JSON.parse(tickers) : [];
+      list = list.map((t: any) => {
+        if (t.id === id) {
+          t.included = true;
+        }
+        return t;
+      }
+      );
+      await redis.set(`tickers-${assetType}`, JSON.stringify(list), "EX", defaults.expirationTime);
+      console.log("Send notification");
     }
   })
 
