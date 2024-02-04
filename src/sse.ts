@@ -23,7 +23,7 @@ const sseInit = async () => {
         if (!token.listings) {
           token.listings = [];
         }
-        token.listings = token.listings.unshift(data);
+        token.listings.unshift(data);
         await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(token), "EX", defaults.expirationTime);
       } else {
         token = { listings: [data] };
@@ -50,7 +50,7 @@ const sseInit = async () => {
           if (!token.sales) {
             token.sales = [];
           }
-          token.sales = token.sales.unshift(listing);
+          token.sales.unshift(listing);
         }
 
         // remove the listing
