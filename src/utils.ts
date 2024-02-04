@@ -30,8 +30,6 @@ export const fetchJSON = async <T>(url: string): Promise<T | null> => {
   }
 };
 
-
-
 export const setPctChange = async (id: string, sales: ListingsV1[] | ListingsV2[], currentHeight: number) => {
   const cutoffs = timeframes.map((tf) => currentHeight - tf.value * 144);
   // assuming 144 blocks from current height "currentHeight" is 1 day, calculate cutoffs for each timeframe
@@ -79,9 +77,9 @@ export const fetchChainInfo = async (): Promise<ChainInfo> => {
   }
   // TODO: We have an endpoint for this now https://junglebus.gorillapool.io/v1/block_header/tip
   const url = `https://api.whatsonchain.com/v1/bsv/main/chain/info`;
-  const chainInfo = await fetchJSON(url);
+  const chainInfo = await fetchJSON(url) as ChainInfo | null;
   await redis.set(`chainInfo`, JSON.stringify(chainInfo), "EX", defaults.expirationTime);
-  return chainInfo as ChainInfo;
+  return chainInfo as ChainInfo || { blocks: 0, headers: 0, bestblockhash: "" };
 }
 
 // eg. {"bsv20-deploy":829674,"bsv20":829667,"market-spends":829674,"locks":829674,"opns":829674,"market":829674,"ord":829674}
@@ -109,7 +107,10 @@ export const fetchExchangeRate = async (): Promise<number> => {
   if (cached) {
     return JSON.parse(cached).rate;
   }
-  const exchangeRateData = await fetchJSON("https://api.whatsonchain.com/v1/bsv/main/exchangerate") as { rate: number };
+  const exchangeRateData = await fetchJSON("https://api.whatsonchain.com/v1/bsv/main/exchangerate") as { rate: number } | null;
+  if (!exchangeRateData) {
+    return 0;
+  }
   await redis.set(`exchangeRate`, JSON.stringify(exchangeRateData), "EX", defaults.expirationTime);
   return exchangeRateData.rate;
 };
