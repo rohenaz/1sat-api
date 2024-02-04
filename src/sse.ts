@@ -64,6 +64,8 @@ const sseInit = async () => {
     const t = await redis.get(`token-${assetType}-${tick}`);
     const ticker = t ? JSON.parse(t) : null;
     const wasIncluded = !!ticker ? ticker.included === true : false;
+    const redisTickers = await redis.get(`tickers-${assetType}`);
+    let tickers = redisTickers ? JSON.parse(redisTickers) : [];
     if (ticker) {
       ticker.included = included;
       ticker.fundTotal = fundTotal;
@@ -85,8 +87,10 @@ const sseInit = async () => {
       //   await redis.set(`tickers-${assetType}`, JSON.stringify(list), "EX", defaults.expirationTime);
       //   console.log("Ticker set to included", tick)
       // }
-      await loadV1TickerDetails([ticker]);
+      const tickers = redisTickers ? JSON.parse(redisTickers) : [];
+      tickers.push(ticker);
     }
+    await loadV1TickerDetails(tickers);
 
   })
   sse.addEventListener("v2funds", async (event) => {
@@ -98,14 +102,18 @@ const sseInit = async () => {
     const t = await redis.get(`token-${assetType}-${id}`);
     const ticker = t ? JSON.parse(t) : null;
     const wasIncluded = !!ticker ? ticker.included === true : false;
+    const redisTickers = await redis.get(`tickers-${assetType}`);
+    let tickers = redisTickers ? JSON.parse(redisTickers) : [];
     if (ticker) {
       ticker.included = included;
       ticker.fundTotal = fundTotal;
       ticker.pendingOps = pendingOps;
       ticker.fundUsed = fundUsed;
       ticker.fundBalance = (fundTotal - fundUsed).toString();
+
+      tickers.push(ticker);
       // await redis.set(`token-${AssetType.BSV20V2}-${id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
-      await loadV2TickerDetails([ticker]);
+
       // if (included === true && !wasIncluded) {
       //   // when ticker is included we need to also update the ticker list
       //   const tickers = await redis.get(`tickers-${assetType}`);
@@ -120,6 +128,7 @@ const sseInit = async () => {
       //   console.log("Ticker set to included", id)
       // }
     }
+    await loadV2TickerDetails([ticker]);
 
   })
 
