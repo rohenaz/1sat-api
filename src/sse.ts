@@ -15,20 +15,16 @@ const sseInit = async () => {
     const { id, tick } = data;
     const assetType = tick ? AssetType.BSV20 : AssetType.BSV20V2;
     const t = await redis.get(`token-${assetType}-${tick || id}`);
-    const ticker = t ? JSON.parse(t) : null;
+    let ticker = t ? JSON.parse(t) : null;
     if (ticker) {
-      const tokenDetails = await redis.get(`token-${assetType}-${tick || id}`);
-      let token = tokenDetails ? JSON.parse(tokenDetails) : null;
-      if (token) {
-        if (!token.listings) {
-          token.listings = [];
-        }
-        token.listings.unshift(data);
-        await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(token), "EX", defaults.expirationTime);
-      } else {
-        token = { listings: [data] };
-        await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+      if (!ticker.listings) {
+        ticker.listings = [];
       }
+      ticker.listings.unshift(data);
+      await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+    } else {
+      ticker = { listings: [data] };
+      await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
     }
   })
 
