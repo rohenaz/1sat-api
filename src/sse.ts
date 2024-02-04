@@ -36,25 +36,22 @@ const sseInit = async () => {
     const s = await redis.get(`token-${assetType}-${tick || id}`);
     const ticker = s ? JSON.parse(s) : null;
     if (ticker) {
-      const tokenDetails = await redis.get(`token-${assetType}-${tick || id}`);
-      let token = tokenDetails ? JSON.parse(tokenDetails) : null;
-      if (token) {
-        // get the listing
-        let listing = find(token.listings, (l: any) => l.outpoint === outpoint);
+      // get the listing
+      let listing = find(ticker.listings, (l: any) => l.outpoint === outpoint);
 
-        if (sale) {
-          if (!token.sales) {
-            token.sales = [];
-          }
-          token.sales.unshift(listing);
+      if (sale) {
+        if (!ticker.sales) {
+          ticker.sales = [];
         }
-
-        // remove the listing
-        token.listings = token.listings.filter((l: any) => l.outpoint !== outpoint);
-
-        await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(token), "EX", defaults.expirationTime);
+        ticker.sales.unshift(listing);
       }
+
+      // remove the listing
+      ticker.listings = ticker.listings.filter((l: any) => l.outpoint !== outpoint);
+
+      await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
     }
+
   })
 
   sse.addEventListener("v1funds", async (event) => {
