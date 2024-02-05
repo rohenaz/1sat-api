@@ -181,6 +181,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     }
     return t;
   });
+  console.log("Merged", merged.length, "results", results.length, "cached", cTickers.length)
   // cache
   await redis.set(`tickers-${AssetType.BSV20}`, JSON.stringify(merged), "EX", defaults.expirationTime);
   return results;
