@@ -175,20 +175,18 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
   let cachedTickers = (redisTickers ? JSON.parse(redisTickers) : []) as MarketDataV1[];
 
   // update cached tickers with new values
-  const merged = cachedTickers.map((c) => {
+  let merged: MarketDataV1[] = [];
+  for (const c of cachedTickers) {
     const t = results.find((r) => r.tick === c.tick);
     if (t) {
       Object.assign(c, t);
     }
-    return c;
-  }) as MarketDataV1[];
-  // add any not already in the list
-  for (const r of results) {
-    if (!merged.find((m) => m.tick === r.tick)) {
-      console.log("FOUND ONE!!!", r.tick)
-      merged.push(r);
-    }
+
+    c.pctChange = parseInt(await redis.get(`pctChange-${c.tick}`) || "0")
+
+    merged.push(c as MarketDataV1)
   }
+
   await redis.set(`tickers-${AssetType.BSV20}`, JSON.stringify(merged), "EX", defaults.expirationTime);
   console.log("Merged tickers", merged.length, "results", results.length, results[0].pctChange)
   return results
