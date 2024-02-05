@@ -4,7 +4,7 @@ import Redis from "ioredis";
 import { uniqBy } from 'lodash';
 import { API_HOST, AssetType, defaults } from './constants';
 import { findMatchingKeys } from './db';
-import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names } from './init';
+import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails } from './init';
 import { sseInit } from './sse';
 import { BSV20Details, BSV20V1, BSV21, BSV21Details, ListingsV2, MarketDataV1, MarketDataV2 } from './types/bsv20';
 import { calculateMarketCap, fetchChainInfo, fetchExchangeRate, fetchJSON, fetchStats, fetchTokensDetails, getPctChange, setPctChange } from './utils';
@@ -125,6 +125,7 @@ export type ChainInfo = {
 // Function to fetch and process market data
 const fetchMarketData = async (assetType: AssetType, id?: string) => {
   id = id?.toLowerCase();
+  const info = await fetchChainInfo()
   switch (assetType) {
     case AssetType.BSV20:
       let detailedTokensV1: BSV20Details[] = [];
@@ -143,9 +144,15 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           tickers = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
           // cache
           await redis.set(`ids-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
+
+          // update 'tickers' cache to include this token if it isnt in there
+          if (tickersV1) {
+            await loadV1TickerDetails(tickersV1, info);
+          }
         }
-        detailedTokensV1 = await fetchTokensDetails<BSV20Details>(tickers, assetType);
+
       }
+
 
       let tokensV1: MarketDataV1[] = [];
       for (const ticker of detailedTokensV1) {
@@ -167,6 +174,8 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           pctChange,
         });
       }
+
+
 
       return tokensV1.sort((a, b) => {
         return b.marketCap - a.marketCap;
@@ -192,7 +201,6 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
         detailedTokensV2 = await fetchTokensDetails<BSV21Details>(tokenIds, assetType);
       }
 
-      const info = await fetchChainInfo()
       let tokens: MarketDataV2[] = [];
       for (const ticker of detailedTokensV2) {
         // average price per unit bassed on last 10 sales

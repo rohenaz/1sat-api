@@ -132,6 +132,7 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[]) => {
   return merged;
 }
 
+// Loads all details decessary to render the first page
 export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo) => {
   const tickers = tickersV1.map((t) => t.tick);
   console.log("Loading v1 ticker details for", tickers)
