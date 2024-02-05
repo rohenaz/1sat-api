@@ -105,8 +105,6 @@ export type ChainInfo = {
   chainwork: string,
 }
 
-
-
 // if (type === AssetType.BSV21) {
 //   const urlTokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1`;
 //   const { promise: promiseBsv20 } = http.customFetch<BSV20TXO[]>(urlTokens);
@@ -117,10 +115,6 @@ export type ChainInfo = {
 //     http.customFetch<BSV20TXO[]>(urlV2Tokens);
 //   listings = await promiseBsv20v2;
 // }
-
-
-
-
 
 // Function to fetch and process market data
 const fetchMarketData = async (assetType: AssetType, id?: string) => {

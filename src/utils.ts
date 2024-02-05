@@ -126,36 +126,40 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
 
         // check cache
         const cached = await redis.get(`token-${assetType}-${tick}`);
+        let details: T | null = null;
         if (cached) {
           console.log("Details: Using cached values for", tick)
-          d.push(JSON.parse(cached));
-          continue;
+          details = JSON.parse(cached);
+        } else {
+          const urlDetails = `${API_HOST}/api/bsv20/tick/${tick}?refresh=false`;
+          details = await fetchJSON<T>(urlDetails)
         }
-
-        const urlDetails = `${API_HOST}/api/bsv20/tick/${tick}?refresh=false`;
-        const details = await fetchJSON<T>(urlDetails)
         if (!details) {
           console.log("Details: No details for", tick)
           continue;
         }
 
-        // add listings
-        const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
-        details.listings = (await fetchJSON<ListingsV1[]>(urlListings) || [])
+        if (!details.listings) {
+          // add listings
+          const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
+          details.listings = (await fetchJSON<ListingsV1[]>(urlListings) || [])
+        }
 
         // add sales
-        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
-        details.sales = (await fetchJSON<ListingsV1[]>(urlSales) || [])
-
+        if (!details.sales) {
+          const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
+          details.sales = (await fetchJSON<ListingsV1[]>(urlSales) || [])
+        }
         // add holders
-        // const urlHolders = `${API_HOST}/api/bsv20/tick/${tick}/holders?limit=20&offset=0`;
-        details.holders = [] // (await fetchJSON(urlHolders) || [])
+        if (!details.holders) {
+          const urlHolders = `${API_HOST}/api/bsv20/tick/${tick}/holders?limit=20&offset=0`;
+          details.holders = (await fetchJSON(urlHolders) || [])
+        }
 
         // cache
         await redis.set(`token-${assetType}-${tick}`, JSON.stringify(details), "EX", defaults.expirationTime);
 
         d.push(details)
-
       }
       break;
     case AssetType.BSV21:
