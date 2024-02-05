@@ -148,8 +148,8 @@ export const fetchTokensDetails = async <T extends BSV20V1Details | BSV21Details
         details.sales = (await fetchJSON<ListingsV1[]>(urlSales) || [])
 
         // add holders
-        const urlHolders = `${API_HOST}/api/bsv20/tick/${tick}/holders?limit=20&offset=0`;
-        details.holders = (await fetchJSON(urlHolders) || [])
+        // const urlHolders = `${API_HOST}/api/bsv20/tick/${tick}/holders?limit=20&offset=0`;
+        details.holders = [] // (await fetchJSON(urlHolders) || [])
 
         // cache
         await redis.set(`token-${assetType}-${tick}`, JSON.stringify(details), "EX", defaults.expirationTime);
