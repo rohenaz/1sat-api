@@ -120,7 +120,7 @@ export const loadV2TickerDetails = async (tickersV2: BSV20V2[]) => {
     merged.push(ticker as BSV20V2Details);
   }
   for (const ticker of merged) {
-    const pctChange = await setPctChange(ticker.id, [], info.blocks);
+    const pctChange = await setPctChange(ticker.id, ticker.sales, info.blocks);
     await redis.set(`pctChange-${ticker.id}`, pctChange, "EX", defaults.expirationTime);
   }
   // cache
@@ -159,7 +159,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[]) => {
     }
     const price = ticker.sales.length > 0 ? parseFloat((ticker.sales[0] as ListingsV1)?.pricePer) : 0;
     const marketCap = calculateMarketCap(price, parseInt(ticker.max));
-    const pctChange = await setPctChange(ticker.tick, [], info.blocks);
+    const pctChange = await setPctChange(ticker.tick, ticker.sales, info.blocks);
 
     results.push({
       price,
