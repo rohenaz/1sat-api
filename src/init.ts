@@ -171,10 +171,10 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     });
   }
   // get the cachged tickers
-  const cached = await redis.get(`tickers-${AssetType.BSV20}`);
-  const cachedTickers = cached ? JSON.parse(cached) : [];
+  const cachedTickers = await redis.get(`tickers-${AssetType.BSV20}`);
+  const cTickers = cachedTickers ? JSON.parse(cachedTickers) : [];
   // merge them with results
-  const merged = cachedTickers.map((t: any) => {
+  const merged = cTickers.map((t: any) => {
     const result = results.find((r) => r.tick === t.tick);
     if (result) {
       Object.assign(t, result);
