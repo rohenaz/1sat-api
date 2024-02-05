@@ -181,8 +181,11 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     if (t) {
       Object.assign(c, t);
     }
-
-    c.pctChange = parseInt(await redis.get(`pctChange-${c.tick}`) || "0")
+    if (c?.sales && c.pctChange === 0) {
+      console.log("how is this possible?", c.tick, c.sales.length, info.blocks)
+      c.pctChange = await setPctChange(c.tick, c.sales, info.blocks);
+    }
+    // c.pctChange = parseInt(await redis.get(`pctChange-${c.tick}`) || "0")
 
     merged.push(c as MarketDataV1)
   }
