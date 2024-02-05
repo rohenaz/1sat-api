@@ -141,6 +141,15 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     const cached = (await redis.get(`token-${AssetType.BSV20}-${tick.toLowerCase()}`) || "{}") as string;
     const parsed = JSON.parse(cached);
     const ticker = Object.assign(parsed, t) as BSV20Details;
+    if (!ticker.sales) {
+      ticker.sales = [];
+    }
+    if (!ticker.listings) {
+      ticker.listings = [];
+    }
+    if (!ticker.holders) {
+      ticker.holders = [];
+    }
     const price = ticker.sales.length > 0 ? parseFloat((ticker.sales[0] as ListingsV1)?.pricePer) : 0;
     const marketCap = calculateMarketCap(price, parseInt(ticker.max));
     const pctChange = await setPctChange(ticker.tick, ticker.sales, info.blocks);
