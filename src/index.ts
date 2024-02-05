@@ -6,7 +6,7 @@ import { API_HOST, AssetType, defaults } from './constants';
 import { findMatchingKeys } from './db';
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names } from './init';
 import { sseInit } from './sse';
-import { BSV20V1, BSV20V1Details, BSV21, BSV21Details, ListingsV2, MarketDataV1, MarketDataV2 } from './types/bsv20';
+import { BSV20Details, BSV20V1, BSV21, BSV21Details, ListingsV2, MarketDataV1, MarketDataV2 } from './types/bsv20';
 import { calculateMarketCap, fetchChainInfo, fetchExchangeRate, fetchJSON, fetchStats, fetchTokensDetails, getPctChange, setPctChange } from './utils';
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
@@ -127,9 +127,9 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
   id = id?.toLowerCase();
   switch (assetType) {
     case AssetType.BSV20:
-      let detailedTokensV1: BSV20V1Details[] = [];
+      let detailedTokensV1: BSV20Details[] = [];
       if (id) {
-        detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>([id], assetType);
+        detailedTokensV1 = await fetchTokensDetails<BSV20Details>([id], assetType);
       } else {
         // check cache
         const cached = await redis.get(`ids-${assetType}`);
@@ -144,7 +144,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           // cache
           await redis.set(`ids-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
         }
-        detailedTokensV1 = await fetchTokensDetails<BSV20V1Details>(tickers, assetType);
+        detailedTokensV1 = await fetchTokensDetails<BSV20Details>(tickers, assetType);
       }
 
       let tokensV1: MarketDataV1[] = [];
@@ -231,9 +231,10 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       const cached = await redis.get(`tickers-${assetType}`);
 
       let tickers: MarketDataV1[] = [];
-      tickers = await fetchV1Tickers();
       if (cached) {
         tickers = Object.assign(JSON.parse(cached), tickers);
+      } else {
+        tickers = await fetchV1Tickers();
       }
       return tickers
     case AssetType.BSV21:
@@ -244,7 +245,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       // if (cachedIds) {
       //   tokenIds = JSON.parse(cachedIds);
       // } else {
-      const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=100&offset=0&included=true`;
+      const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=200&offset=0&included=true`;
       const tickersv2 = await fetchJSON<BSV21[]>(urlV2Tokens);
 
       // EXAMPLE

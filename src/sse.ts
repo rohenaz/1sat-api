@@ -4,6 +4,7 @@ import { redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
 import { loadV1TickerDetails, loadV2TickerDetails } from "./init";
 import { BalanceUpdate } from "./types/bsv20";
+import { fetchChainInfo } from "./utils";
 
 const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funds&channel=v2funds&channel=bsv20listings&channel=bsv20sales`);
 
@@ -27,8 +28,9 @@ const sseInit = async () => {
       ticker = { listings: [data] };
       await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
     }
+    const info = await fetchChainInfo()
 
-    await loadV1TickerDetails([ticker]);
+    await loadV1TickerDetails([ticker], info);
   })
 
   sse.addEventListener("bsv20sales", async (event) => {
@@ -97,7 +99,9 @@ const sseInit = async () => {
         return t;
       })
     }
-    await loadV1TickerDetails(tickers);
+    const info = await fetchChainInfo()
+
+    await loadV1TickerDetails(tickers, info);
 
   })
   sse.addEventListener("v2funds", async (event) => {

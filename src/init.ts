@@ -1,15 +1,17 @@
-import { redis } from ".";
+import { ChainInfo, redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
-import { BSV20V1, BSV20V1Details, BSV21, BSV21Details, ListingsV1, MarketDataV1 } from "./types/bsv20";
+import { BSV20Details, BSV20V1, BSV21, BSV21Details, ListingsV1, MarketDataV1 } from "./types/bsv20";
 import { calculateMarketCap, fetchChainInfo, fetchJSON, fetchTokensDetails, setPctChange } from "./utils";
 
 
 // on boot up we get all the tickers and cache them
-export const fetchV1Tickers = async (): Promise<MarketDataV1[]> => {
+export const fetchV1Tickers = async (fetchDetails = true): Promise<MarketDataV1[]> => {
   const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
   const tickersV1 = (await fetchJSON<BSV20V1[]>(urlV1Tokens)) || [];
-  console.log("Fetch v1 tickers", tickersV1.length)
-  return await loadV1TickerDetails(tickersV1);
+  console.log("Fetched v1 tickers", tickersV1.length)
+  const info = await fetchChainInfo()
+
+  return await loadV1TickerDetails(tickersV1, info);
 }
 
 type TickerName = {
@@ -130,33 +132,33 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[]) => {
   return merged;
 }
 
-export const loadV1TickerDetails = async (tickersV1: BSV20V1[]) => {
-  const info = await fetchChainInfo()
+export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo) => {
   const tickers = tickersV1.map((t) => t.tick);
   console.log("Loading v1 ticker details for", tickers)
-  const details = await fetchTokensDetails<BSV20V1Details>(tickers, AssetType.BSV20);
-  console.log("Fetch v1 ticker details", details.length, tickers.length, tickersV1.length)
+
+  // const details = await fetchTokensDetails<BSV20Details>(tickers, AssetType.BSV20);
+  // console.log("Fetch v1 ticker details", details.length, tickers.length, tickersV1.length)
   // merge back in passed in values
-  // let merged: BSV20V1Details[] = [];
+  // let merged: BSV20Details[] = [];
   // for (const ticker of details) {
   //   let t = tickersV1.find((t) => t.tick === ticker.tick);
   //   if (t) {
   //     t = Object.assign(ticker, t);
-  //     merged.push(t as BSV20V1Details);
+  //     merged.push(t as BSV20Details);
   //   }
   // }
 
   const results: MarketDataV1[] = [];
 
-  for (const ticker of details) {
-    console.log("Processing", ticker)
+  for (const tick of tickers) {
+    console.log("Processing", { ticker: tick })
     // check cache for sales token-${assetType}-${tick}
-    const cached = await redis.get(`token-${AssetType.BSV20}-${ticker.tick.toLowerCase()}`);
-    if (cached) {
-      console.log("Merging cached values for", ticker.tick)
-      // load values to tick
-      Object.assign(ticker, JSON.parse(cached));
+    const cached = await redis.get(`token-${AssetType.BSV20}-${tick.toLowerCase()}`);
+    if (!cached) {
+      console.log("No cached data for", tick)
+      continue;
     }
+    const ticker = JSON.parse(cached) as BSV20Details;
     const price = ticker.sales.length > 0 ? parseFloat((ticker.sales[0] as ListingsV1)?.pricePer) : 0;
     const marketCap = calculateMarketCap(price, parseInt(ticker.max));
     const pctChange = await setPctChange(ticker.tick, ticker.sales, info.blocks);

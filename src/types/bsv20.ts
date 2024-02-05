@@ -74,7 +74,7 @@ export interface ListingsV1 extends BSV20V1 {
   spendHeight: string;
 }
 
-export interface BSV20V1Details extends BSV20V1 {
+export interface BSV20Details extends BSV20V1 {
   accounts: number;
   holders: Holder[];
   pending: string;
@@ -106,7 +106,7 @@ export interface MarketDataV2 extends BSV21Details {
   pctChange: number;
 }
 
-export interface MarketDataV1 extends BSV20V1Details {
+export interface MarketDataV1 extends BSV20Details {
   price: number;
   marketCap: number;
   pctChange: number;
