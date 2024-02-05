@@ -182,8 +182,8 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
       Object.assign(c, t);
     }
     if (c.sales.length > 0 && c.pctChange === 0) {
-      console.log("how is this possible?", c.tick, c.sales.length, info.blocks)
       c.pctChange = await setPctChange(c.tick, c.sales, info.blocks);
+      console.log("how is this possible?", c.tick, c.sales.length, info.blocks, c.pctChange)
     }
     // c.pctChange = parseInt(await redis.get(`pctChange-${c.tick}`) || "0")
 
