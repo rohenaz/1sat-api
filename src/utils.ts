@@ -31,7 +31,7 @@ export const fetchJSON = async <T>(url: string): Promise<T | null> => {
 };
 
 export const setPctChange = async (id: string, sales: ListingsV1[] | ListingsV2[], currentHeight: number) => {
-  const cutoffs = timeframes.map((tf) => currentHeight - tf.value * 144);
+  const cutoffs = timeframes.map((tf) => currentHeight - Math.floor(tf.value * 144));
   // assuming 144 blocks from current height "currentHeight" is 1 day, calculate cutoffs for each timeframe
 
   // Filter out sales that are older than the cutoff
