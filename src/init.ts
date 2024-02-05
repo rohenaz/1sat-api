@@ -160,9 +160,9 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
   let tickers = (redisTickers ? JSON.parse(redisTickers) : []) as MarketDataV1[];
   tickers = tickers.map((t: any) => {
     // merge
-    const ticker = results.find((r) => r.tick === t.tick);
-    if (ticker) {
-      Object.assign(t, ticker);
+    const tkr = results.find((r) => r.tick === t.tick);
+    if (tkr) {
+      Object.assign(t, tkr);
     }
     return t;
   })
