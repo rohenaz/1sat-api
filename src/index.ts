@@ -268,7 +268,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         const cached = await redis.get(`token-${assetType}-${ticker.id.toLowerCase()}`);
         if (cached) {
           // load values to tick
-          Object.assign(tick, JSON.parse(cached))
+          tick = Object.assign(JSON.parse(cached), tick)
         }
 
         // price is based on last sale
