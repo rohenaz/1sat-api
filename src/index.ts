@@ -145,35 +145,35 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           // cache
           await redis.set(`ids-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
 
-          // update 'tickers' cache to include this token if it isnt in there
-          if (tickersV1) {
-            await loadV1TickerDetails(tickersV1, info);
-          }
+
+
         }
 
       }
+      // update 'tickers' cache to include this token if it isnt in there
 
+      const tokensV1 = await loadV1TickerDetails(detailedTokensV1, info);
 
-      let tokensV1: MarketDataV1[] = [];
-      for (const ticker of detailedTokensV1) {
-        const totalSales = ticker.sales.reduce((acc, sale) => {
-          return acc + parseInt(sale.price)
-        }, 0);
-        const totalAmount = ticker.sales.reduce((acc, sale) => {
-          return acc + parseInt(sale.amt) / 10 ** ticker.dec
-        }, 0);
-        const price = totalAmount > 0 ? totalSales / totalAmount : 0;
-        const marketCap = calculateMarketCap(price, parseInt(ticker.max) / 10 ** ticker.dec);
+      // let tokensV1: MarketDataV1[] = [];
+      // for (const ticker of detailedTokensV1) {
+      //   const totalSales = ticker.sales.reduce((acc, sale) => {
+      //     return acc + parseInt(sale.price)
+      //   }, 0);
+      //   const totalAmount = ticker.sales.reduce((acc, sale) => {
+      //     return acc + parseInt(sale.amt) / 10 ** ticker.dec
+      //   }, 0);
+      //   const price = totalAmount > 0 ? totalSales / totalAmount : 0;
+      //   const marketCap = calculateMarketCap(price, parseInt(ticker.max) / 10 ** ticker.dec);
 
-        const pctChange = await setPctChange(ticker.tick, ticker.sales, 0);
+      //   const pctChange = await setPctChange(ticker.tick, ticker.sales, 0);
 
-        tokensV1.push({
-          ...ticker,
-          price,
-          marketCap,
-          pctChange,
-        });
-      }
+      //   tokensV1.push({
+      //     ...ticker,
+      //     price,
+      //     marketCap,
+      //     pctChange,
+      //   });
+      // }
 
 
 
