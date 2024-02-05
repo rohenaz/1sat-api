@@ -123,7 +123,6 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
     case AssetType.BSV20:
       // get the last sale price
       for (const tick of tokenIDs) {
-
         // check cache
         const cached = await redis.get(`token-${assetType}-${tick}`);
         let details: T | null = null;
