@@ -1,7 +1,7 @@
 import { ChainInfo, redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
 import { BSV20Details, BSV20V1, BSV21, BSV21Details, ListingsV1, MarketDataV1 } from "./types/bsv20";
-import { calculateMarketCap, fetchChainInfo, fetchJSON, fetchTokensDetails, setPctChange } from "./utils";
+import { calculateMarketCap, fetchChainInfo, fetchJSON, fetchTokensDetails, getPctChange, setPctChange } from "./utils";
 
 
 // on boot up we get all the tickers and cache them
@@ -182,11 +182,12 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
       Object.assign(c, t);
     }
     if (c.sales.length > 0 && c.pctChange === 0) {
-      c.pctChange = await setPctChange(c.tick, c.sales, info.blocks);
+      c.pctChange = await getPctChange(c.tick);
       console.log("how is this possible?", c.tick, c.sales.length, info.blocks, c.pctChange)
     }
-    // c.pctChange = parseInt(await redis.get(`pctChange-${c.tick}`) || "0")
-
+    if (c.pctChange > 0) {
+      console.log("PCT CHANGE", c.tick, c.pctChange)
+    }
     merged.push(c as MarketDataV1)
   }
 
