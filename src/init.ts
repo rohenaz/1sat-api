@@ -181,7 +181,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     if (t) {
       Object.assign(c, t);
     }
-    if (c?.sales && c.pctChange === 0) {
+    if (c.sales.length > 0 && c.pctChange === 0) {
       console.log("how is this possible?", c.tick, c.sales.length, info.blocks)
       c.pctChange = await setPctChange(c.tick, c.sales, info.blocks);
     }
