@@ -132,58 +132,29 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[]) => {
   return merged;
 }
 
-// Loads all details decessary to render the first page
+// saves tickers to caches and adds pctChange
 export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo) => {
-  const tickers = tickersV1.map((t) => t.tick);
-  console.log("Loading v1 ticker details for", tickers)
-
-  // const details = await fetchTokensDetails<BSV20Details>(tickers, AssetType.BSV20);
-  // console.log("Fetch v1 ticker details", details.length, tickers.length, tickersV1.length)
-  // merge back in passed in values
-  // let merged: BSV20Details[] = [];
-  // for (const ticker of details) {
-  //   let t = tickersV1.find((t) => t.tick === ticker.tick);
-  //   if (t) {
-  //     t = Object.assign(ticker, t);
-  //     merged.push(t as BSV20Details);
-  //   }
-  // }
-
   const results: MarketDataV1[] = [];
-
-  for (const tick of tickers) {
-    console.log("Processing", { ticker: tick })
+  for (const t of tickersV1) {
+    const tick = t.tick;
     // check cache for sales token-${assetType}-${tick}
-    const cached = await redis.get(`token-${AssetType.BSV20}-${tick.toLowerCase()}`);
-    if (!cached) {
-      console.log("No cached data for", tick)
-      continue;
-    }
-    const ticker = JSON.parse(cached) as BSV20Details;
+    const cached = (await redis.get(`token-${AssetType.BSV20}-${tick.toLowerCase()}`) || "{}") as string;
+    const parsed = JSON.parse(cached);
+    const ticker = Object.assign(parsed, t) as BSV20Details;
     const price = ticker.sales.length > 0 ? parseFloat((ticker.sales[0] as ListingsV1)?.pricePer) : 0;
     const marketCap = calculateMarketCap(price, parseInt(ticker.max));
     const pctChange = await setPctChange(ticker.tick, ticker.sales, info.blocks);
 
-    results.push({
+    const result = {
       price,
       pctChange,
       marketCap,
       ...ticker,
-    });
+    } as MarketDataV1
+
+    await redis.set(`token-${AssetType.BSV20}-${tick}`, JSON.stringify(result), "EX", defaults.expirationTime);
+    results.push(result);
   }
-  // get the cachged tickers
-  const cachedTickers = await redis.get(`tickers-${AssetType.BSV20}`);
-  const cTickers = (cachedTickers ? JSON.parse(cachedTickers) : []) as MarketDataV1[];
-  // merge them with results
-  const merged = results.map((t: any) => {
-    const cachedMatch = cTickers.find((r) => r.tick === t.tick);
-    if (cachedMatch) {
-      t = Object.assign(cachedMatch, t);
-    }
-    return t;
-  });
-  console.log("Merged", merged.length, "results", results.length, "cached", cTickers.length)
-  // cache
-  await redis.set(`tickers-${AssetType.BSV20}`, JSON.stringify(merged), "EX", defaults.expirationTime);
+  await redis.set(`tickers-${AssetType.BSV20}`, JSON.stringify(results), "EX", defaults.expirationTime);
   return results;
 }
