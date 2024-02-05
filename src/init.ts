@@ -5,7 +5,7 @@ import { calculateMarketCap, fetchChainInfo, fetchJSON, fetchTokensDetails, setP
 
 
 // on boot up we get all the tickers and cache them
-export const fetchV1Tickers = async (fetchDetails = true): Promise<MarketDataV1[]> => {
+export const fetchV1Tickers = async (): Promise<MarketDataV1[]> => {
   const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
   const tickersV1 = (await fetchJSON<BSV20V1[]>(urlV1Tokens)) || [];
   console.log("Fetched v1 tickers", tickersV1.length)
@@ -143,12 +143,18 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     const ticker = Object.assign(parsed, t) as BSV20Details;
     if (!ticker.sales) {
       ticker.sales = [];
+      const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
+      ticker.sales = (await fetchJSON<ListingsV1[]>(urlSales) || [])
     }
     if (!ticker.listings) {
       ticker.listings = [];
+      const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
+      ticker.listings = (await fetchJSON<ListingsV1[]>(urlListings) || [])
     }
     if (!ticker.holders) {
       ticker.holders = [];
+      const urlHolders = `${API_HOST}/api/bsv20/tick/${tick}/holders?limit=20&offset=0`;
+      ticker.holders = (await fetchJSON(urlHolders) || [])
     }
     const price = ticker.sales.length > 0 ? parseFloat((ticker.sales[0] as ListingsV1)?.pricePer) : 0;
     const marketCap = calculateMarketCap(price, parseInt(ticker.max));
