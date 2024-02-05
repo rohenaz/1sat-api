@@ -182,6 +182,13 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     }
     return c;
   }) as MarketDataV1[];
+  // add any not already in the list
+  for (const r of results) {
+    if (!merged.find((m) => m.tick === r.tick)) {
+      console.log("FOUND ONE!!!", r.tick)
+      merged.push(r);
+    }
+  }
   await redis.set(`tickers-${AssetType.BSV20}`, JSON.stringify(merged), "EX", defaults.expirationTime);
   console.log("Merged tickers", merged.length, "results", results.length, results[0].pctChange)
   return results
