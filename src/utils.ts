@@ -37,7 +37,8 @@ export const setPctChange = async (id: string, sales: ListingsV1[] | ListingsV2[
   // Filter out sales that are older than the cutoff
   let filteredSales = sales.filter((sale) => sale.height >= cutoffs[4]);
   // TODO: Change this back
-  if (sales.length > 0) {
+  filteredSales = sales;
+  if (filteredSales.length > 0) {
     // Parse the price of the most recent sale
     const lastPrice = parseFloat(filteredSales[0].pricePer);
     // Parse the price of the oldest sale
