@@ -231,10 +231,9 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
       const cached = await redis.get(`tickers-${assetType}`);
 
       let tickers: MarketDataV1[] = [];
+      tickers = await fetchV1Tickers();
       if (cached) {
-        tickers = JSON.parse(cached);
-      } else {
-        tickers = await fetchV1Tickers();
+        tickers = Object.assign(JSON.parse(cached), tickers);
       }
       return tickers
     case AssetType.BSV20V2:
