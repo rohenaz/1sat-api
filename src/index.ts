@@ -129,8 +129,10 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
   switch (assetType) {
     case AssetType.BSV20:
       let detailedTokensV1: BSV20Details[] = [];
+      let results: MarketDataV1[] = [];
       if (id) {
         detailedTokensV1 = await fetchTokensDetails<BSV20Details>([id], assetType);
+        results = await loadV1TickerDetails(detailedTokensV1, info);
       } else {
         // check cache
         const cached = await redis.get(`ids-${assetType}`);
@@ -149,10 +151,11 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
 
         }
 
+        results = await loadV1TickerDetails(detailedTokensV1, info);
+
       }
       // update 'tickers' cache to include this token if it isnt in there
 
-      const tokensV1 = await loadV1TickerDetails(detailedTokensV1, info);
 
       // let tokensV1: MarketDataV1[] = [];
       // for (const ticker of detailedTokensV1) {
@@ -177,7 +180,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
 
 
 
-      return tokensV1.sort((a, b) => {
+      return results.sort((a, b) => {
         return b.marketCap - a.marketCap;
       });
     case AssetType.BSV21:
