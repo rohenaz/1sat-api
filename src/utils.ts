@@ -1,6 +1,6 @@
 import { ChainInfo, redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
-import { BSV20V1Details, BSV20V2Details, ListingsV1, ListingsV2 } from "./types/bsv20";
+import { BSV20V1Details, BSV21Details, ListingsV1, ListingsV2 } from "./types/bsv20";
 
 type Timeframe = {
   label: string;
@@ -115,7 +115,7 @@ export const fetchExchangeRate = async (): Promise<number> => {
   return exchangeRateData.rate;
 };
 
-export const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Details>(tokenIDs: string[], assetType: AssetType): Promise<T[]> => {
+export const fetchTokensDetails = async <T extends BSV20V1Details | BSV21Details>(tokenIDs: string[], assetType: AssetType): Promise<T[]> => {
 
   let d: T[] = [];
   // use passed in type instead 
@@ -158,7 +158,7 @@ export const fetchTokensDetails = async <T extends BSV20V1Details | BSV20V2Detai
 
       }
       break;
-    case AssetType.BSV20V2:
+    case AssetType.BSV21:
       for (const id of tokenIDs) {
         //check cache 
         const cached = await redis.get(`token-${assetType}-${id}`);

@@ -12,7 +12,7 @@ const sseInit = async () => {
   sse.addEventListener("bsv20listings", async (event) => {
     const data = JSON.parse(event.data);
     const { id, tick } = data;
-    const assetType = tick ? AssetType.BSV20 : AssetType.BSV20V2;
+    const assetType = tick ? AssetType.BSV20 : AssetType.BSV21;
     const t = await redis.get(`token-${assetType}-${tick || id}`);
     let ticker = t ? JSON.parse(t) : null;
     console.log("Adding listing", event.data);
@@ -35,7 +35,7 @@ const sseInit = async () => {
     console.log("Sale or cencel", event.data);
     const { id, tick, outpoint, txid, sale } = event.data;
     // txid is the txid from which is was spend
-    const assetType = tick ? AssetType.BSV20 : AssetType.BSV20V2;
+    const assetType = tick ? AssetType.BSV20 : AssetType.BSV21;
     const s = await redis.get(`token-${assetType}-${tick || id}`);
     const ticker = s ? JSON.parse(s) : null;
     if (ticker) {
@@ -101,7 +101,7 @@ const sseInit = async () => {
 
   })
   sse.addEventListener("v2funds", async (event) => {
-    const assetType = AssetType.BSV20V2;
+    const assetType = AssetType.BSV21;
     console.log("V2 Funds", event.data);
     const data = JSON.parse(event.data) as BalanceUpdate;
     const { id, fundTotal, fundUsed, pendingOps, included } = data;
@@ -119,7 +119,7 @@ const sseInit = async () => {
       ticker.fundBalance = (fundTotal - fundUsed).toString();
 
       tickers.push(ticker);
-      // await redis.set(`token-${AssetType.BSV20V2}-${id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+      // await redis.set(`token-${AssetType.BSV21}-${id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
 
       // if (included === true && !wasIncluded) {
       //   // when ticker is included we need to also update the ticker list

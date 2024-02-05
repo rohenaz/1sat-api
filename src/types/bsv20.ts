@@ -37,8 +37,8 @@ export interface BSV20V1 extends BaseTxo {
   fundBalance: string;
 }
 
-// For BSV20V2 Data
-export interface BSV20V2 extends BaseTxo {
+// For BSV21 Data
+export interface BSV21 extends BaseTxo {
   id: string;
   sym: string; // Symbol
   icon?: string; // eg 87f1d0785cf9b4951e75e8cf9353d63a49f98e9b6b255bcd6a986db929a00472_0
@@ -51,7 +51,7 @@ export interface BSV20V2 extends BaseTxo {
   included: boolean;
 }
 
-export interface ListingsV2 extends BSV20V2 {
+export interface ListingsV2 extends BSV21 {
   price: string;
   pricePer: string;
   owner: string;
@@ -88,7 +88,7 @@ export interface Holder {
   amt: string;
 }
 
-export interface BSV20V2Details extends BSV20V2 {
+export interface BSV21Details extends BSV21 {
   accounts: number;
   holders: Holder[];
   pendingOps: number;
@@ -97,10 +97,10 @@ export interface BSV20V2Details extends BSV20V2 {
 }
 
 // Adjust the BSV20TXO type if needed
-export type BSV20TXO = BSV20V1 | BSV20V2;
+export type BSV20TXO = BSV20V1 | BSV21;
 
 
-export interface MarketDataV2 extends BSV20V2Details {
+export interface MarketDataV2 extends BSV21Details {
   price: number;
   marketCap: number;
   pctChange: number;

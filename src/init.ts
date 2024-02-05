@@ -1,6 +1,6 @@
 import { redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
-import { BSV20V1, BSV20V1Details, BSV20V2, BSV20V2Details, ListingsV1, MarketDataV1 } from "./types/bsv20";
+import { BSV20V1, BSV20V1Details, BSV21, BSV21Details, ListingsV1, MarketDataV1 } from "./types/bsv20";
 import { calculateMarketCap, fetchChainInfo, fetchJSON, fetchTokensDetails, setPctChange } from "./utils";
 
 
@@ -15,7 +15,7 @@ export const fetchV1Tickers = async (): Promise<MarketDataV1[]> => {
 type TickerName = {
   tick: string, // tick || sym
   id: string, // tick || id
-  type: AssetType.BSV20 | AssetType.BSV20V2
+  type: AssetType.BSV20 | AssetType.BSV21
   icon?: string
 }
 
@@ -36,14 +36,14 @@ const fetchV1TickerNames = async (offset: number, resultsPerPage: number, includ
 const fetchV2TickerNames = async (offset: number, resultsPerPage: number) => {
   const url = `${API_HOST}/api/bsv20/v2?limit=${resultsPerPage}&offset=${offset}`
   const response = await fetch(url)
-  const ticker = (await response.json()) as BSV20V2[]
+  const ticker = (await response.json()) as BSV21[]
   return (ticker || []).map((t) => {
-    const v2 = t as BSV20V2
+    const v2 = t as BSV21
     return {
       tick: v2.sym,
       id: v2.id,
       icon: v2.icon,
-      type: AssetType.BSV20V2
+      type: AssetType.BSV21
     } as TickerName
   })
 }
@@ -97,27 +97,27 @@ export const loadAllV2Names = async (): Promise<void> => {
 
 export const fetchV2Tickers = async () => {
   const urlV2Tokens = `${API_HOST}/api/bsv20/v2?limit=100&offset=0&included=true`;
-  const tickersV2 = await fetchJSON<BSV20V2[]>(urlV2Tokens);
+  const tickersV2 = await fetchJSON<BSV21[]>(urlV2Tokens);
   if (!tickersV2 || !tickersV2.length) {
     return []
   }
   return await loadV2TickerDetails(tickersV2);
 }
 
-export const loadV2TickerDetails = async (tickersV2: BSV20V2[]) => {
+export const loadV2TickerDetails = async (tickersV2: BSV21[]) => {
   const info = await fetchChainInfo()
 
   const tickers = tickersV2.map((t) => t.id);
-  const details = await fetchTokensDetails<BSV20V2Details>(tickers, AssetType.BSV20V2);
+  const details = await fetchTokensDetails<BSV21Details>(tickers, AssetType.BSV21);
 
   // merge back in passed in values
-  let merged: BSV20V2Details[] = []
+  let merged: BSV21Details[] = []
   for (const ticker of details) {
     let t = tickersV2.find((t) => t.id === ticker.id);
     if (t) {
       Object.assign(ticker, t);
     }
-    merged.push(ticker as BSV20V2Details);
+    merged.push(ticker as BSV21Details);
   }
   for (const ticker of merged) {
     const pctChange = await setPctChange(ticker.id, ticker.sales, info.blocks);
@@ -125,7 +125,7 @@ export const loadV2TickerDetails = async (tickersV2: BSV20V2[]) => {
   }
   // cache
   if (merged.length > 0) {
-    await redis.set(`tickers-${AssetType.BSV20V2}`, JSON.stringify(merged), "EX", defaults.expirationTime);
+    await redis.set(`tickers-${AssetType.BSV21}`, JSON.stringify(merged), "EX", defaults.expirationTime);
   }
   return merged;
 }
