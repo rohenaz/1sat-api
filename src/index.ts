@@ -41,7 +41,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     // if (marketData) {
     //   await redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
     // }
-    console.log("marketData", marketData)
+    console.log("marketData", marketData?.length)
     return marketData;
     //}
     //return JSON.parse(market);
