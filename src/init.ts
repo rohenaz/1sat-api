@@ -19,18 +19,20 @@ type TickerName = {
   id: string, // tick || id
   type: AssetType.BSV20 | AssetType.BSV21
   icon?: string
+  num: number
 }
 
 const fetchV1TickerNames = async (offset: number, resultsPerPage: number, included: boolean) => {
-  const url = `${API_HOST}/api/bsv20?limit=${resultsPerPage}&offset=${offset}&included=${included}`
+  const url = `${API_HOST}/api/bsv20?limit=${resultsPerPage}&&sort=height&dir=asc&offset=${offset}&included=${included}`
   const response = await fetch(url)
   const ticker = await response.json() as BSV20V1[]
-  return (ticker || []).map((t) => {
+  return (ticker || []).map((t, idx) => {
     const v1 = t as BSV20V1
     return {
       tick: v1.tick,
       id: v1.tick,
-      type: AssetType.BSV20
+      type: AssetType.BSV20,
+      num: idx + 1,
     } as TickerName
   })
 }
