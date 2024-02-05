@@ -134,7 +134,7 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[]) => {
 
 // saves tickers to caches and adds pctChange
 export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo) => {
-  const results: MarketDataV1[] = [];
+  let results: MarketDataV1[] = [];
   for (const t of tickersV1) {
     const tick = t.tick;
     // check cache for sales token-${assetType}-${tick}
@@ -166,16 +166,16 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
   }
   // get the tickers and merge in the new values
   const redisTickers = await redis.get(`tickers-${AssetType.BSV20}`);
-  let tickers = (redisTickers ? JSON.parse(redisTickers) : []) as MarketDataV1[];
-  tickers = tickers.map((t: any) => {
+  let cachedTickers = (redisTickers ? JSON.parse(redisTickers) : []) as MarketDataV1[];
+  results = results.map((t: any) => {
     // merge
-    const tkr = results.find((r) => r.tick === t.tick);
+    const tkr = cachedTickers.find((r) => r.tick === t.tick);
     if (tkr) {
       Object.assign(t, tkr);
     }
     return t;
   })
-  console.log("Merged tickers", tickers.length, "results", results.length, "redis", redisTickers ? JSON.parse(redisTickers).length : 0)
-  await redis.set(`tickers-${AssetType.BSV20}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
+  console.log("Merged tickers", cachedTickers.length, "results", results.length)
+  await redis.set(`tickers-${AssetType.BSV20}`, JSON.stringify(results), "EX", defaults.expirationTime);
   return results;
 }
