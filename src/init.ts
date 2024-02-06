@@ -40,7 +40,7 @@ const fetchV1TickerNames = async (offset: number, resultsPerPage: number, includ
       tick: v1.tick,
       id: v1.tick,
       type: AssetType.BSV20,
-      num: idx + 1,
+      num: idx + 1 + (offset * resultsPerPage),
     } as TickerName
   })
 }
