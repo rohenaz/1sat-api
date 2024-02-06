@@ -3,7 +3,7 @@ import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
 import { uniqBy } from 'lodash';
 import { API_HOST, AssetType, defaults } from './constants';
-import { findMatchingKeys } from './db';
+import { findMatchingKeys, findOneExactMatchingKey } from './db';
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails } from './init';
 import { sseInit } from './sse';
 import { BSV20Details, BSV20V1, BSV21, BSV21Details, ListingsV2, MarketDataV1, MarketDataV2 } from './types/bsv20';
@@ -36,10 +36,10 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const type = AssetType.BSV20
   const num = params.num.toUpperCase()
 
-  const results = await findMatchingKeys(redis, "num", num, type)
+  const result = await findOneExactMatchingKey(redis, "num", num, type)
 
   // if no results, parse autofill and store in num
-  if (results.length === 0) {
+  if (!result) {
     // get all autofill keys
     const autofill = await findMatchingKeys(redis, "autofill", "", type)
 
@@ -47,11 +47,11 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     const result = autofill.find((a) => a.num === parseInt(num))
     if (result) {
       await redis.set(`num-${type}-${num}`, JSON.stringify(result), "EX", defaults.expirationTime);
-      return [result]
+      return result
     }
   }
-  console.log({ results })
-  return results
+  console.log({ result })
+  return result
 }).get('/market/:assetType', async ({ set, params }) => {
   console.log(params.assetType)
   try {
