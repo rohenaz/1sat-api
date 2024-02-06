@@ -65,26 +65,7 @@ export const loadAllV1Names = async (): Promise<void> => {
   let page = 0;
   let includedCount = 0
   let resultsPerPage = 200;
-
-  let done = false
-  while (!done) {
-    const offset = page * resultsPerPage;
-    let results = await fetchV1TickerNames(offset, resultsPerPage, true)
-    page++
-    if (!results || !results.length) {
-      done = true
-      continue
-    }
-    includedCount += results.length
-    for (const result of results) {
-      await redis.set(`autofill-${AssetType.BSV20}-${result.tick}`, JSON.stringify(result));
-    }
-  }
-
-  // reset flags
-  page = 0;
-  done = false;
-
+  let done = false;
   let unincludedCount = 0;
   while (!done) {
     const offset = page * resultsPerPage;
