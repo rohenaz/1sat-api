@@ -104,7 +104,6 @@ export interface MarketDataV2 extends BSV21Details {
   price: number;
   marketCap: number;
   pctChange: number;
-  num: number;
 }
 
 export interface MarketDataV1 extends BSV20Details {

@@ -26,7 +26,15 @@ const fetchV1TickerNames = async (offset: number, resultsPerPage: number, includ
   const url = `${API_HOST}/api/bsv20?limit=${resultsPerPage}&&sort=height&dir=asc&offset=${offset}&included=${included}`
   const response = await fetch(url)
   const ticker = await response.json() as BSV20V1[]
-  return (ticker || []).map((t, idx) => {
+  return (ticker || []).sort((a, b) => {
+    if (a.height === b.height) {
+      if (a.idx === b.idx) {
+        return a.vout < b.vout ? -1 : 1
+      }
+      return a.idx < b.idx ? -1 : 1
+    }
+    return a.height < b.height ? -1 : 1
+  }).map((t, idx) => {
     const v1 = t as BSV20V1
     return {
       tick: v1.tick,
