@@ -171,10 +171,11 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     } as MarketDataV1
 
     // 
-    const autofillData = await redis.set(`autofill-${result.tick}`, JSON.stringify(result));
-    const autofill = JSON.parse(autofillData);
-    result.num = autofill.num;
-
+    const autofillData = await redis.get(`autofill-${result.tick}`);
+    if (autofillData) {
+      const autofill = JSON.parse(autofillData);
+      result.num = autofill.num;
+    }
 
     await redis.set(`token-${AssetType.BSV20}-${tick}`, JSON.stringify(result), "EX", defaults.expirationTime);
     results.push(result);
