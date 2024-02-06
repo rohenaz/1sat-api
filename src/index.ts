@@ -214,12 +214,18 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
         console.log({ totalSales, totalAmount, price, marketCap, symbol: ticker.sym, dec: ticker.dec, amt: ticker.amt })
 
         const pctChange = await setPctChange(ticker.id, ticker.sales, info.blocks);
-
+        const autofillData = await redis.get(`autofill-${ticker.id}`);
+        let num = 0
+        if (autofillData) {
+          const autofill = JSON.parse(autofillData);
+          num = autofill.num;
+        }
         tokens.push({
           ...ticker,
           price,
           marketCap,
           pctChange,
+          num
         });
       }
       return tokens
