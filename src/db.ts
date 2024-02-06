@@ -1,13 +1,12 @@
 import { Redis } from "ioredis";
 import { AssetType } from "./constants";
 
-export const findMatchingKeys = async (redis: Redis, partial: string, type: AssetType) => {
-  const pattern = `autofill-${type}-${partial}*`;
+export const findMatchingKeys = async (redis: Redis, prefix: string, partial: string, type: AssetType) => {
+  const pattern = `${prefix}-${type}-${partial}*`;
   let cursor = '0';
   let results = [];
-
   do {
-    const reply = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 20);
+    const reply = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 60);
     cursor = reply[0];
     const keys = reply[1];
 
@@ -19,6 +18,5 @@ export const findMatchingKeys = async (redis: Redis, partial: string, type: Asse
       }
     }
   } while (cursor !== '0');
-
   return results;
 }

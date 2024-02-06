@@ -28,7 +28,28 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const type = params.assetType as AssetType
   const id = params.id.toUpperCase()
 
-  const results = await findMatchingKeys(redis, id, type)
+  const results = await findMatchingKeys(redis, "autofill", id, type)
+  console.log({ results })
+  return results
+}).get('/ticker/num/:num', async ({ params }) => {
+  // autofill endpoint for ticker id
+  const type = AssetType.BSV20
+  const num = params.num.toUpperCase()
+
+  const results = await findMatchingKeys(redis, "num", num, type)
+
+  // if no results, parse autofill and store in num
+  if (results.length === 0) {
+    // get all autofill keys
+    const autofill = await findMatchingKeys(redis, "autofill", "", type)
+
+    // find the num
+    const result = autofill.find((a) => a.num === parseInt(num))
+    if (result) {
+      await redis.set(`num-${type}-${num}`, JSON.stringify(result), "EX", defaults.expirationTime);
+      return [result]
+    }
+  }
   console.log({ results })
   return results
 }).get('/market/:assetType', async ({ set, params }) => {
