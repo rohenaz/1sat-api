@@ -69,7 +69,7 @@ export const loadAllV1Names = async (): Promise<void> => {
     }
     includedCount += results.length
     for (const result of results) {
-      await redis.set(`autofill-${result.tick}`, JSON.stringify(result));
+      await redis.set(`autofill-${AssetType.BSV20}-${result.tick}`, JSON.stringify(result));
     }
   }
 
@@ -89,7 +89,7 @@ export const loadAllV1Names = async (): Promise<void> => {
     unincludedCount += results.length
 
     for (const result of results) {
-      await redis.set(`autofill-${result.tick}`, JSON.stringify(result));
+      await redis.set(`autofill-${AssetType.BSV20}-${result.tick}`, JSON.stringify(result));
     }
   }
   console.log("All tickers cached for autofill", includedCount, unincludedCount)
@@ -171,7 +171,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     } as MarketDataV1
 
     // 
-    const autofillData = await redis.get(`autofill-${result.tick}`);
+    const autofillData = await redis.get(`autofill-${AssetType.BSV20}-${result.tick}`);
     if (autofillData) {
       const autofill = JSON.parse(autofillData);
       result.num = autofill.num;

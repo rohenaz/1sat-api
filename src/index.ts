@@ -25,10 +25,10 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   return `:)`;
 }).get('/ticker/autofill/:assetType/:id', async ({ params }) => {
   // autofill endpoint for ticker id
-  const type = params.assetType
+  const type = params.assetType as AssetType
   const id = params.id.toUpperCase()
 
-  const results = await findMatchingKeys(redis, id)
+  const results = await findMatchingKeys(redis, id, type)
   console.log({ results })
   return results
 }).get('/market/:assetType', async ({ set, params }) => {
@@ -214,7 +214,7 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
         console.log({ totalSales, totalAmount, price, marketCap, symbol: ticker.sym, dec: ticker.dec, amt: ticker.amt })
 
         const pctChange = await setPctChange(ticker.id, ticker.sales, info.blocks);
-        const autofillData = await redis.get(`autofill-${ticker.id}`);
+        const autofillData = await redis.get(`autofill-${assetType}-${ticker.id}`);
         let num = 0
         if (autofillData) {
           const autofill = JSON.parse(autofillData);
