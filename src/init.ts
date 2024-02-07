@@ -54,23 +54,24 @@ const fetchV2TickerNames = async (offset: number, resultsPerPage: number) => {
 
 export const loadAllV1Names = async (): Promise<void> => {
   // hit the list endpoint over and over
-  let page = 0;
-  let includedCount = 0
+  let offset = (await redis.hlen(`autofill-${AssetType.BSV20}`)) || 0
+  let includedCount, unincludedCount = 0
   let resultsPerPage = 200;
   let done = false;
-  let unincludedCount = 0;
+
   while (!done) {
-    const offset = page * resultsPerPage;
+    // const offset = page * resultsPerPage;
     let results = await fetchV1TickerNames(offset, resultsPerPage, false)
-    page++
-    if (!results || !results.length) {
+    // page++
+    if (!results || results.length < resultsPerPage) {
       done = true;
       continue
     }
+    offset += results.length
     unincludedCount += results.length
 
     for (const result of results) {
-      await redis.set(`autofill-${AssetType.BSV20}-${result.tick}`, JSON.stringify(result));
+      await redis.hset(`autofill-${AssetType.BSV20}`, result.tick.toLowerCase(), JSON.stringify(result));
     }
   }
   console.log("All tickers cached for autofill", includedCount, unincludedCount)
@@ -152,7 +153,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     } as MarketDataV1
 
     // 
-    const autofillData = await redis.get(`autofill-${AssetType.BSV20}-${result.tick}`);
+    const autofillData = await redis.hget(`autofill-${AssetType.BSV20}`, result.tick.toLowerCase());
     if (autofillData) {
       const autofill = JSON.parse(autofillData);
       result.num = autofill.num;
