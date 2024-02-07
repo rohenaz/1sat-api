@@ -79,7 +79,9 @@ const sseInit = async () => {
 
     const t = await redis.get(`token-${assetType}-${tick?.toLowerCase()}`);
     const ticker = t ? JSON.parse(t) : null;
-    const wasIncluded = !!ticker ? ticker.included === true : false;
+    if (!!ticker && ticker.included) {
+      await redis.zadd(`included-${AssetType.BSV20}`, 'NX', Date.now(), ticker.tick.toLowerCase())
+    }
     const redisTickers = await redis.get(`tickers-${assetType}`);
     let tickers = redisTickers ? JSON.parse(redisTickers) : [];
     if (ticker) {
