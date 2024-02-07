@@ -68,7 +68,6 @@ const sseInit = async () => {
 
     //   await redis.set(`token-${assetType}-${tick?.toLowerCase() || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
     // }
-
   })
 
   sse.addEventListener("v1funds", async (event) => {
