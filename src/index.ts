@@ -162,8 +162,6 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           // cache
           await redis.set(`ids-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
 
-
-
         }
 
         results = await loadV1TickerDetails(detailedTokensV1, info);
