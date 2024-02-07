@@ -81,15 +81,15 @@ const sseInit = async () => {
     if (!!ticker && ticker.included) {
       await redis.zadd(`included-${AssetType.BSV20}`, 'NX', Date.now(), ticker.tick.toLowerCase())
     }
-    const redisTickers = await redis.get(`tickers-${assetType}`);
-    let tickers = redisTickers ? JSON.parse(redisTickers) : [];
+    // const redisTickers = await redis.get(`tickers-${assetType}`);
+    // let tickers = redisTickers ? JSON.parse(redisTickers) : [];
     if (ticker) {
       ticker.included = included;
       ticker.fundTotal = fundTotal;
       ticker.pendingOps = pendingOps;
       ticker.fundUsed = fundUsed;
       ticker.fundBalance = (fundTotal - fundUsed).toString();
-      // await redis.set(`token-${AssetType.BSV20}-${tick?.toLowerCase()}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+      await redis.set(`token-${AssetType.BSV20}-${tick?.toLowerCase()}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
       // if (included === true && !wasIncluded) {
       //   // when ticker is included we need to also update the ticker list
       //   const tickers = await redis.get(`tickers-${assetType}`);
@@ -104,17 +104,17 @@ const sseInit = async () => {
       //   await redis.set(`tickers-${assetType}`, JSON.stringify(list), "EX", defaults.expirationTime);
       //   console.log("Ticker set to included", tick)
       // }
-      tickers = tickers.map((t: any) => {
-        // merge
-        if (t.tick === tick) {
-          Object.assign(t, ticker);
-        }
-        return t;
-      })
+      // tickers = tickers.map((t: any) => {
+      //   // merge
+      //   if (t.tick === tick) {
+      //     Object.assign(t, ticker);
+      //   }
+      //   return t;
+      // })
     }
     const info = await fetchChainInfo()
 
-    await loadV1TickerDetails(tickers, info);
+    await loadV1TickerDetails([ticker], info);
 
   })
   sse.addEventListener("v2funds", async (event) => {
