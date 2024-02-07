@@ -144,6 +144,9 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     const marketCap = calculateMarketCap(price, parseInt(ticker.max));
     const pctChange = await setPctChange(ticker.tick, ticker.sales, info.blocks);
 
+    if (ticker.included) {
+      await redis.zadd(`included-${AssetType.BSV20}`, ticker.tick.toLowerCase(), ticker.height)
+    }
 
     const result = {
       ...ticker,

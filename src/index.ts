@@ -260,8 +260,22 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
   switch (assetType) {
     case AssetType.BSV20:
       // check cache
+      let tv1: MarketDataV1[] = [];
 
-      return await fetchV1Tickers();
+      const included = await redis.zscan(`included-${AssetType.BSV20}`, 0, "COUNT", 1000);
+
+      for (const [cursor, tick] of included) {
+        const cached = await redis.get(`token-${AssetType.BSV20}-${tick.toLowerCase()}`)
+        if (!cached) {
+          continue;
+        }
+        const token = JSON.parse(cached);
+        // console.log(key, value)
+        tv1.push(token);
+      }
+      return tv1;
+
+    // return await fetchV1Tickers();
 
     case AssetType.BSV21:
       let tv2: MarketDataV2[] = [];
