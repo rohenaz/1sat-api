@@ -171,10 +171,7 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
         })
         await pipeline.exec()
 
-        // cache
         await redis.set(`token-${assetType}-${tick.toLowerCase()}`, JSON.stringify(details)); //, "EX", defaults.expirationTime);
-
-
         d.push(details)
       }
       break;
