@@ -125,24 +125,34 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     const cached = (await redis.get(`token-${AssetType.BSV20}-${tick.toLowerCase()}`) || "{}") as string;
     const parsed = JSON.parse(cached);
     const ticker = Object.assign(parsed, t) as MarketDataV1;
-    if (!ticker.sales) {
-      ticker.sales = [];
-      const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
-      ticker.sales = (await fetchJSON<ListingsV1[]>(urlSales) || [])
-    }
-    if (!ticker.listings) {
-      ticker.listings = [];
-      const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
-      ticker.listings = (await fetchJSON<ListingsV1[]>(urlListings) || [])
-    }
+    const sales = [] as ListingsV1[];
+
+
+    const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
+    let key = `sales-${AssetType.BSV20}-${tick.toLowerCase()}`
+    let pipeline = redis.pipeline().del(key);
+    (await fetchJSON<ListingsV1[]>(urlSales) || []).forEach((sale) => {
+      pipeline.zadd(key, sale.spendHeight, JSON.stringify(sale))
+      sales.push(sale)
+    })
+    await pipeline.exec()
+
+    const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
+    key = `listings-${AssetType.BSV20}-${tick.toLowerCase()}`;
+    pipeline = redis.pipeline().del(key);
+    (await fetchJSON<ListingsV1[]>(urlListings) || []).forEach((listing) => {
+      pipeline.hset(key, `${listing.txid}_${listing.vout}`, JSON.stringify(listing))
+    })
+    await pipeline.exec()
+    // }
     if (!ticker.holders) {
       ticker.holders = [];
       const urlHolders = `${API_HOST}/api/bsv20/tick/${tick}/holders?limit=20&offset=0`;
       ticker.holders = (await fetchJSON(urlHolders) || [])
     }
-    const price = ticker.sales.length > 0 ? parseFloat((ticker.sales[0] as ListingsV1)?.pricePer) : 0;
+    const price = sales.length > 0 ? parseFloat((sales[0] as ListingsV1)?.pricePer) : 0;
     const marketCap = calculateMarketCap(price, parseInt(ticker.max));
-    const pctChange = await setPctChange(ticker.tick, ticker.sales, info.blocks);
+    const pctChange = await setPctChange(ticker.tick, sales, info.blocks);
 
     if (ticker.included) {
       await redis.zadd(`included-${AssetType.BSV20}`, ticker.height, ticker.tick.toLowerCase())
@@ -156,37 +166,37 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     } as MarketDataV1
 
     // 
-    const autofillData = await redis.hget(`autofill-${AssetType.BSV20}`, result.tick.toLowerCase());
+    const autofillData = await redis.hget(`autofill - ${AssetType.BSV20}`, result.tick.toLowerCase());
     if (autofillData) {
       const autofill = JSON.parse(autofillData);
       result.num = autofill.num;
     }
 
-    await redis.set(`token-${AssetType.BSV20}-${tick.toLowerCase()}`, JSON.stringify(result), "EX", defaults.expirationTime);
+    await redis.set(`token-${AssetType.BSV20} - ${tick.toLowerCase()}`, JSON.stringify(result)) //, "EX", defaults.expirationTime);
     results.push(result);
   }
   // get the tickers and merge in the new values
-  const redisTickers = await redis.get(`tickers-${AssetType.BSV20}`);
-  let cachedTickers = (redisTickers ? JSON.parse(redisTickers) : []) as MarketDataV1[];
+  // const redisTickers = await redis.get(`tickers-${AssetType.BSV20}`);
+  // let cachedTickers = (redisTickers ? JSON.parse(redisTickers) : []) as MarketDataV1[];
 
-  // update cached tickers with new values
-  let merged: MarketDataV1[] = [];
-  for (const c of cachedTickers) {
-    const t = results.find((r) => r.tick === c.tick);
-    if (t) {
-      Object.assign(c, t);
-    }
-    if (c.sales.length > 0 && c.pctChange === 0) {
-      c.pctChange = await getPctChange(c.tick);
-      console.log("how is this possible?", c.tick, c.sales.length, info.blocks, c.pctChange)
-    }
-    if (c.pctChange > 0) {
-      console.log("PCT CHANGE", c.tick, c.pctChange)
-    }
-    merged.push(c as MarketDataV1)
-  }
+  // // update cached tickers with new values
+  // let merged: MarketDataV1[] = [];
+  // for (const c of cachedTickers) {
+  //   const t = results.find((r) => r.tick === c.tick);
+  //   if (t) {
+  //     Object.assign(c, t);
+  //   }
+  //   if (c.sales.length > 0 && c.pctChange === 0) {
+  //     c.pctChange = await getPctChange(c.tick);
+  //     console.log("how is this possible?", c.tick, c.sales.length, info.blocks, c.pctChange)
+  //   }
+  //   if (c.pctChange > 0) {
+  //     console.log("PCT CHANGE", c.tick, c.pctChange)
+  //   }
+  //   merged.push(c as MarketDataV1)
+  // }
 
-  await redis.set(`tickers-${AssetType.BSV20}`, JSON.stringify(merged), "EX", defaults.expirationTime);
+  // await redis.set(`tickers-${AssetType.BSV20}`, JSON.stringify(merged), "EX", defaults.expirationTime);
   // console.log("Merged tickers", merged.length, "results", results.length, results[0].pctChange)
   return results
 }

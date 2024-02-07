@@ -140,17 +140,6 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
           continue;
         }
 
-        if (!details.listings) {
-          // add listings
-          const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
-          details.listings = (await fetchJSON<ListingsV1[]>(urlListings) || [])
-        }
-
-        // add sales
-        if (!details.sales) {
-          const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
-          details.sales = (await fetchJSON<ListingsV1[]>(urlSales) || [])
-        }
         // add holders
         if (!details.holders) {
           const urlHolders = `${API_HOST}/api/bsv20/tick/${tick}/holders?limit=20&offset=0`;
@@ -159,6 +148,31 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
 
         // cache
         await redis.set(`token-${assetType}-${tick.toLowerCase()}`, JSON.stringify(details), "EX", defaults.expirationTime);
+
+        // add listings
+        const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
+        // details.listings = (await fetchJSON<ListingsV1[]>(urlListings) || [])
+        const listings = [] as ListingsV1[];
+        let key = `listings-${AssetType.BSV20}-${tick.toLowerCase()}`;
+        let pipeline = redis.pipeline().del(key);
+        (await fetchJSON<ListingsV1[]>(urlListings) || []).forEach((listing) => {
+          pipeline.hset(key, `${listing.txid}_${listing.vout}`, JSON.stringify(listing))
+          if (listing) listings.push(listing)
+        })
+        details.listings = listings;
+
+        await pipeline.exec()
+
+        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
+        const sales = [] as ListingsV1[];
+        // details.sales = (await fetchJSON<ListingsV1[]>(urlSales) || [])
+        key = `sales-${AssetType.BSV20}-${tick.toLowerCase()}`
+        pipeline = redis.pipeline().del(key);
+        (await fetchJSON<ListingsV1[]>(urlSales) || []).forEach((sale) => {
+          pipeline.zadd(key, sale.spendHeight, JSON.stringify(sale))
+          sales.push(sale)
+        })
+        await pipeline.exec()
 
         d.push(details)
       }

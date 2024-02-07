@@ -15,23 +15,25 @@ const sseInit = async () => {
     const { tick } = data as ListingsV1;
     const { id } = data as ListingsV2;
     const assetType = tick ? AssetType.BSV20 : AssetType.BSV21;
-    const t = await redis.get(`token-${assetType}-${tick || id}`);
-    let ticker = t ? JSON.parse(t) : null;
-    console.log("Adding listing", event.data);
-    if (ticker) {
-      if (!ticker.listings) {
-        ticker.listings = [];
-      }
-      ticker.listings.unshift(data);
-      console.log("Added listing. New length:", ticker.listings.length);
-      await redis.set(`token-${assetType}-${tick?.toLowerCase() || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
-    } else {
-      ticker = { listings: [data] };
-      await redis.set(`token-${assetType}-${tick?.toLowerCase() || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
-    }
-    const info = await fetchChainInfo()
 
-    await loadV1TickerDetails([ticker], info);
+    await redis.hset(`listings-${assetType}-${tick || id}`, `${data.txid}_${data.vout}`, JSON.stringify(data))
+    // const t = await redis.get(`token-${assetType}-${tick || id}`);
+    // let ticker = t ? JSON.parse(t) : null;
+    // console.log("Adding listing", event.data);
+    // if (ticker) {
+    //   if (!ticker.listings) {
+    //     ticker.listings = [];
+    //   }
+    //   ticker.listings.unshift(data);
+    //   console.log("Added listing. New length:", ticker.listings.length);
+    //   await redis.set(`token-${assetType}-${tick?.toLowerCase() || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+    // } else {
+    //   ticker = { listings: [data] };
+    //   await redis.set(`token-${assetType}-${tick?.toLowerCase() || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+    // }
+    // const info = await fetchChainInfo()
+
+    // await loadV1TickerDetails([ticker], info);
   })
 
   sse.addEventListener("bsv20sales", async (event) => {
@@ -39,24 +41,33 @@ const sseInit = async () => {
     const { id, tick, outpoint, txid, sale } = event.data;
     // txid is the txid from which is was spend
     const assetType = tick ? AssetType.BSV20 : AssetType.BSV21;
-    const s = await redis.get(`token-${assetType}-${tick?.toLowerCase() || id}`);
-    const ticker = s ? JSON.parse(s) : null;
-    if (ticker) {
-      // get the listing
-      let listing = find(ticker.listings, (l: any) => l.outpoint === outpoint);
 
+    const listing = await redis.hget(`listings-${assetType}-${tick || id}`, `${txid}_${outpoint}`);
+    if (listing) {
+      const l = JSON.parse(listing);
       if (sale) {
-        if (!ticker.sales) {
-          ticker.sales = [];
-        }
-        ticker.sales.unshift(listing);
+        await redis.zadd(`sales-${assetType}-${tick || id}`, l.spendHeight || Number.MAX_SAFE_INTEGER, JSON.stringify(l))
       }
-
-      // remove the listing
-      ticker.listings = ticker.listings.filter((l: any) => l.outpoint !== outpoint);
-
-      await redis.set(`token-${assetType}-${tick?.toLowerCase() || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+      await redis.hdel(`listings-${assetType}-${tick || id}`, `${txid}_${outpoint}`);
     }
+    // const s = await redis.get(`token-${assetType}-${tick?.toLowerCase() || id}`);
+    // const ticker = s ? JSON.parse(s) : null;
+    // if (ticker) {
+    //   // get the listing
+    //   let listing = find(ticker.listings, (l: any) => l.outpoint === outpoint);
+
+    //   if (sale) {
+    //     if (!ticker.sales) {
+    //       ticker.sales = [];
+    //     }
+    //     ticker.sales.unshift(listing);
+    //   }
+
+    //   // remove the listing
+    //   ticker.listings = ticker.listings.filter((l: any) => l.outpoint !== outpoint);
+
+    //   await redis.set(`token-${assetType}-${tick?.toLowerCase() || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+    // }
 
   })
 
