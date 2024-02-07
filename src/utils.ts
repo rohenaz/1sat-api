@@ -148,7 +148,6 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
 
         // add listings
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
-        // details.listings = (await fetchJSON<ListingsV1[]>(urlListings) || [])
         const listings = [] as ListingsV1[];
         let key = `listings-${AssetType.BSV20}-${tick.toLowerCase()}`;
         let pipeline = redis.pipeline().del(key);
