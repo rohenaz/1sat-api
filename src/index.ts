@@ -264,14 +264,16 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
 
       const included = await redis.zscan(`included-${AssetType.BSV20}`, 0, "COUNT", 1000);
 
-      for (const [cursor, tick] of included) {
-        const cached = await redis.get(`token-${AssetType.BSV20}-${tick.toLowerCase()}`)
-        if (!cached) {
-          continue;
+      for (const [_, ticks] of included) {
+        for (const tick of ticks) {
+          const cached = await redis.get(`token-${AssetType.BSV20}-${tick.toLowerCase()}`)
+          if (!cached) {
+            continue;
+          }
+          const token = JSON.parse(cached);
+          // console.log(key, value)
+          tv1.push(token);
         }
-        const token = JSON.parse(cached);
-        // console.log(key, value)
-        tv1.push(token);
       }
       return tv1;
 
