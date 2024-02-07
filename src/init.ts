@@ -158,7 +158,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
       result.num = autofill.num;
     }
 
-    await redis.set(`token-${AssetType.BSV20}-${tick}`, JSON.stringify(result), "EX", defaults.expirationTime);
+    await redis.set(`token-${AssetType.BSV20}-${tick.toLowerCase()}`, JSON.stringify(result), "EX", defaults.expirationTime);
     results.push(result);
   }
   // get the tickers and merge in the new values

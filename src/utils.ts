@@ -126,7 +126,7 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
       // get the last sale price
       for (const tick of tokenIDs) {
         // check cache
-        const cached = await redis.get(`token-${assetType}-${tick}`);
+        const cached = await redis.get(`token-${assetType}-${tick.toLowerCase()}`);
         let details: T | null = null;
         if (cached) {
           console.log("Details: Using cached values for", tick)
@@ -158,7 +158,7 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
         }
 
         // cache
-        await redis.set(`token-${assetType}-${tick}`, JSON.stringify(details), "EX", defaults.expirationTime);
+        await redis.set(`token-${assetType}-${tick.toLowerCase()}`, JSON.stringify(details), "EX", defaults.expirationTime);
 
         d.push(details)
       }

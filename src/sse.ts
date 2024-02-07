@@ -23,10 +23,10 @@ const sseInit = async () => {
       }
       ticker.listings.unshift(data);
       console.log("Added listing. New length:", ticker.listings.length);
-      await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+      await redis.set(`token-${assetType}-${tick?.toLowerCase() || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
     } else {
       ticker = { listings: [data] };
-      await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+      await redis.set(`token-${assetType}-${tick?.toLowerCase() || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
     }
     const info = await fetchChainInfo()
 
@@ -38,7 +38,7 @@ const sseInit = async () => {
     const { id, tick, outpoint, txid, sale } = event.data;
     // txid is the txid from which is was spend
     const assetType = tick ? AssetType.BSV20 : AssetType.BSV21;
-    const s = await redis.get(`token-${assetType}-${tick || id}`);
+    const s = await redis.get(`token-${assetType}-${tick?.toLowerCase() || id}`);
     const ticker = s ? JSON.parse(s) : null;
     if (ticker) {
       // get the listing
@@ -54,7 +54,7 @@ const sseInit = async () => {
       // remove the listing
       ticker.listings = ticker.listings.filter((l: any) => l.outpoint !== outpoint);
 
-      await redis.set(`token-${assetType}-${tick || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+      await redis.set(`token-${assetType}-${tick?.toLowerCase() || id}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
     }
 
   })
@@ -65,7 +65,7 @@ const sseInit = async () => {
     const data = JSON.parse(event.data) as BalanceUpdate;
     const { tick, fundTotal, fundUsed, pendingOps, included } = data;
 
-    const t = await redis.get(`token-${assetType}-${tick}`);
+    const t = await redis.get(`token-${assetType}-${tick?.toLowerCase()}`);
     const ticker = t ? JSON.parse(t) : null;
     const wasIncluded = !!ticker ? ticker.included === true : false;
     const redisTickers = await redis.get(`tickers-${assetType}`);
@@ -76,7 +76,7 @@ const sseInit = async () => {
       ticker.pendingOps = pendingOps;
       ticker.fundUsed = fundUsed;
       ticker.fundBalance = (fundTotal - fundUsed).toString();
-      // await redis.set(`token-${AssetType.BSV20}-${tick}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+      // await redis.set(`token-${AssetType.BSV20}-${tick?.toLowerCase()}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
       // if (included === true && !wasIncluded) {
       //   // when ticker is included we need to also update the ticker list
       //   const tickers = await redis.get(`tickers-${assetType}`);
