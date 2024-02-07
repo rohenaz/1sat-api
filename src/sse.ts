@@ -3,7 +3,7 @@ import { find } from "lodash";
 import { redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
 import { loadV1TickerDetails, loadV2TickerDetails } from "./init";
-import { BalanceUpdate } from "./types/bsv20";
+import { BalanceUpdate, ListingsV1, ListingsV2 } from "./types/bsv20";
 import { fetchChainInfo } from "./utils";
 
 const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funds&channel=v2funds&channel=bsv20listings&channel=bsv20sales`);
@@ -12,7 +12,8 @@ const sseInit = async () => {
 
   sse.addEventListener("bsv20listings", async (event) => {
     const data = JSON.parse(event.data);
-    const { id, tick } = data;
+    const { tick } = data as ListingsV1;
+    const { id } = data as ListingsV2;
     const assetType = tick ? AssetType.BSV20 : AssetType.BSV21;
     const t = await redis.get(`token-${assetType}-${tick || id}`);
     let ticker = t ? JSON.parse(t) : null;
