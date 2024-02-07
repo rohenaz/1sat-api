@@ -128,7 +128,6 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     const ticker = Object.assign(parsed, t) as MarketDataV1;
     const sales = [] as ListingsV1[];
 
-
     const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
     let key = `sales-${AssetType.BSV20}-${tick.toLowerCase()}`
     let pipeline = redis.pipeline().del(key);
@@ -167,7 +166,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     } as MarketDataV1
 
     // 
-    const autofillData = await redis.hget(`autofill - ${AssetType.BSV20}`, result.tick.toLowerCase());
+    const autofillData = await redis.hget(`autofill-${AssetType.BSV20}`, result.tick.toLowerCase());
     if (autofillData) {
       const autofill = JSON.parse(autofillData);
       result.num = autofill.num;

@@ -146,9 +146,6 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
           details.holders = (await fetchJSON(urlHolders) || [])
         }
 
-        // cache
-        await redis.set(`token-${assetType}-${tick.toLowerCase()}`, JSON.stringify(details), "EX", defaults.expirationTime);
-
         // add listings
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
         // details.listings = (await fetchJSON<ListingsV1[]>(urlListings) || [])
@@ -173,6 +170,10 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
           sales.push(sale)
         })
         await pipeline.exec()
+
+        // cache
+        await redis.set(`token-${assetType}-${tick.toLowerCase()}`, JSON.stringify(details)); //, "EX", defaults.expirationTime);
+
 
         d.push(details)
       }
