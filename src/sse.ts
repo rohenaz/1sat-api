@@ -3,8 +3,8 @@ import { find } from "lodash";
 import { redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
 import { loadV1TickerDetails, loadV2TickerDetails } from "./init";
-import { BalanceUpdate, ListingsV1, ListingsV2 } from "./types/bsv20";
-import { fetchChainInfo } from "./utils";
+import { BSV20Details, BalanceUpdate, ListingsV1, ListingsV2 } from "./types/bsv20";
+import { fetchChainInfo, fetchTokensDetails } from "./utils";
 
 const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funds&channel=v2funds&channel=bsv20listings&channel=bsv20sales`);
 
@@ -81,8 +81,6 @@ const sseInit = async () => {
     if (!!ticker && ticker.included) {
       await redis.zadd(`included-${AssetType.BSV20}`, 'NX', Date.now(), ticker.tick.toLowerCase())
     }
-    // const redisTickers = await redis.get(`tickers-${assetType}`);
-    // let tickers = redisTickers ? JSON.parse(redisTickers) : [];
     if (ticker) {
       ticker.included = included;
       ticker.fundTotal = fundTotal;
@@ -90,33 +88,14 @@ const sseInit = async () => {
       ticker.fundUsed = fundUsed;
       ticker.fundBalance = (fundTotal - fundUsed).toString();
       await redis.set(`token-${AssetType.BSV20}-${tick?.toLowerCase()}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
-      // if (included === true && !wasIncluded) {
-      //   // when ticker is included we need to also update the ticker list
-      //   const tickers = await redis.get(`tickers-${assetType}`);
-      //   let list = tickers ? JSON.parse(tickers) : [];
-      //   list = list.map((t: any) => {
-      //     if (t.tick === tick) {
-      //       t.included = true;
-      //     }
-      //     return t;
-      //   }
-      //   );
-      //   await redis.set(`tickers-${assetType}`, JSON.stringify(list), "EX", defaults.expirationTime);
-      //   console.log("Ticker set to included", tick)
-      // }
-      // tickers = tickers.map((t: any) => {
-      //   // merge
-      //   if (t.tick === tick) {
-      //     Object.assign(t, ticker);
-      //   }
-      //   return t;
-      // })
+
+    } else {
+      const info = await fetchChainInfo()
+      const detailedTokensV1 = await fetchTokensDetails<BSV20Details>([tick!], assetType);
+      await loadV1TickerDetails(detailedTokensV1, info);
     }
-    const info = await fetchChainInfo()
-
-    await loadV1TickerDetails([ticker], info);
-
   })
+
   sse.addEventListener("v2funds", async (event) => {
     const assetType = AssetType.BSV21;
     console.log("V2 Funds", event.data);
