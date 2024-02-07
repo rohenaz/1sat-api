@@ -161,7 +161,6 @@ const fetchMarketData = async (assetType: AssetType, id?: string) => {
           tickers = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
           // cache
           await redis.set(`ids-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
-
         }
 
         results = await loadV1TickerDetails(detailedTokensV1, info);
