@@ -79,9 +79,10 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     assetType: t.String()
   })
 }).get("/market/:assetType/:id", async ({ set, params }) => {
-  console.log("WITH ID", params.assetType, params.id)
+  const id = decodeURIComponent(params.id);
+  console.log("WITH ID", params.assetType, id)
   try {
-    const marketData = await fetchMarketData(params.assetType as AssetType, params.id);
+    const marketData = await fetchMarketData(params.assetType as AssetType, id);
     return marketData;
   } catch (e) {
     console.error("Error fetching market data:", e);
