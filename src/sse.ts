@@ -87,7 +87,7 @@ const sseInit = async () => {
       ticker.pendingOps = pendingOps;
       ticker.fundUsed = fundUsed;
       ticker.fundBalance = (fundTotal - fundUsed).toString();
-      await redis.set(`token-${AssetType.BSV20}-${tick?.toLowerCase()}`, JSON.stringify(ticker), "EX", defaults.expirationTime);
+      await redis.set(`token-${AssetType.BSV20}-${tick?.toLowerCase()}`, JSON.stringify(ticker));
 
     } else {
       const info = await fetchChainInfo()
