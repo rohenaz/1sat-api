@@ -65,13 +65,12 @@ export const loadAllV1Names = async (): Promise<void> => {
   let resultsPerPage = 200;
   let done = false;
 
-  while (!done) {
+  while (true) {
     // const offset = page * resultsPerPage;
     let results = await fetchV1TickerNames(offset, resultsPerPage, false)
     // page++
-    if (!results || results.length < resultsPerPage) {
-      done = true;
-      continue
+    if (!results) {
+      break
     }
     offset += results.length
     unincludedCount += results.length
@@ -79,6 +78,9 @@ export const loadAllV1Names = async (): Promise<void> => {
     for (const result of results) {
       console.log("AutoFill", result.tick, result.tick.toLowerCase())
       await redis.hset(`autofill-${AssetType.BSV20}`, result.tick.toLowerCase(), JSON.stringify(result));
+    }
+    if (results.length < resultsPerPage) {
+      break
     }
   }
   console.log("All tickers cached for autofill", includedCount, unincludedCount)
