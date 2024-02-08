@@ -132,7 +132,7 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
           console.log("Details: Using cached values for", tick)
           details = JSON.parse(cached);
         } else {
-          const urlDetails = `${API_HOST}/api/bsv20/tick/${tick}?refresh=false`;
+          const urlDetails = `${API_HOST}/api/bsv20/tick/${tick}`;
           details = await fetchJSON<T>(urlDetails)
         }
         if (!details) {
@@ -140,36 +140,17 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
           continue;
         }
 
-        // // add holders
-        // if (!details.holders) {
-        //   const urlHolders = `${API_HOST}/api/bsv20/tick/${tick}/holders?limit=20&offset=0`;
-        //   details.holders = (await fetchJSON(urlHolders) || [])
-        // }
-
-        // // add listings
-        // const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
-        // const listings = [] as ListingsV1[];
-        // let key = `listings-${AssetType.BSV20}-${tick.toLowerCase()}`;
-        // let pipeline = redis.pipeline().del(key);
-        // (await fetchJSON<ListingsV1[]>(urlListings) || []).forEach((listing) => {
-        //   pipeline.hset(key, `${listing.txid}_${listing.vout}`, JSON.stringify(listing))
-        //   if (listing) listings.push(listing)
-        // })
-        // details.listings = listings;
-
-        // await pipeline.exec()
-
-        // const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
-        // const sales = [] as ListingsV1[];
-        // // details.sales = (await fetchJSON<ListingsV1[]>(urlSales) || [])
-        // key = `sales-${AssetType.BSV20}-${tick.toLowerCase()}`
-        // pipeline = redis.pipeline().del(key);
-        // (await fetchJSON<ListingsV1[]>(urlSales) || []).forEach((sale) => {
-        //   pipeline.zadd(key, sale.spendHeight, JSON.stringify(sale))
-        //   sales.push(sale)
-        // })
-        // await pipeline.exec()
-        // details.sales = sales;
+        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
+        const sales = [] as ListingsV1[];
+        // details.sales = (await fetchJSON<ListingsV1[]>(urlSales) || [])
+        const key = `sales-${AssetType.BSV20}-${tick.toLowerCase()}`
+        const pipeline = redis.pipeline().del(key);
+        (await fetchJSON<ListingsV1[]>(urlSales) || []).forEach((sale) => {
+          pipeline.zadd(key, sale.spendHeight, JSON.stringify(sale))
+          sales.push(sale)
+        })
+        await pipeline.exec()
+        details.sales = sales;
 
         await redis.set(`token-${assetType}-${tick.toLowerCase()}`, JSON.stringify(details)); //, "EX", defaults.expirationTime);
         d.push(details)
