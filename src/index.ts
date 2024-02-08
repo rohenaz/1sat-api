@@ -146,6 +146,7 @@ const fetchMarketData = async (assetType: AssetType, id: string) => {
       let detailedTokensV1: BSV20Details[] = [];
       let results: MarketDataV1[] = [];
       // if (id) {
+      console.log("Fetching token details for", id)
       detailedTokensV1 = await fetchTokensDetails<BSV20Details>([id], assetType);
       results = await loadV1TickerDetails(detailedTokensV1, info);
 
