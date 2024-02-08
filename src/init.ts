@@ -72,6 +72,7 @@ export const loadAllV1Names = async (): Promise<void> => {
     unincludedCount += results.length
 
     for (const result of results) {
+      console.log("AutoFill", result.tick, result.tick.toLowerCase())
       await redis.hset(`autofill-${AssetType.BSV20}`, result.tick.toLowerCase(), JSON.stringify(result));
     }
   }
