@@ -140,8 +140,8 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
           continue;
         }
 
-        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
-        details.sales = (await fetchJSON<ListingsV1[]>(urlSales) || []);
+        // const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
+        // details.sales = (await fetchJSON<ListingsV1[]>(urlSales) || []);
 
         d.push(details)
         await redis.set(`token-${assetType}-${tick.toLowerCase()}`, JSON.stringify(details)); //, "EX", defaults.expirationTime);

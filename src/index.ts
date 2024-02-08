@@ -15,9 +15,9 @@ export const redis = new Redis(`${process.env.REDIS_URL}`);
 redis.on("connect", () => console.log("Connected to Redis"));
 redis.on("error", (err) => console.error("Redis Error", err));
 
+await loadAllV1Names();
 await fetchV1Tickers();
 await fetchV2Tickers();
-await loadAllV1Names();
 await sseInit();
 
 const app = new Elysia().use(cors()).get("/", ({ set }) => {
@@ -148,24 +148,6 @@ const fetchMarketData = async (assetType: AssetType, id: string) => {
       // if (id) {
       detailedTokensV1 = await fetchTokensDetails<BSV20Details>([id], assetType);
       results = await loadV1TickerDetails(detailedTokensV1, info);
-      // } else {
-      //   // check cache
-      //   const cached = await redis.get(`ids-${assetType}`);
-      //   let tickers: string[] = [];
-      //   if (cached) {
-      //     tickers = JSON.parse(cached);
-      //   } else {
-      //     // TODO: I'm fetching these tokens here just to get the list of ids to then fetch details. Very inefficient
-      //     const urlV1Tokens = `${API_HOST}/api/bsv20?limit=20&offset=0&sort=height&dir=desc&included=true`;
-      //     const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
-      //     tickers = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
-      //     // cache
-      //     await redis.set(`ids-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
-      //   }
-
-      //   results = await loadV1TickerDetails(detailedTokensV1, info);
-
-      // }
 
       return results.sort((a, b) => {
         return b.marketCap - a.marketCap;
