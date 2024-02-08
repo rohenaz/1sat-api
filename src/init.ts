@@ -131,6 +131,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     await Promise.all([
       (async () => {
         if (ticker.sales) {
+          sales = ticker.sales;
           return
         }
         const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;

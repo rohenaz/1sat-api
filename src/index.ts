@@ -138,59 +138,34 @@ export type ChainInfo = {
 // }
 
 // Function to fetch and process market data
-const fetchMarketData = async (assetType: AssetType, id?: string) => {
+const fetchMarketData = async (assetType: AssetType, id: string) => {
   id = id?.toLowerCase();
   const info = await fetchChainInfo()
   switch (assetType) {
     case AssetType.BSV20:
       let detailedTokensV1: BSV20Details[] = [];
       let results: MarketDataV1[] = [];
-      if (id) {
-        detailedTokensV1 = await fetchTokensDetails<BSV20Details>([id], assetType);
-        results = await loadV1TickerDetails(detailedTokensV1, info);
-      } else {
-        // check cache
-        const cached = await redis.get(`ids-${assetType}`);
-        let tickers: string[] = [];
-        if (cached) {
-          tickers = JSON.parse(cached);
-        } else {
-          // TODO: I'm fetching these tokens here just to get the list of ids to then fetch details. Very inefficient
-          const urlV1Tokens = `${API_HOST}/api/bsv20?limit=20&offset=0&sort=height&dir=desc&included=true`;
-          const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
-          tickers = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
-          // cache
-          await redis.set(`ids-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
-        }
+      // if (id) {
+      detailedTokensV1 = await fetchTokensDetails<BSV20Details>([id], assetType);
+      results = await loadV1TickerDetails(detailedTokensV1, info);
+      // } else {
+      //   // check cache
+      //   const cached = await redis.get(`ids-${assetType}`);
+      //   let tickers: string[] = [];
+      //   if (cached) {
+      //     tickers = JSON.parse(cached);
+      //   } else {
+      //     // TODO: I'm fetching these tokens here just to get the list of ids to then fetch details. Very inefficient
+      //     const urlV1Tokens = `${API_HOST}/api/bsv20?limit=20&offset=0&sort=height&dir=desc&included=true`;
+      //     const tickersV1 = await fetchJSON<BSV20V1[]>(urlV1Tokens);
+      //     tickers = uniqBy(tickersV1, 'tick').map(ticker => ticker.tick);
+      //     // cache
+      //     await redis.set(`ids-${assetType}`, JSON.stringify(tickers), "EX", defaults.expirationTime);
+      //   }
 
-        results = await loadV1TickerDetails(detailedTokensV1, info);
+      //   results = await loadV1TickerDetails(detailedTokensV1, info);
 
-      }
-      // update 'tickers' cache to include this token if it isnt in there
-
-
-      // let tokensV1: MarketDataV1[] = [];
-      // for (const ticker of detailedTokensV1) {
-      //   const totalSales = ticker.sales.reduce((acc, sale) => {
-      //     return acc + parseInt(sale.price)
-      //   }, 0);
-      //   const totalAmount = ticker.sales.reduce((acc, sale) => {
-      //     return acc + parseInt(sale.amt) / 10 ** ticker.dec
-      //   }, 0);
-      //   const price = totalAmount > 0 ? totalSales / totalAmount : 0;
-      //   const marketCap = calculateMarketCap(price, parseInt(ticker.max) / 10 ** ticker.dec);
-
-      //   const pctChange = await setPctChange(ticker.tick, ticker.sales, 0);
-
-      //   tokensV1.push({
-      //     ...ticker,
-      //     price,
-      //     marketCap,
-      //     pctChange,
-      //   });
       // }
-
-
 
       return results.sort((a, b) => {
         return b.marketCap - a.marketCap;
