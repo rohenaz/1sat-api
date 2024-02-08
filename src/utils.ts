@@ -141,19 +141,10 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
         }
 
         const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
-        const sales = [] as ListingsV1[];
-        // details.sales = (await fetchJSON<ListingsV1[]>(urlSales) || [])
-        const key = `sales-${AssetType.BSV20}-${tick.toLowerCase()}`
-        const pipeline = redis.pipeline().del(key);
-        (await fetchJSON<ListingsV1[]>(urlSales) || []).forEach((sale) => {
-          pipeline.zadd(key, sale.spendHeight, JSON.stringify(sale))
-          sales.push(sale)
-        })
-        await pipeline.exec()
-        details.sales = sales;
+        details.sales = (await fetchJSON<ListingsV1[]>(urlSales) || []);
 
-        await redis.set(`token-${assetType}-${tick.toLowerCase()}`, JSON.stringify(details)); //, "EX", defaults.expirationTime);
         d.push(details)
+        await redis.set(`token-${assetType}-${tick.toLowerCase()}`, JSON.stringify(details)); //, "EX", defaults.expirationTime);
       }
       break;
     case AssetType.BSV21:

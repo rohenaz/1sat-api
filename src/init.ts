@@ -126,7 +126,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     const cached = (await redis.get(`token-${AssetType.BSV20}-${tick.toLowerCase()}`) || "{}") as string;
     const parsed = JSON.parse(cached);
     const ticker = Object.assign(parsed, t) as MarketDataV1;
-    const sales = [] as ListingsV1[];
+    let sales = [] as ListingsV1[];
 
     await Promise.all([
       (async () => {
@@ -134,13 +134,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
           return
         }
         const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
-        let key = `sales-${AssetType.BSV20}-${tick.toLowerCase()}`
-        let pipeline = redis.pipeline().del(key);
-        (await fetchJSON<ListingsV1[]>(urlSales) || []).forEach((sale) => {
-          pipeline.zadd(key, sale.spendHeight, JSON.stringify(sale))
-          sales.push(sale)
-        })
-        await pipeline.exec()
+        sales = (await fetchJSON<ListingsV1[]>(urlSales) || [])
       })(),
       (async () => {
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
@@ -165,7 +159,6 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
       })(),
     ])
 
-    // }
     const price = sales.length > 0 ? parseFloat((sales[0] as ListingsV1)?.pricePer) : 0;
     const marketCap = calculateMarketCap(price, parseInt(ticker.max));
     const pctChange = await setPctChange(ticker.tick, sales, info.blocks);
