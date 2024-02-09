@@ -26,7 +26,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
 }).get('/ticker/autofill/:assetType/:id', async ({ params }) => {
   // autofill endpoint for ticker id
   const type = params.assetType as AssetType
-  const id = params.id.toUpperCase()
+  const id = params.id.toLowerCase()
 
   const results = await findMatchingKeys(redis, "autofill", id, type)
   console.log({ results })
