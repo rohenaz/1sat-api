@@ -2,11 +2,11 @@ import { Redis } from "ioredis";
 import { AssetType } from "./constants";
 
 export const findMatchingKeys = async (redis: Redis, prefix: string, partial: string, type: AssetType) => {
-  const pattern = `${prefix}-${type}-${partial}*`;
+  const pattern = `${partial}*`;
   let cursor = '0';
   let results = [];
   do {
-    const reply = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 60);
+    const reply = await redis.hscan(`${prefix}-${type}`, cursor, 'MATCH', pattern, 'COUNT', 60);
     cursor = reply[0];
     const keys = reply[1];
 
