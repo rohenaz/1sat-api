@@ -1,7 +1,7 @@
 import { ChainInfo, redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
 import { BSV20V1, BSV21, BSV21Details, ListingsV1, MarketDataV1 } from "./types/bsv20";
-import { calculateMarketCap, fetchChainInfo, fetchJSON, fetchTokensDetails, getPctChange, setPctChange } from "./utils";
+import { calculateMarketCap, fetchChainInfo, fetchJSON, fetchTokensDetails, setPctChange } from "./utils";
 
 
 // on boot up we get all the tickers and cache them
@@ -155,6 +155,10 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
           ticker.holders = [];
           const urlHolders = `${API_HOST}/api/bsv20/tick/${tick}/holders?limit=20&offset=0`;
           ticker.holders = (await fetchJSON(urlHolders) || [])
+          // TODO: For some reason accounts is not populated
+          if (!ticker.accounts || ticker.accounts === 0) {
+            ticker.accounts = ticker.holders.length;
+          }
         }
       })(),
       (async () => {

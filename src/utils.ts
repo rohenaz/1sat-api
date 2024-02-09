@@ -169,7 +169,10 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
         // add holders
         const urlHolders = `${API_HOST}/api/bsv20/id/${id}/holders?limit=20&offset=0`;
         details.holders = [] // (await fetchJSON(urlHolders) || [])
-
+        // TODO: For some reason accounts is not populated
+        if (!details.accounts || details.accounts === 0) {
+          details.accounts = details.holders.length;
+        }
         // add sales
         const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&id=${id}`;
         details.sales = (await fetchJSON<ListingsV2[]>(urlSales) || [])
