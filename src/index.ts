@@ -102,7 +102,6 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   // same as /market/:assetType/:id but doesn't return minted out tokens
   const id = decodeURIComponent(params.id);
   console.log("WITH ID", params.assetType, id)
-
   try {
     const marketData = await fetchMarketData(params.assetType as AssetType, id) as MarketDataV1[];
     return marketData.filter((token) => {
