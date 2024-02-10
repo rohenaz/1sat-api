@@ -6,7 +6,7 @@ import { API_HOST, AssetType, defaults } from './constants';
 import { findMatchingKeys, findOneExactMatchingKey } from './db';
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails } from './init';
 import { sseInit } from './sse';
-import { BSV20Details, BSV20V1, BSV21, BSV21Details, ListingsV2, MarketDataV1, MarketDataV2 } from './types/bsv20';
+import { BSV20Details, BSV21, BSV21Details, ListingsV2, MarketDataV1, MarketDataV2 } from './types/bsv20';
 import { calculateMarketCap, fetchChainInfo, fetchExchangeRate, fetchJSON, fetchStats, fetchTokensDetails, getPctChange, setPctChange } from './utils';
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
@@ -84,6 +84,30 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   try {
     const marketData = await fetchMarketData(params.assetType as AssetType, id);
     return marketData;
+  } catch (e) {
+    console.error("Error fetching market data:", e);
+    set.status = 500;
+    return {};
+  }
+}, {
+  transform({ params }) {
+    params.assetType = params.assetType.toLowerCase();
+    params.id = params.id.toLowerCase();
+  },
+  params: t.Object({
+    assetType: t.String(),
+    id: t.String()
+  })
+}).get("/mint/:assetType/:id", async ({ set, params }) => {
+  // same as /market/:assetType/:id but doesn't return minted out tokens
+  const id = decodeURIComponent(params.id);
+  console.log("WITH ID", params.assetType, id)
+
+  try {
+    const marketData = await fetchMarketData(params.assetType as AssetType, id) as MarketDataV1[];
+    return marketData.filter((token) => {
+      return token.supply !== token.max;
+    });
   } catch (e) {
     console.error("Error fetching market data:", e);
     set.status = 500;
