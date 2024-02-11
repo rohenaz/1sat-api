@@ -1,7 +1,7 @@
 import { ChainInfo, redis } from ".";
-import { API_HOST, AssetType, defaults } from "./constants";
-import { BSV20V1, BSV21, BSV21Details, ListingsV1, MarketDataV1 } from "./types/bsv20";
-import { calculateMarketCap, fetchChainInfo, fetchJSON, fetchTokensDetails, setPctChange } from "./utils";
+import { API_HOST, AssetType } from "./constants";
+import { BSV20V1, BSV21, ListingsV1, ListingsV2, MarketDataV1, MarketDataV2 } from "./types/bsv20";
+import { calculateMarketCap, fetchChainInfo, fetchJSON, setPctChange } from "./utils";
 
 
 // on boot up we get all the tickers and cache them
@@ -96,33 +96,8 @@ export const fetchV2Tickers = async () => {
   if (!tickersV2 || !tickersV2.length) {
     return []
   }
-  return await loadV2TickerDetails(tickersV2);
-}
-
-export const loadV2TickerDetails = async (tickersV2: BSV21[]) => {
   const info = await fetchChainInfo()
-
-  const tickers = tickersV2.map((t) => t.id);
-  const details = await fetchTokensDetails<BSV21Details>(tickers, AssetType.BSV21);
-
-  // merge back in passed in values
-  let merged: BSV21Details[] = []
-  for (const ticker of details) {
-    let t = tickersV2.find((t) => t.id === ticker.id);
-    if (t) {
-      Object.assign(ticker, t);
-    }
-    merged.push(ticker as BSV21Details);
-  }
-  for (const ticker of merged) {
-    // TODO
-    const pctChange = await setPctChange(ticker.id, ticker.sales, info.blocks);
-  }
-  // cache
-  if (merged.length > 0) {
-    await redis.set(`tickers-${AssetType.BSV21}`, JSON.stringify(merged), "EX", defaults.expirationTime);
-  }
-  return merged;
+  return await loadV2TickerDetails(tickersV2, info);
 }
 
 // saves tickers to caches and adds pctChange
@@ -168,7 +143,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
       })(),
     ])
 
-    const price = sales.length > 0 ? parseFloat((sales[0] as ListingsV1)?.pricePer) : 0;
+    const price = sales.length > 0 ? parseFloat(sales[0]?.pricePer) : 0;
     const marketCap = calculateMarketCap(price, parseInt(ticker.max));
     const pctChange = await setPctChange(ticker.tick, sales, info.blocks);
 
@@ -188,28 +163,68 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     await redis.set(`token-${AssetType.BSV20}-${tick.toLowerCase()}`, JSON.stringify(result)) //, "EX", defaults.expirationTime);
     results.push(result);
   }
-  // get the tickers and merge in the new values
-  // const redisTickers = await redis.get(`tickers-${AssetType.BSV20}`);
-  // let cachedTickers = (redisTickers ? JSON.parse(redisTickers) : []) as MarketDataV1[];
 
-  // // update cached tickers with new values
-  // let merged: MarketDataV1[] = [];
-  // for (const c of cachedTickers) {
-  //   const t = results.find((r) => r.tick === c.tick);
-  //   if (t) {
-  //     Object.assign(c, t);
-  //   }
-  //   if (c.sales.length > 0 && c.pctChange === 0) {
-  //     c.pctChange = await getPctChange(c.tick);
-  //     console.log("how is this possible?", c.tick, c.sales.length, info.blocks, c.pctChange)
-  //   }
-  //   if (c.pctChange > 0) {
-  //     console.log("PCT CHANGE", c.tick, c.pctChange)
-  //   }
-  //   merged.push(c as MarketDataV1)
-  // }
+  return results
+}
 
-  // await redis.set(`tickers-${AssetType.BSV20}`, JSON.stringify(merged), "EX", defaults.expirationTime);
-  // console.log("Merged tickers", merged.length, "results", results.length, results[0].pctChange)
+export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) => {
+  let results: MarketDataV2[] = [];
+  for (const t of tickersV2) {
+    const id = t.id;
+    // check cache for sales token-${assetType}-${tick}
+    const cached = (await redis.get(`token-${AssetType.BSV21}-${id}`) || "{}") as string;
+    const parsed = JSON.parse(cached);
+    const ticker = Object.assign(parsed, t) as MarketDataV2;
+    let sales = [] as ListingsV2[];
+
+    await Promise.all([
+      (async () => {
+        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&id=${id}`;
+        sales = (await fetchJSON<ListingsV2[]>(urlSales) || [])
+      })(),
+      (async () => {
+        const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&id=${id}`;
+        const key = `listings-${AssetType.BSV21}-${id}`;
+        const pipeline = redis.pipeline().del(key);
+        (await fetchJSON<ListingsV1[]>(urlListings) || []).forEach((listing) => {
+          pipeline.hset(key, `${listing.txid}_${listing.vout}`, JSON.stringify(listing))
+        })
+        await pipeline.exec()
+      })(),
+      (async () => {
+        if (!ticker.holders) {
+          ticker.holders = [];
+          const urlHolders = `${API_HOST}/api/bsv20/id/${id}/holders?limit=20&offset=0`;
+          ticker.holders = (await fetchJSON(urlHolders) || [])
+        }
+      })(),
+      (async () => {
+        if (ticker.included) {
+          await redis.zadd(`included-${AssetType.BSV21}`, 'NX', Date.now(), id)
+        }
+      })(),
+    ])
+
+    const price = sales.length > 0 ? parseFloat((sales[0])?.pricePer) : 0;
+    const marketCap = calculateMarketCap(price, parseInt(ticker.amt));
+    const pctChange = await setPctChange(id, sales, info.blocks);
+
+    const result = {
+      ...ticker,
+      price,
+      pctChange,
+      marketCap,
+    } as MarketDataV2
+
+    // const autofillData = await redis.hget(`autofill-${AssetType.BSV21}`, id);
+    // if (autofillData) {
+    //   const autofill = JSON.parse(autofillData);
+    //   result.num = autofill.num;
+    // }
+
+    await redis.set(`token-${AssetType.BSV21}-${id}`, JSON.stringify(result)) //, "EX", defaults.expirationTime);
+    results.push(result);
+  }
+
   return results
 }

@@ -14,12 +14,6 @@ export const findMatchingKeys = async (redis: Redis, prefix: string, partial: st
     for (let i = 0; i < keys.length; i += 2) {
       results.push(JSON.parse(keys[i + 1]));
     }
-    // for (const key of keys) {
-    //   const value = await redis.get(key);
-    //   if (value) {
-    //     results.push(JSON.parse(value));
-    //   }
-    // }
   } while (cursor !== '0');
   return results;
 }
@@ -27,19 +21,4 @@ export const findMatchingKeys = async (redis: Redis, prefix: string, partial: st
 export const findOneExactMatchingKey = async (redis: Redis, prefix: string, key: string, type: AssetType) => {
   const pattern = `${prefix}-${type}-${key}`;
   return await redis.get(pattern);
-  // let cursor = '0';
-  // do {
-  //   const reply = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 60);
-  //   cursor = reply[0];
-  //   const keys = reply[1];
-
-  //   // Fetch the value for each matching key
-  //   for (const key of keys) {
-  //     const value = await redis.get(key);
-  //     if (value) {
-  //       return JSON.parse(value);
-  //     }
-  //   }
-  // } while (cursor !== '0');
-  // return null;
 }
