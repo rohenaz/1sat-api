@@ -126,15 +126,15 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
       // get the last sale price
       for (const tick of tokenIDs) {
         // check cache
-        const cached = await redis.get(`token-${assetType}-${tick.toLowerCase()}`);
+        // const cached = await redis.get(`token-${assetType}-${tick.toLowerCase()}`);
         let details: T | null = null;
-        if (cached) {
-          console.log("Details: Using cached values for", tick)
-          details = JSON.parse(cached);
-        } else {
-          const urlDetails = `${API_HOST}/api/bsv20/tick/${tick}`;
-          details = await fetchJSON<T>(urlDetails)
-        }
+        // if (cached) {
+        //   console.log("Details: Using cached values for", tick)
+        //   details = JSON.parse(cached);
+        // } else {
+        const urlDetails = `${API_HOST}/api/bsv20/tick/${tick}`;
+        details = await fetchJSON<T>(urlDetails)
+        // }
         if (!details) {
           console.log("Details: No details for", tick)
           continue;
@@ -150,11 +150,11 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
     case AssetType.BSV21:
       for (const id of tokenIDs) {
         //check cache 
-        const cached = await redis.get(`token-${assetType}-${id}`);
-        if (cached) {
-          d.push(JSON.parse(cached));
-          continue;
-        }
+        // const cached = await redis.get(`token-${assetType}-${id}`);
+        // if (cached) {
+        //   d.push(JSON.parse(cached));
+        //   continue;
+        // }
 
         const url = `${API_HOST}/api/bsv20/id/${id}?refresh=false`;
         const details = await fetchJSON<T>(url)
@@ -167,15 +167,15 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
         // details.listings = (await fetchJSON<ListingsV2[]>(urlListings) || [])
 
         // add holders
-        const urlHolders = `${API_HOST}/api/bsv20/id/${id}/holders?limit=20&offset=0`;
-        details.holders = [] // (await fetchJSON(urlHolders) || [])
+        // const urlHolders = `${API_HOST}/api/bsv20/id/${id}/holders?limit=20&offset=0`;
+        // details.holders = [] // (await fetchJSON(urlHolders) || [])
         // TODO: For some reason accounts is not populated
-        if (!details.accounts || details.accounts === 0) {
-          details.accounts = details.holders.length;
-        }
+        // if (!details.accounts || details.accounts === 0) {
+        //   details.accounts = details.holders.length;
+        // }
         // add sales
-        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&id=${id}`;
-        details.sales = (await fetchJSON<ListingsV2[]>(urlSales) || [])
+        // const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&id=${id}`;
+        // details.sales = (await fetchJSON<ListingsV2[]>(urlSales) || [])
 
         // cache
         await redis.set(`token-${assetType}-${id}`, JSON.stringify(details), "EX", defaults.expirationTime);
