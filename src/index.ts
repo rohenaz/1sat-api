@@ -52,18 +52,18 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   }
   console.log({ result })
   return result
-}).get('/market/:assetType', async ({ set, params }) => {
+}).get('/market/:assetType', async ({ set, params, query }) => {
   console.log(params.assetType)
   try {
     // let market = await redis.get(`market-${params.assetType}`);
     // console.log("In cache?", market)
     // if (!market) {
-    const marketData = await fetchShallowMarketData(params.assetType as AssetType);
+    const resp = await fetchShallowMarketData(params.assetType as AssetType, query.cursor);
     // if (marketData) {
     //   await redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
     // }
-    console.log("marketData", marketData?.length)
-    return marketData;
+    console.log("marketData", resp.marketData?.length)
+    return resp;
     //}
     //return JSON.parse(market);
   } catch (e) {
@@ -193,14 +193,14 @@ const fetchMarketData = async (assetType: AssetType, id: string) => {
   }
 };
 
-const fetchShallowMarketData = async (assetType: AssetType) => {
+const fetchShallowMarketData = async (assetType: AssetType, cursor = '0'): Promise<{ cursor: string, marketData: MarketDataV1[] | MarketDataV2[] }> => {
   switch (assetType) {
     case AssetType.BSV20:
       // check cache
       let tv1: MarketDataV1[] = [];
 
-      const [cursorv1, ticks] = await redis.zscan(`included-${AssetType.BSV20}`, 0, "COUNT", 1000);
-
+      const [cursorv1, ticks] = await redis.zscan(`included-${AssetType.BSV20}`, cursor, "COUNT", 1000);
+      cursor = cursorv1;
       for (let i = 0; i < ticks.length; i += 2) {
         const tick = ticks[i];
         const cached = await redis.get(`token-${AssetType.BSV20}-${tick}`)
@@ -211,12 +211,12 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         // console.log(key, value)
         tv1.push(token);
       }
-      return tv1;
+      return { cursor, marketData: tv1 }
 
     case AssetType.BSV21:
       let tv2: MarketDataV2[] = [];
-      const [cursorv2, ids] = await redis.zscan(`included-${AssetType.BSV21}`, 0, "COUNT", 1000);
-
+      const [cursorv2, ids] = await redis.zscan(`included-${AssetType.BSV21}`, cursor, "COUNT", 1000);
+      cursor = cursorv2;
       for (let i = 0; i < ids.length; i += 2) {
         const id = ids[i];
         const cached = await redis.get(`token-${AssetType.BSV21}-${id}`)
@@ -226,9 +226,10 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         const token = JSON.parse(cached);
         tv2.push(token);
       }
-      return tv2;
+      return { cursor, marketData: tv2 }
     default:
       break;
   }
+  return { cursor, marketData: [] };
 }
 
