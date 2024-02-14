@@ -51,7 +51,8 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   }
   console.log({ result })
   return result
-}).post("/ticker/num", async ({ params, body }) => {
+}).post("/ticker/num", async ({ set, params, body }) => {
+  set.headers["Content-Type"] = "application/json";
   // takes a list of ids, returns the num records
   // and corresponding autofill records
   const ids = body.ids
