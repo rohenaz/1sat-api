@@ -60,13 +60,17 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const ids = body.ids
   console.log({ ids })
   const type = AssetType.BSV20
-  const results = []
+  const results: any[] = []
   for (const id of ids) {
+    if (results.some((r) => r.id === id)) {
+      continue
+    }
     const num = await findMatchingKeys(redis, "num", id, type)
     const autofill = await findMatchingKeys(redis, "autofill", id, type)
     console.log({ num, autofill })
     if (num && autofill) {
-      results.push({ num, autofill })
+
+      results.push({ ...num, ...autofill })
     }
     return results
   }
