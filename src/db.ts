@@ -4,7 +4,7 @@ import { AssetType } from "./constants";
 export const findMatchingKeys = async (redis: Redis, prefix: string, partial: string, type: AssetType) => {
   const pattern = `${partial}*`;
   let cursor = '0';
-  let results = [];
+  const results = [];
   do {
     const reply = await redis.hscan(`${prefix}-${type}`, cursor, 'MATCH', pattern, 'COUNT', 60);
     cursor = reply[0];

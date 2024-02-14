@@ -1,13 +1,12 @@
 import { cors } from '@elysiajs/cors';
 import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
-import { uniqBy } from 'lodash';
-import { API_HOST, AssetType, defaults } from './constants';
+import { AssetType, defaults } from './constants';
 import { findMatchingKeys, findOneExactMatchingKey } from './db';
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
 import { sseInit } from './sse';
-import { BSV20Details, BSV21, BSV21Details, ListingsV2, MarketDataV1, MarketDataV2 } from './types/bsv20';
-import { calculateMarketCap, fetchChainInfo, fetchExchangeRate, fetchJSON, fetchStats, fetchTokensDetails, getPctChange, setPctChange } from './utils';
+import { BSV20Details, BSV21Details, MarketDataV1, MarketDataV2 } from './types/bsv20';
+import { fetchChainInfo, fetchExchangeRate, fetchStats, fetchTokensDetails } from './utils';
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
 
@@ -196,7 +195,7 @@ const fetchMarketData = async (assetType: AssetType, id: string) => {
   id = id?.toLowerCase();
   const info = await fetchChainInfo()
   switch (assetType) {
-    case AssetType.BSV20:
+    case AssetType.BSV20: {
       let detailedTokensV1: BSV20Details[] = [];
       let resultsv1: MarketDataV1[] = [];
       // if (id) {
@@ -207,7 +206,8 @@ const fetchMarketData = async (assetType: AssetType, id: string) => {
       return resultsv1.sort((a, b) => {
         return b.marketCap - a.marketCap;
       });
-    case AssetType.BSV21:
+    }
+    case AssetType.BSV21: {
       let detailedTokensV2: BSV21Details[] = [];
       let resultsv2: MarketDataV2[] = [];
       detailedTokensV2 = await fetchTokensDetails<BSV21Details>([id], assetType);
@@ -217,6 +217,7 @@ const fetchMarketData = async (assetType: AssetType, id: string) => {
       return resultsv2.sort((a, b) => {
         return b.marketCap - a.marketCap;
       });
+    }
 
     default:
       return [];
@@ -225,9 +226,9 @@ const fetchMarketData = async (assetType: AssetType, id: string) => {
 
 const fetchShallowMarketData = async (assetType: AssetType) => {
   switch (assetType) {
-    case AssetType.BSV20:
+    case AssetType.BSV20: {
       // check cache
-      let tv1: MarketDataV1[] = [];
+      const tv1: MarketDataV1[] = [];
 
       const [cursorv1, ticks] = await redis.zscan(`included-${AssetType.BSV20}`, 0, "COUNT", 1000);
 
@@ -242,9 +243,10 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         tv1.push(token);
       }
       return tv1;
+    }
 
-    case AssetType.BSV21:
-      let tv2: MarketDataV2[] = [];
+    case AssetType.BSV21: {
+      const tv2: MarketDataV2[] = [];
       const [cursorv2, ids] = await redis.zscan(`included-${AssetType.BSV21}`, 0, "COUNT", 1000);
 
       for (let i = 0; i < ids.length; i += 2) {
@@ -257,6 +259,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
         tv2.push(token);
       }
       return tv2;
+    }
     default:
       break;
   }
