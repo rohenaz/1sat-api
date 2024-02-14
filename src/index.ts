@@ -62,13 +62,11 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const type = AssetType.BSV20
   const results = []
   for (const id of ids) {
-    const num = await findOneExactMatchingKey(redis, "num", id, type)
-    const autofill = await findOneExactMatchingKey(redis, "autofill", id, type)
+    const num = await findMatchingKeys(redis, "num", id, type)
+    const autofill = await findMatchingKeys(redis, "autofill", id, type)
     console.log({ num, autofill })
     if (num && autofill) {
-      const parsedNum = JSON.parse(num)
-      const parsedAutofill = JSON.parse(autofill)
-      results.push({ num: parsedNum, autofill: parsedAutofill })
+      results.push({ num, autofill })
     }
     return results
   }
