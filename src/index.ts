@@ -62,7 +62,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const type = AssetType.BSV20
   const results: any[] = []
   for (const id of ids) {
-    if (results.some((r) => r.id === id)) {
+    if (results.some((r) => r.tick === id)) {
       continue
     }
     const cached = (await redis.get(`token-${AssetType.BSV20}-${id.toLowerCase()}`) || "{}") as string;
