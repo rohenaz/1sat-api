@@ -52,6 +52,27 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   }
   console.log({ result })
   return result
+}).post("/ticker/num", async ({ params, body }) => {
+  // takes a list of ids, returns the num records
+  // and corresponding autofill records
+  const ids = body.ids
+  const type = AssetType.BSV20
+  const results = []
+  for (const id of ids) {
+    const num = await findOneExactMatchingKey(redis, "num", id, type)
+    const autofill = await findOneExactMatchingKey(redis, "autofill", id, type)
+    console.log({ num, autofill })
+    if (num && autofill) {
+      const parsedNum = JSON.parse(num)
+      const parsedAutofill = JSON.parse(autofill)
+      results.push({ num: parsedNum, autofill: parsedAutofill })
+    }
+    return results
+  }
+}, {
+  body: t.Object({
+    ids: t.Array(t.String())
+  })
 }).get('/market/:assetType', async ({ set, params }) => {
   console.log(params.assetType)
   try {
@@ -121,6 +142,15 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     assetType: t.String(),
     id: t.String()
   })
+}).get("/airdrop/:template", async ({ params }) => {
+
+  // return a list of addresses
+  const template = params.template
+
+  // template 1 - all buyers
+
+  // template 2 - all holders
+  return []
 }).get("/status", async ({ set }) => {
   set.headers["Content-Type"] = "application/json";
   const chainInfo = await fetchChainInfo();
