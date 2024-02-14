@@ -65,10 +65,11 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     if (results.some((r) => r.id === id)) {
       continue
     }
-    const num = await findMatchingKeys(redis, "token", id, type)
-    console.log({ num })
-    if (num.length > 0) {
-      results.push(num[0])
+    const cached = (await redis.get(`token-${AssetType.BSV20}-${id.toLowerCase()}`) || "{}") as string;
+    const parsed = JSON.parse(cached);
+
+    if (parsed) {
+      results.push(parsed)
     }
     return results
   }
