@@ -22,6 +22,8 @@ await sseInit();
 const app = new Elysia().use(cors()).get("/", ({ set }) => {
   set.headers["Content-Type"] = "text/html";
   return `:)`;
+}).onError(({ error }) => {
+  console.error("Error:", error);
 }).get('/ticker/autofill/:assetType/:id', async ({ params }) => {
   // autofill endpoint for ticker id
   const type = params.assetType as AssetType
