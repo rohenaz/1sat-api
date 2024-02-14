@@ -71,8 +71,8 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     if (parsed) {
       results.push(parsed)
     }
-    return results
   }
+  return results
 }, {
   body: t.Object({
     ids: t.Array(t.String())
