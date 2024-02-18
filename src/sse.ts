@@ -12,10 +12,13 @@ const sseInit = async () => {
 
   sse.addEventListener("bsv20listings", async (event) => {
     const data = JSON.parse(event.data);
-    const { tick } = data as ListingsV1;
+    let { tick } = data as ListingsV1;
     const { id } = data as ListingsV2;
     const assetType = tick ? AssetType.BSV20 : AssetType.BSV21;
 
+    if (tick) {
+      tick = tick.toLowerCase();
+    }
     await redis.hset(`listings-${assetType}-${tick || id}`, `${data.txid}_${data.vout}`, JSON.stringify(data))
     // const t = await redis.get(`token-${assetType}-${tick || id}`);
     // let ticker = t ? JSON.parse(t) : null;
@@ -38,10 +41,13 @@ const sseInit = async () => {
 
   sse.addEventListener("bsv20sales", async (event) => {
     console.log("Sale or cencel", event.data);
-    const { id, tick, outpoint, txid, sale } = event.data;
+    let { id, tick, outpoint, txid, sale } = event.data;
     // txid is the txid from which is was spend
     const assetType = tick ? AssetType.BSV20 : AssetType.BSV21;
 
+    if (tick) {
+      tick = tick.toLowerCase();
+    }
     const listing = await redis.hget(`listings-${assetType}-${tick || id}`, `${txid}_${outpoint}`);
     if (listing) {
       const l = JSON.parse(listing);
