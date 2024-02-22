@@ -80,7 +80,8 @@ export const fetchChainInfo = async (): Promise<ChainInfo> => {
   // TODO: We have an endpoint for this now https://junglebus.gorillapool.io/v1/block_header/tip
   const url = `https://api.whatsonchain.com/v1/bsv/main/chain/info`;
   const chainInfo = await fetchJSON(url) as ChainInfo | null;
-  await redis.set(`chainInfo`, JSON.stringify(chainInfo), "EX", defaults.expirationTime);
+  // this one has to update pretty frequently blocks can be found sub-minute
+  await redis.set(`chainInfo`, JSON.stringify(chainInfo), "EX", 60);
   return chainInfo as ChainInfo || { blocks: 0, headers: 0, bestblockhash: "" };
 }
 
