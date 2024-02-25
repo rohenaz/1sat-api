@@ -78,7 +78,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   })
 }).get('/market/:assetType', async ({ set, params, query }) => {
   const { limit, offset, sort, dir } = query;
-  console.log(params.assetType)
+  console.log({ limit, offset, sort, dir, params })
 
   try {
     // let market = await redis.get(`market-${params.assetType}`);
@@ -276,4 +276,3 @@ const fetchShallowMarketData = async (assetType: AssetType, offset = 0, limit = 
       break;
   }
 }
-
