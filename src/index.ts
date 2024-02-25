@@ -10,7 +10,6 @@ import { fetchChainInfo, fetchExchangeRate, fetchStats, fetchTokensDetails } fro
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
 
-// TODO: make process to get all the tickers and then an endpoint for autocomplete ticker names
 redis.on("connect", () => console.log("Connected to Redis"));
 redis.on("error", (err) => console.error("Redis Error", err));
 
@@ -77,8 +76,10 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   body: t.Object({
     ids: t.Array(t.String())
   })
-}).get('/market/:assetType', async ({ set, params }) => {
+}).get('/market/:assetType', async ({ set, params, query }) => {
+  const { limit, offset, sort, dir } = query;
   console.log(params.assetType)
+
   try {
     // let market = await redis.get(`market-${params.assetType}`);
     // console.log("In cache?", market)
@@ -100,6 +101,12 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   transform({ params }) {
     params.assetType = params.assetType.toLowerCase();
   },
+  query: t.Object({
+    limit: t.String(),
+    offset: t.String(),
+    sort: t.String(),
+    dir: t.String()
+  }),
   params: t.Object({
     assetType: t.String()
   })
@@ -229,13 +236,13 @@ const fetchMarketData = async (assetType: AssetType, id: string) => {
   }
 };
 
-const fetchShallowMarketData = async (assetType: AssetType) => {
+const fetchShallowMarketData = async (assetType: AssetType, offset = 0, limit = 20) => {
   switch (assetType) {
     case AssetType.BSV20: {
       // check cache
       const tv1: MarketDataV1[] = [];
 
-      const [cursorv1, ticks] = await redis.zscan(`included-${AssetType.BSV20}`, 0, "COUNT", 1000);
+      const [cursorv1, ticks] = await redis.zscan(`included-${AssetType.BSV20}`, offset, "COUNT", limit);
 
       for (let i = 0; i < ticks.length; i += 2) {
         const tick = ticks[i];
@@ -252,7 +259,7 @@ const fetchShallowMarketData = async (assetType: AssetType) => {
 
     case AssetType.BSV21: {
       const tv2: MarketDataV2[] = [];
-      const [cursorv2, ids] = await redis.zscan(`included-${AssetType.BSV21}`, 0, "COUNT", 1000);
+      const [cursorv2, ids] = await redis.zscan(`included-${AssetType.BSV21}`, offset, "COUNT", limit);
 
       for (let i = 0; i < ids.length; i += 2) {
         const id = ids[i];
