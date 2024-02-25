@@ -84,7 +84,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     // let market = await redis.get(`market-${params.assetType}`);
     // console.log("In cache?", market)
     // if (!market) {
-    const marketData = await fetchShallowMarketData(params.assetType as AssetType);
+    const marketData = await fetchShallowMarketData(params.assetType as AssetType, parseInt(offset), parseInt(limit));
     // if (marketData) {
     //   await redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
     // }
