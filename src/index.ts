@@ -31,7 +31,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const results = await findMatchingKeys(redis, "autofill", id, type)
   console.log({ results })
   // bring exact matches to the top
-  return results.sort((a, b) => a === id ? -1 : b === id ? 1 : 0)
+  return results.sort((a, b) => a.toLowerCase() === id ? -1 : b.toLowerCase() === id ? 1 : 0)
 }).get('/ticker/num/:num', async ({ params }) => {
   // autofill endpoint for ticker id
   const type = AssetType.BSV20
