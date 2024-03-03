@@ -1,5 +1,5 @@
-export const ORDFS = `https://ordfs.network`;
-export const API_HOST = `https://texas.ordinals.gorillapool.io`;
+export const ORDFS = "https://ordfs.network";
+export const API_HOST = "https://ordinals.gorillapool.io";
 
 export enum AssetType {
   Ordinals = "ordinals",
