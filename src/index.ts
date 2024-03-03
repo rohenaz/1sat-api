@@ -31,7 +31,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const results = await findMatchingKeys(redis, "autofill", id, type)
   console.log({ results })
   // bring exact matches to the top
-  return results.sort((a, b) => a.id === id ? -1 : b.id === id ? 1 : 0)
+  return results.sort((a, b) => a.id.toLowerCase() === id ? -1 : b.id.toLowerCase() === id ? 1 : 0)
 }, {
   transform({ params }) {
     params.assetType = params.assetType.toLowerCase();
