@@ -7,6 +7,11 @@ import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails, lo
 import { sseInit } from './sse';
 import { BSV20Details, BSV21Details, MarketDataV1, MarketDataV2 } from './types/bsv20';
 import { fetchChainInfo, fetchExchangeRate, fetchStats, fetchTokensDetails } from './utils';
+import { HashToMintBsv20 } from './contracts/htm';
+import { DefaultProvider, MethodCallOptions, TestWallet, bsv, toByteString } from 'scrypt-ts';
+
+import artifact from "./artifacts/htm.json";
+HashToMintBsv20.loadArtifact(artifact);
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
 
@@ -17,6 +22,8 @@ await loadAllV1Names();
 await fetchV1Tickers();
 await fetchV2Tickers();
 await sseInit();
+
+const privKey = bsv.PrivateKey.fromWIF(process.env.FUNDING_WIF!)
 
 const app = new Elysia().use(cors()).get("/", ({ set }) => {
   set.headers["Content-Type"] = "text/html";
@@ -178,6 +185,39 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     exchangeRate,
     indexers
   };
+}).post("pow20/submit", async ({ params, body }) => {
+  const chainInfo = await fetchChainInfo()
+  const { outpoint, nonce, script, recipientPkh } = body as { outpoint: string, nonce: string, script: string, recipientPkh: string };
+  const [txid, vout] = outpoint.split("_");
+  const htm = HashToMintBsv20.fromUTXO({
+    outputIndex: parseInt(vout, 10),
+    txId: txid,
+    script: Buffer.from(script, 'base64').toString('hex'),
+    satoshis: 1
+  })
+  htm.bindTxBuilder('redeem', HashToMintBsv20.buildTxForRedeem);
+  htm.connect(new TestWallet(
+    privKey,
+    new DefaultProvider({
+      network: bsv.Networks.mainnet,
+    })
+  ))
+
+  const { tx } = await htm.methods.redeem(
+    toByteString(recipientPkh),
+    toByteString(nonce),
+    {
+      changeAddress: privKey.toAddress(),
+      sequence: 0,
+      lockTime: chainInfo.blocks,
+    } as MethodCallOptions<HashToMintBsv20>
+  );
+
+  console.log("TX", tx.id, tx.toBuffer().toString('hex'))
+  return {
+    txid: tx.id,
+  }
+
 }).listen(process.env.PORT ?? 3000);
 
 console.log(

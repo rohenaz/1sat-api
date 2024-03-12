@@ -1,0 +1,108 @@
+import "node_modules/scrypt-ord/src/contracts/ordinal.scrypt";
+struct __scrypt_ts_Change {  int amount;  Ripemd160 address;}
+
+contract HashToMintBsv20 {
+  @state bytes id;
+  const int max;
+  const int dec;
+  const bytes sym;
+  const int totalSupply;
+  @state int supply;
+  const int currentReward;
+  const int startingDifficulty;
+  const int maxDifficulty;
+  bytes __scrypt_ts_ctx_hashoutputs;
+  int __scrypt_ts_ctx_sequence;
+  bytes __scrypt_ts_ctx_outpoint_txid;
+  int __scrypt_ts_ctx_outpoint_outputindex;
+  __scrypt_ts_Change __scrypt_ts_change;
+  constructor(bytes sym, int max, int dec, int currentReward, int difficulty) {
+    this.max = max;
+    this.dec = dec;
+    this.id = b'';
+    this.sym = sym;
+    require(this.max <= 18446744073709551615);
+    require(this.dec <= 18);
+    
+    this.supply = max;
+    this.currentReward = currentReward;
+    this.totalSupply = max;
+    this.startingDifficulty = difficulty;
+    this.maxDifficulty = 15;
+    require(max % 5 == 0);
+    require(difficulty < 15);
+  }
+  function buildStateOutputFT(int amt) : bytes {
+    if(this.isGenesis()) {
+        this.initId();
+      }
+    bytes stateScript = HashToMintBsv20.createTransferInsciption(this.id, amt) + Ordinal.removeInsciption(this.getStateScript());
+    return Utils.buildOutput(stateScript, 1);
+  }
+  function isGenesis() : bool {
+    return this.id == b'';
+  }
+  static function buildTransferOutput(Ripemd160 address, bytes id, int amt) : bytes {
+    bytes transferScript = HashToMintBsv20.buildTransferScript(address, id, amt);
+    return Utils.buildOutput(transferScript, 1);
+  }
+  static function buildTransferScript(Ripemd160 address, bytes id, int amt) : bytes {
+    return (HashToMintBsv20.createTransferInsciption(id, amt) + Utils.buildPublicKeyHashScript(address));
+  }
+  static function createTransferInsciption(bytes id, int amt) : bytes {
+    bytes amtByteString = Ordinal.int2Str(amt);
+    bytes transferJSON = "{\"p\":\"bsv-20\",\"op\":\"transfer\",\"id\":\"" + id + "\",\"amt\":\"" + amtByteString + "\"}";
+    return Ordinal.createInsciption(transferJSON, "application/bsv-20");
+  }
+  function initId() : bool {
+    this.id = Ordinal.txId2str(this.__scrypt_ts_ctx_outpoint_txid) + "_" + Ordinal.int2Str(this.__scrypt_ts_ctx_outpoint_outputindex);
+    return true;
+  }
+  public function redeem(Ripemd160 rewardPkh, bytes nonce, SigHashPreimage __scrypt_ts_txPreimage, int __scrypt_ts_changeAmount, Ripemd160 __scrypt_ts_changeAddress) {
+    require(Tx.checkPreimageSigHashType(__scrypt_ts_txPreimage, SigHashType(b'c1')));
+    this.__scrypt_ts_ctx_hashoutputs = SigHash.hashOutputs(__scrypt_ts_txPreimage);
+    this.__scrypt_ts_ctx_sequence = SigHash.nSequence(__scrypt_ts_txPreimage);
+    this.__scrypt_ts_ctx_outpoint_outputindex = unpack(SigHash.outpoint(__scrypt_ts_txPreimage)[32 :]);
+    this.__scrypt_ts_ctx_outpoint_txid = SigHash.outpoint(__scrypt_ts_txPreimage)[0:32];
+    this.__scrypt_ts_change = {__scrypt_ts_changeAmount, __scrypt_ts_changeAddress};
+    Sha256 hash = sha256(sha256(this.__scrypt_ts_ctx_outpoint_txid + nonce));
+    int calculatedDifficulty = this.calculateDifficulty();
+    
+    loop (15) : i {
+        int mask = (i % 2 == 0 ? 0xf0 : 0x0f);
+        if(i < calculatedDifficulty) {
+          int sliceStart = (i) / (2);
+          int sliceEnd = sliceStart + (1);
+          bytes byte = hash[sliceStart : sliceEnd];
+          int slicedHash = (unpack(byte) & mask);
+          require(slicedHash == (0));
+        }
+      }
+    require(this.__scrypt_ts_ctx_sequence < 0xffffffff);
+    int supply = this.supply - this.currentReward;
+    this.supply = supply;
+    bytes stateOutput = b'';
+    if(supply > 0) {
+        stateOutput = this.buildStateOutputFT(supply);
+      }
+    bytes rewardOutput = HashToMintBsv20.buildTransferOutput(rewardPkh, this.id, this.currentReward);
+    bytes outputs = stateOutput + rewardOutput + this.buildChangeOutput();
+    require(hash256(outputs) == this.__scrypt_ts_ctx_hashoutputs);
+  }
+  function calculateDifficulty() : int {
+    int difficulty = this.startingDifficulty;
+    int supplyRatio = (this.supply * 100) / this.totalSupply;
+    if(supplyRatio < 20) {
+        difficulty = this.startingDifficulty + 4;
+      } else if(supplyRatio < 40) {
+        difficulty = this.startingDifficulty + 3;
+      } else if(supplyRatio < 60) {
+        difficulty = this.startingDifficulty + 2;
+      } else if(supplyRatio < 80) {
+        difficulty = this.startingDifficulty + 1;
+      }
+    return difficulty;
+  }
+  function buildStateOutput(int amount) : bytes {  return Utils.buildOutput(this.getStateScript(), amount);}
+  function buildChangeOutput() : bytes {  return this.__scrypt_ts_change.amount > 0 ? Utils.buildOutput(Utils.buildPublicKeyHashScript(this.__scrypt_ts_change.address), this.__scrypt_ts_change.amount) : b'';}
+}
