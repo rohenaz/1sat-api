@@ -185,9 +185,9 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     exchangeRate,
     indexers
   };
-}).post("pow20/submit", async ({ params, body }) => {
+}).post("pow20/submit", async ({ body }) => {
   const chainInfo = await fetchChainInfo()
-  const { outpoint, nonce, script, recipientPkh } = body as { outpoint: string, nonce: string, script: string, recipientPkh: string };
+  const { outpoint, nonce, script, recipientPkh } = body;
   const [txid, vout] = outpoint.split("_");
   const htm = HashToMintBsv20.fromUTXO({
     outputIndex: parseInt(vout, 10),
@@ -218,6 +218,13 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     txid: tx.id,
   }
 
+}, {
+  body: t.Object({
+    outpoint: t.String(),
+    nonce: t.String(),
+    script: t.String(),
+    recipientPkh: t.String()
+  })
 }).listen(process.env.PORT ?? 3000);
 
 console.log(
