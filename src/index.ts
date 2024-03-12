@@ -186,6 +186,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     indexers
   };
 }).post("/pow20/submit", async ({ body }) => {
+  console.log("POW20 SUBMIT", body)
   const chainInfo = await fetchChainInfo()
   const { outpoint, nonce, script, recipientPkh } = body;
   const [txid, vout] = outpoint.split("_");
@@ -195,6 +196,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     script: Buffer.from(script, 'base64').toString('hex'),
     satoshis: 1
   })
+  console.log("POW20 INSTANTIANT")
   htm.bindTxBuilder('redeem', HashToMintBsv20.buildTxForRedeem);
   htm.connect(new TestWallet(
     privKey,
@@ -202,6 +204,8 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       network: bsv.Networks.mainnet,
     })
   ))
+
+  console.log("POW20 CONNECTED")
 
   const { tx } = await htm.methods.redeem(
     toByteString(recipientPkh),
@@ -212,6 +216,8 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       lockTime: chainInfo.blocks,
     } as MethodCallOptions<HashToMintBsv20>
   );
+
+  console.log("POW20 REDEEM CALLED")
 
   console.log("TX", tx.id, tx.toBuffer().toString('hex'))
   return {
