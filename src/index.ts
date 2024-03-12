@@ -185,7 +185,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     exchangeRate,
     indexers
   };
-}).post("pow20/submit", async ({ body }) => {
+}).post("/pow20/submit", async ({ body }) => {
   const chainInfo = await fetchChainInfo()
   const { outpoint, nonce, script, recipientPkh } = body;
   const [txid, vout] = outpoint.split("_");
