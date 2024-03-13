@@ -1,6 +1,6 @@
 {
     "version": 9,
-    "compilerVersion": "1.19.2+commit.c3a20a0",
+    "compilerVersion": "1.19.1+commit.febd187",
     "contract": "HashToMintBsv20",
     "md5": "0ba9dec1a735cc8b944e9352175027dd",
     "structs": [

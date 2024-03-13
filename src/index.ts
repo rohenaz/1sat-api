@@ -1,14 +1,14 @@
 import { cors } from '@elysiajs/cors';
 import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
+import { DefaultProvider, MethodCallOptions, TestWallet, UTXO, bsv, toByteString } from 'scrypt-ts';
 import { AssetType, defaults } from './constants';
+import { HashToMintBsv20 } from './contracts/htm.ts';
 import { findMatchingKeys, findOneExactMatchingKey } from './db';
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
 import { sseInit } from './sse';
 import { BSV20Details, BSV21Details, MarketDataV1, MarketDataV2 } from './types/bsv20';
 import { fetchChainInfo, fetchExchangeRate, fetchStats, fetchTokensDetails } from './utils';
-import { HashToMintBsv20 } from './contracts/htm';
-import { DefaultProvider, MethodCallOptions, TestWallet, bsv, toByteString } from 'scrypt-ts';
 
 import artifact from "./artifacts/htm.json";
 HashToMintBsv20.loadArtifact(artifact);
@@ -18,12 +18,12 @@ export const redis = new Redis(`${process.env.REDIS_URL}`);
 redis.on("connect", () => console.log("Connected to Redis"));
 redis.on("error", (err) => console.error("Redis Error", err));
 
+const privKey = bsv.PrivateKey.fromWIF(process.env.FUNDING_WIF!)
+
 await loadAllV1Names();
 await fetchV1Tickers();
 await fetchV2Tickers();
 await sseInit();
-
-const privKey = bsv.PrivateKey.fromWIF(process.env.FUNDING_WIF!)
 
 const app = new Elysia().use(cors()).get("/", ({ set }) => {
   set.headers["Content-Type"] = "text/html";
@@ -188,17 +188,30 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
 }).post("/pow20/submit", async ({ body }) => {
   console.log("POW20 SUBMIT", body)
   const chainInfo = await fetchChainInfo()
-  const { outpoint, nonce, script, recipientPkh } = body;
+  const { outpoint, nonce, recipientPkh } = body;
   const [txid, vout] = outpoint.split("_");
+  console.log({ txid, vout, nonce, recipientPkh })
+
+  // get the raw tx
+  const resp = await fetch(`https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`);
+  const txhex = await resp.text();
+  const newTx = new bsv.Transaction(txhex)
+
+  // const scriptObj = bsv.Script.fromBuffer(Buffer.from(script, 'base64'))
+  // console.log(scriptObj.toString())
+
   const htm = HashToMintBsv20.fromUTXO({
     outputIndex: parseInt(vout, 10),
     txId: txid,
-    script: Buffer.from(script, 'base64').toString('hex'),
-    satoshis: 1
-  })
+    script: newTx.outputs[0].script,
+    satoshis: newTx.outputs[0].satoshis,
+  } as UTXO)
+
+  // const htm = HashToMintBsv20.fromTx(newTx,
+  //   parseInt(vout, 10))
   console.log("POW20 INSTANTIANT")
   htm.bindTxBuilder('redeem', HashToMintBsv20.buildTxForRedeem);
-  htm.connect(new TestWallet(
+  await htm.connect(new TestWallet(
     privKey,
     new DefaultProvider({
       network: bsv.Networks.mainnet,
@@ -228,7 +241,6 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   body: t.Object({
     outpoint: t.String(),
     nonce: t.String(),
-    script: t.String(),
     recipientPkh: t.String()
   })
 }).listen(process.env.PORT ?? 3000);
