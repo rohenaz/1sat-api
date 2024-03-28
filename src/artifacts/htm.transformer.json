@@ -1,9 +1,0 @@
-{
-  "success": true,
-  "errors": [],
-  "scryptfile": "htm.scrypt",
-  "sourceMapFile": "htm.scrypt.map",
-  "ctxMethods": [
-    "redeem"
-  ]
-}

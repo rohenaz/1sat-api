@@ -1,7 +1,6 @@
 import { cors } from '@elysiajs/cors';
 import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
-import { bsv } from 'scrypt-ts';
 import { AssetType, defaults } from './constants';
 import { findMatchingKeys, findOneExactMatchingKey } from './db';
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
@@ -9,15 +8,10 @@ import { sseInit } from './sse';
 import { BSV20Details, BSV21Details, MarketDataV1, MarketDataV2 } from './types/bsv20';
 import { fetchChainInfo, fetchExchangeRate, fetchStats, fetchTokensDetails } from './utils';
 
-// import artifact from "./artifacts/htm.json";
-// HashToMintBsv20.loadArtifact(artifact);
-
 export const redis = new Redis(`${process.env.REDIS_URL}`);
 
 redis.on("connect", () => console.log("Connected to Redis"));
 redis.on("error", (err) => console.error("Redis Error", err));
-
-const privKey = bsv.PrivateKey.fromWIF(process.env.FUNDING_WIF!)
 
 await loadAllV1Names();
 await fetchV1Tickers();
