@@ -181,10 +181,10 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) =
       // https://ordinals.gorillapool.io/content/6b469160b43aee11d848b77847acfd6a3435e547e04bcfa60f69dfe0fa62da57_0?fuzzy=false
       // populate the 3 fields for pow20 tokens if applicable
       (async () => {
-        const urlPow20 = `${API_HOST}/api/content/${id}?fuzzy=false`;
+        const urlPow20 = `${API_HOST}/content/${id}?fuzzy=false`;
         const pow20 = await fetchJSON(urlPow20) as Partial<BSV21>;
-        console.log({ pow20 })
         if (pow20 && pow20.contract === "pow-20") {
+          console.log({ pow20 })
           const { contract, startingReward, difficulty } = pow20;
           ticker.contract = contract;
           ticker.startingReward = startingReward;
