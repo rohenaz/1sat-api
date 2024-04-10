@@ -49,6 +49,9 @@ export interface BSV21 extends BaseTxo {
   fundUsed?: string;
   fundBalance: string;
   included: boolean;
+  contract?: "pow-20" | undefined;
+  difficulty?: number | undefined;
+  startingReward?: number | undefined;
 }
 
 export interface ListingsV2 extends BSV21 {

@@ -5,7 +5,7 @@ import { AssetType, defaults } from './constants';
 import { findMatchingKeys, findOneExactMatchingKey } from './db';
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
 import { sseInit } from './sse';
-import { BSV20Details, BSV21Details, MarketDataV1, MarketDataV2 } from './types/bsv20';
+import type { BSV20Details, BSV21Details, MarketDataV1, MarketDataV2 } from './types/bsv20';
 import { fetchChainInfo, fetchExchangeRate, fetchStats, fetchTokensDetails } from './utils';
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
@@ -20,7 +20,7 @@ await sseInit();
 
 const app = new Elysia().use(cors()).get("/", ({ set }) => {
   set.headers["Content-Type"] = "text/html";
-  return `:)`;
+  return ":)";
 }).onError(({ error }) => {
   console.error("Error:", error);
 }).get('/ticker/autofill/:assetType/:id', async ({ params }) => {
@@ -117,6 +117,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     assetType: t.String()
   })
 }).get("/market/:assetType/:id", async ({ set, params }) => {
+  ``
   const id = decodeURIComponent(params.id);
   console.log("WITH ID", params.assetType, id)
   try {

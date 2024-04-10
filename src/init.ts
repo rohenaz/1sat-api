@@ -168,7 +168,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
 }
 
 export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) => {
-  let results: MarketDataV2[] = [];
+  const results: MarketDataV2[] = [];
   for (const t of tickersV2) {
     const id = t.id;
     // check cache for sales token-${assetType}-${tick}
@@ -178,6 +178,19 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) =
     let sales = [] as ListingsV2[];
 
     await Promise.all([
+      // https://ordinals.gorillapool.io/content/6b469160b43aee11d848b77847acfd6a3435e547e04bcfa60f69dfe0fa62da57_0?fuzzy=false
+      // populate the 3 fields for pow20 tokens if applicable
+      (async () => {
+        const urlPow20 = `${API_HOST}/content/${id}_0?fuzzy=false`;
+        const pow20 = await fetchJSON(urlPow20) as Partial<BSV21>;
+        if (pow20.contract === "pow-20") {
+          const { contract, startingReward, difficulty } = pow20;
+          ticker.contract = contract;
+          ticker.startingReward = startingReward;
+          ticker.difficulty = difficulty;
+        }
+      }
+      )(),
       (async () => {
         const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&id=${id}`;
         sales = (await fetchJSON<ListingsV2[]>(urlSales) || [])
@@ -205,8 +218,8 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) =
       })(),
     ])
 
-    const price = sales.length > 0 ? parseFloat((sales[0])?.pricePer) : 0;
-    const marketCap = calculateMarketCap(price, parseInt(ticker.amt));
+    const price = sales.length > 0 ? Number.parseFloat((sales[0])?.pricePer) : 0;
+    const marketCap = calculateMarketCap(price, Number.parseInt(ticker.amt));
     const pctChange = await setPctChange(id, sales, info.blocks);
 
     const result = {

@@ -120,7 +120,7 @@ export const fetchExchangeRate = async (): Promise<number> => {
 
 export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(tokenIDs: string[], assetType: AssetType): Promise<T[]> => {
 
-  let d: T[] = [];
+  const d: T[] = [];
   // use passed in type instead 
   switch (assetType) {
     case AssetType.BSV20:
