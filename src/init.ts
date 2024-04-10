@@ -67,7 +67,7 @@ export const loadAllV1Names = async (): Promise<void> => {
 
   while (true) {
     // const offset = page * resultsPerPage;
-    let results = await fetchV1TickerNames(offset, resultsPerPage, false)
+    const results = await fetchV1TickerNames(offset, resultsPerPage, false)
     // page++
     if (!results) {
       break
@@ -102,7 +102,7 @@ export const fetchV2Tickers = async () => {
 
 // saves tickers to caches and adds pctChange
 export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo) => {
-  let results: MarketDataV1[] = [];
+  const results: MarketDataV1[] = [];
   for (const t of tickersV1) {
     const tick = t.tick;
     // check cache for sales token-${assetType}-${tick}
@@ -120,9 +120,9 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
         const key = `listings-${AssetType.BSV20}-${tick.toLowerCase()}`;
         const pipeline = redis.pipeline().del(key);
-        (await fetchJSON<ListingsV1[]>(urlListings) || []).forEach((listing) => {
+        for (const listing of (await fetchJSON<ListingsV1[]>(urlListings) || [])) {
           pipeline.hset(key, `${listing.txid}_${listing.vout}`, JSON.stringify(listing))
-        })
+        }
         await pipeline.exec()
       })(),
       (async () => {
@@ -200,9 +200,9 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) =
         const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&id=${id}`;
         const key = `listings-${AssetType.BSV21}-${id}`;
         const pipeline = redis.pipeline().del(key);
-        (await fetchJSON<ListingsV1[]>(urlListings) || []).forEach((listing) => {
+        for (const listing of (await fetchJSON<ListingsV2[]>(urlListings) || [])) {
           pipeline.hset(key, `${listing.txid}_${listing.vout}`, JSON.stringify(listing))
-        })
+        }
         await pipeline.exec()
       })(),
       (async () => {
