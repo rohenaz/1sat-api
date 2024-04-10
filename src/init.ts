@@ -1,6 +1,6 @@
 import { redis, type ChainInfo } from ".";
 import { API_HOST, AssetType } from "./constants";
-import type { BSV20V1, BSV21, ListingsV1, ListingsV2, MarketDataV1, MarketDataV2 } from "./types/bsv20";
+import type { BSV20V1, BSV21, Holder, ListingsV1, ListingsV2, MarketDataV1, MarketDataV2 } from "./types/bsv20";
 import { calculateMarketCap, fetchChainInfo, fetchJSON, setPctChange } from "./utils";
 
 
@@ -171,55 +171,22 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) =
   const results: MarketDataV2[] = [];
   for (const t of tickersV2) {
     const id = t.id;
-    // check cache for sales token-${assetType}-${tick}
     const cached = (await redis.get(`token-${AssetType.BSV21}-${id}`) || "{}") as string;
     const parsed = JSON.parse(cached);
     const ticker = Object.assign(parsed, t) as MarketDataV2;
-    let sales = [] as ListingsV2[];
 
-    await Promise.all([
-      // https://ordinals.gorillapool.io/content/6b469160b43aee11d848b77847acfd6a3435e547e04bcfa60f69dfe0fa62da57_0?fuzzy=false
-      // populate the 3 fields for pow20 tokens if applicable
-      (async () => {
-        const urlPow20 = `${API_HOST}/content/${id}?fuzzy=false`;
-        const pow20 = await fetchJSON(urlPow20) as Partial<BSV21>;
-        if (pow20 && pow20.contract === "pow-20") {
-          const { contract, startingReward, difficulty } = pow20;
-          console.log({ contract, startingReward, difficulty })
-          ticker.contract = contract;
-          ticker.startingReward = startingReward;
-          ticker.difficulty = difficulty;
-        }
-      }
-      )(),
-      (async () => {
-        const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&id=${id}`;
-        sales = (await fetchJSON<ListingsV2[]>(urlSales) || [])
-      })(),
-      (async () => {
-        const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&id=${id}`;
-        const key = `listings-${AssetType.BSV21}-${id}`;
-        const pipeline = redis.pipeline().del(key);
-        for (const listing of (await fetchJSON<ListingsV2[]>(urlListings) || [])) {
-          pipeline.hset(key, `${listing.txid}_${listing.vout}`, JSON.stringify(listing))
-        }
-        await pipeline.exec()
-      })(),
-      (async () => {
-        if (!ticker.holders) {
-          ticker.holders = [];
-          const urlHolders = `${API_HOST}/api/bsv20/id/${id}/holders?limit=20&offset=0`;
-          ticker.holders = (await fetchJSON(urlHolders) || [])
-        }
-      })(),
-      (async () => {
-        if (ticker.included) {
-          await redis.zadd(`included-${AssetType.BSV21}`, 'NX', Date.now(), id)
-        }
-      })(),
-    ])
+    const [pow20Data, sales, listings, holders] = await Promise.all([
+      fetchPow20Data(id),
+      fetchSales(id),
+      fetchListings(id),
+      fetchHolders(id, ticker),
+    ]);
 
-    const price = sales.length > 0 ? Number.parseFloat((sales[0])?.pricePer) : 0;
+    updateTickerWithPow20Data(ticker, pow20Data);
+    await updateListingsCache(id, listings);
+    await updateIncludedCache(id, ticker);
+
+    const price = sales.length > 0 ? Number.parseFloat(sales[0]?.pricePer) : 0;
     const marketCap = calculateMarketCap(price, Number.parseInt(ticker.amt));
     const pctChange = await setPctChange(id, sales, info.blocks);
 
@@ -228,17 +195,61 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) =
       price,
       pctChange,
       marketCap,
-    } as MarketDataV2
+    } as MarketDataV2;
 
-    // const autofillData = await redis.hget(`autofill-${AssetType.BSV21}`, id);
-    // if (autofillData) {
-    //   const autofill = JSON.parse(autofillData);
-    //   result.num = autofill.num;
-    // }
-
-    await redis.set(`token-${AssetType.BSV21}-${id}`, JSON.stringify(result)) //, "EX", defaults.expirationTime);
+    await redis.set(`token-${AssetType.BSV21}-${id}`, JSON.stringify(result));
     results.push(result);
   }
+  return results;
+};
 
-  return results
+async function fetchPow20Data(id: string): Promise<Partial<BSV21>> {
+  const urlPow20 = `${API_HOST}/content/${id}?fuzzy=false`;
+  const pow20Data = await fetchJSON(urlPow20);
+  return pow20Data as Partial<BSV21>;
+}
+
+async function fetchSales(id: string): Promise<ListingsV2[]> {
+  const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&id=${id}`;
+  const sales = await fetchJSON<ListingsV2[]>(urlSales);
+  return sales || [];
+}
+
+async function fetchListings(id: string): Promise<ListingsV2[]> {
+  const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&id=${id}`;
+  const listings = await fetchJSON<ListingsV2[]>(urlListings);
+  return listings || [];
+}
+
+async function fetchHolders(id: string, ticker: MarketDataV2): Promise<void> {
+  if (!ticker.holders) {
+    const urlHolders = `${API_HOST}/api/bsv20/id/${id}/holders?limit=20&offset=0`;
+    const holders = await fetchJSON(urlHolders) as Holder[];
+    ticker.holders = holders || [];
+  }
+}
+
+function updateTickerWithPow20Data(ticker: MarketDataV2, pow20Data: Partial<BSV21>): void {
+  if (pow20Data && pow20Data.contract === "pow-20") {
+    const { contract, startingReward, difficulty } = pow20Data;
+    console.log({ contract, startingReward, difficulty });
+    ticker.contract = contract;
+    ticker.startingReward = startingReward;
+    ticker.difficulty = difficulty;
+  }
+}
+
+async function updateListingsCache(id: string, listings: ListingsV2[]): Promise<void> {
+  const key = `listings-${AssetType.BSV21}-${id}`;
+  const pipeline = redis.pipeline().del(key);
+  for (const listing of listings) {
+    pipeline.hset(key, `${listing.txid}_${listing.vout}`, JSON.stringify(listing));
+  }
+  await pipeline.exec();
+}
+
+async function updateIncludedCache(id: string, ticker: MarketDataV2): Promise<void> {
+  if (ticker.included) {
+    await redis.zadd(`included-${AssetType.BSV21}`, "NX", Date.now(), id);
+  }
 }
