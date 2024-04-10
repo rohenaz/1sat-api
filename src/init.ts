@@ -184,8 +184,8 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) =
         const urlPow20 = `${API_HOST}/content/${id}?fuzzy=false`;
         const pow20 = await fetchJSON(urlPow20) as Partial<BSV21>;
         if (pow20 && pow20.contract === "pow-20") {
-          console.log({ pow20 })
           const { contract, startingReward, difficulty } = pow20;
+          console.log({ contract, startingReward, difficulty })
           ticker.contract = contract;
           ticker.startingReward = startingReward;
           ticker.difficulty = difficulty;

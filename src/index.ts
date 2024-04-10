@@ -117,7 +117,6 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     assetType: t.String()
   })
 }).get("/market/:assetType/:id", async ({ set, params }) => {
-  ``
   const id = decodeURIComponent(params.id);
   console.log("WITH ID", params.assetType, id)
   try {
