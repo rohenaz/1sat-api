@@ -1,6 +1,6 @@
-import { ChainInfo, redis } from ".";
+import { redis, type ChainInfo } from ".";
 import { API_HOST, AssetType } from "./constants";
-import { BSV20V1, BSV21, ListingsV1, ListingsV2, MarketDataV1, MarketDataV2 } from "./types/bsv20";
+import type { BSV20V1, BSV21, ListingsV1, ListingsV2, MarketDataV1, MarketDataV2 } from "./types/bsv20";
 import { calculateMarketCap, fetchChainInfo, fetchJSON, setPctChange } from "./utils";
 
 
@@ -143,8 +143,8 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
       })(),
     ])
 
-    const price = sales.length > 0 ? parseFloat(sales[0]?.pricePer) : 0;
-    const marketCap = calculateMarketCap(price, parseInt(ticker.max));
+    const price = sales.length > 0 ? Number.parseFloat(sales[0]?.pricePer) : 0;
+    const marketCap = calculateMarketCap(price, Number.parseInt(ticker.max));
     const pctChange = await setPctChange(ticker.tick, sales, info.blocks);
 
     const result = {

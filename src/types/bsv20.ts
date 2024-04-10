@@ -1,5 +1,5 @@
-import { Bsv20Status } from "../constants";
-import { BaseTxo } from "./common";
+import type { Bsv20Status } from "../constants";
+import type { BaseTxo } from "./common";
 
 export interface BSV20 extends BaseTxo {
   max?: string;

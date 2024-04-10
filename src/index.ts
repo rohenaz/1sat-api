@@ -50,7 +50,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     const autofill = await findMatchingKeys(redis, "autofill", "", type)
 
     // find the num
-    const result = autofill.find((a) => a.num === parseInt(num))
+    const result = autofill.find((a) => a.num === Number.parseInt(num))
     if (result) {
       await redis.set(`num-${type}-${num}`, JSON.stringify(result), "EX", defaults.expirationTime);
       return result
@@ -90,7 +90,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     // let market = await redis.get(`market-${params.assetType}`);
     // console.log("In cache?", market)
     // if (!market) {
-    const marketData = await fetchShallowMarketData(params.assetType as AssetType, parseInt(offset), parseInt(limit));
+    const marketData = await fetchShallowMarketData(params.assetType as AssetType, Number.parseInt(offset), Number.parseInt(limit));
     // if (marketData) {
     //   await redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
     // }
