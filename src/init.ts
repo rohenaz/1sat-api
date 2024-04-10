@@ -176,13 +176,12 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) =
     const ticker = Object.assign(parsed, t) as MarketDataV2;
 
     const [pow20Data, sales, listings, holders] = await Promise.all([
-      fetchPow20Data(id),
+      fetchPow20Data(id, ticker),
       fetchSales(id),
       fetchListings(id),
       fetchHolders(id, ticker),
     ]);
 
-    updateTickerWithPow20Data(ticker, pow20Data);
     await updateListingsCache(id, listings);
     await updateIncludedCache(id, ticker);
 
@@ -203,10 +202,11 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) =
   return results;
 };
 
-async function fetchPow20Data(id: string): Promise<Partial<BSV21>> {
+async function fetchPow20Data(id: string, ticker: MarketDataV2): Promise<Partial<BSV21>> {
   const urlPow20 = `${API_HOST}/content/${id}?fuzzy=false`;
-  const pow20Data = await fetchJSON(urlPow20);
-  return pow20Data as Partial<BSV21>;
+  const pow20Data = await fetchJSON(urlPow20) as Partial<BSV21>
+  updateTickerWithPow20Data(ticker, pow20Data);
+  return pow20Data;
 }
 
 async function fetchSales(id: string): Promise<ListingsV2[]> {
