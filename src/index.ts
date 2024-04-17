@@ -7,7 +7,7 @@ import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails, lo
 import { sseInit } from './sse';
 import type { BSV20Details, BSV21Details, MarketDataV1, MarketDataV2 } from './types/bsv20';
 import { User } from './types/user';
-import { fetchChainInfo, fetchExchangeRate, fetchStats, fetchTokensDetails } from './utils';
+import { fetchChainInfo, fetchExchangeRate, fetchJSON, fetchStats, fetchTokensDetails } from './utils';
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
 export const botRedis = new Redis(`${process.env.BOT_REDIS_URL}`);
@@ -199,7 +199,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   params: t.Object({
     discordId: t.String()
   })
-}).get("/user/:discordId/claim/:txid", async ({ params }) => {
+}).get("/user/:discordId/check/:txid", async ({ params, set }) => {
   // return user info
   const discordId = params.discordId
 
@@ -207,7 +207,22 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const userStr = await botRedis.get(`user-${discordId}`)
   // find the tx in the user wins
   const user = JSON.parse(userStr) as User
-  return user.wins.find((w) => w.amount === params.txid)
+  const win = user.wins.find((w) => w.amount === params.txid)
+  if (!win) {
+    set.status = 404;
+    return {}
+  }
+
+  // see if the win exists on chain
+  // if it already does we cacnnot claim anything
+  const tx = fetchJSON(`https://api.whatsonchain.com/v1/bsv/main/tx/hash/${params.txid}`)
+  if (!tx) {
+    // if it doesn't, we can claim it
+    return tx
+  }
+  set.status = 404;
+  return {}
+
 }, {
   params: t.Object({
     discordId: t.String(),
