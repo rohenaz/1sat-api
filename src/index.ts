@@ -10,6 +10,10 @@ import { User } from './types/user';
 import { fetchChainInfo, fetchExchangeRate, fetchStats, fetchTokensDetails } from './utils';
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
+export const botRedis = new Redis(`${process.env.BOT_REDIS_URL}`);
+
+botRedis.on("connect", () => console.log("Connected to Bot Redis"));
+botRedis.on("error", (err) => console.error("Bot Redis Error", err));
 
 redis.on("connect", () => console.log("Connected to Redis"));
 redis.on("error", (err) => console.error("Redis Error", err));
@@ -184,7 +188,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const discordId = params.discordId
 
   // get the user from redis by discord id
-  const user = await redis.get(`user-${discordId}`)
+  const user = await botRedis.get(`user-${discordId}`)
   if (!user) {
     set.status = 404;
     return {}
@@ -200,7 +204,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const discordId = params.discordId
 
   // get the user from redis by discord id
-  const userStr = await redis.get(`user-${discordId}`)
+  const userStr = await botRedis.get(`user-${discordId}`)
   // find the tx in the user wins
   const user = JSON.parse(userStr) as User
   return user.wins.find((w) => w.amount === params.txid)
