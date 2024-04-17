@@ -218,10 +218,17 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const tx = fetchJSON(`https://api.whatsonchain.com/v1/bsv/main/tx/hash/${params.txid}`)
   if (!tx) {
     // if it doesn't, we can claim it
-    return tx
+    return {
+      win,
+      claimed: false
+    }
   }
-  set.status = 404;
-  return {}
+  // already claimed - conflict status
+  set.status = 409;
+  return {
+    win,
+    claimed: true
+  }
 
 }, {
   params: t.Object({
