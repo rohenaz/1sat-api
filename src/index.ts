@@ -207,7 +207,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const userStr = await botRedis.get(`user-${discordId}`)
   // find the tx in the user wins
   const user = JSON.parse(userStr) as User
-  const win = user.wins.find((w) => w.amount === params.txid)
+  const win = user.wins.find((w) => w.txid === params.txid)
   if (!win) {
     set.status = 404;
     return {}
