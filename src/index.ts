@@ -212,9 +212,12 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     }
   }
   const user = JSON.parse(userStr) as User
+
   // find the tx in the user wins
   const win = user.wins.find((w) => w.txid === params.txid)
   const airdrop = user.airdrops.find((a) => a.txid === params.txid)
+  const gift = user.giftsGiven.find((g) => g.txid === params.txid)
+
   if (!win && !airdrop) {
     set.status = 404;
     return {
@@ -227,15 +230,19 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const tx = fetchJSON(`https://api.whatsonchain.com/v1/bsv/main/tx/hash/${params.txid}`)
   if (!tx) {
     // if it doesn't, we can claim it
-    return {
-      tx: airdrop || win,
+    const claim = {
+      win,
+      gift,
+      airdrop,
       claimed: false
     }
+
+    return claim
   }
   // already claimed - conflict status
   set.status = 409;
   return {
-    tx: win || airdrop,
+    win, airdrop, gift,
     claimed: true,
     error: "already claimed"
   }
