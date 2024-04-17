@@ -179,18 +179,22 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     exchangeRate,
     indexers
   };
-}).get("/user/:discordId", async ({ params }) => {
+}).get("/user/:discordId", async ({ params, set }) => {
   // return user info
   const discordId = params.discordId
 
   // get the user from redis by discord id
   const user = await redis.get(`user-${discordId}`)
+  if (!user) {
+    set.status = 404;
+    return {}
+  }
   return JSON.parse(user)
 }, {
   params: t.Object({
     discordId: t.String()
   })
-}).get("/claim/:discordId/tx/:txid", async ({ params }) => {
+}).get("/user/:discordId/claim/:txid", async ({ params }) => {
   // return user info
   const discordId = params.discordId
 
