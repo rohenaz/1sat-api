@@ -6,6 +6,7 @@ import { findMatchingKeys, findOneExactMatchingKey } from './db';
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
 import { sseInit } from './sse';
 import type { BSV20Details, BSV21Details, MarketDataV1, MarketDataV2 } from './types/bsv20';
+import { User } from './types/user';
 import { fetchChainInfo, fetchExchangeRate, fetchStats, fetchTokensDetails } from './utils';
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
@@ -178,6 +179,31 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     exchangeRate,
     indexers
   };
+}).get("/user/:discordId", async ({ params }) => {
+  // return user info
+  const discordId = params.discordId
+
+  // get the user from redis by discord id
+  const user = await redis.get(`user-${discordId}`)
+  return JSON.parse(user)
+}, {
+  params: t.Object({
+    discordId: t.String()
+  })
+}).get("/claim/:discordId/tx/:txid", async ({ params }) => {
+  // return user info
+  const discordId = params.discordId
+
+  // get the user from redis by discord id
+  const userStr = await redis.get(`user-${discordId}`)
+  // find the tx in the user wins
+  const user = JSON.parse(userStr) as User
+  return user.wins.find((w) => w.amount === params.txid)
+}, {
+  params: t.Object({
+    discordId: t.String(),
+    txid: t.String()
+  })
 }).listen(process.env.PORT ?? 3000);
 
 console.log(
