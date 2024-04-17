@@ -214,10 +214,11 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const user = JSON.parse(userStr) as User
   // find the tx in the user wins
   const win = user.wins.find((w) => w.txid === params.txid)
-  if (!win) {
+  const airdrop = user.airdrops.find((a) => a.txid === params.txid)
+  if (!win && !airdrop) {
     set.status = 404;
     return {
-      error: "win not found"
+      error: "no win or airdrop with that txid"
     }
   }
 
@@ -227,14 +228,14 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   if (!tx) {
     // if it doesn't, we can claim it
     return {
-      win,
+      tx: airdrop || win,
       claimed: false
     }
   }
   // already claimed - conflict status
   set.status = 409;
   return {
-    win,
+    tx: win || airdrop,
     claimed: true,
     error: "already claimed"
   }
