@@ -205,12 +205,20 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
 
   // get the user from redis by discord id
   const userStr = await botRedis.get(`user-${discordId}`)
-  // find the tx in the user wins
+  if (!userStr) {
+    set.status = 404;
+    return {
+      error: "user not found"
+    }
+  }
   const user = JSON.parse(userStr) as User
+  // find the tx in the user wins
   const win = user.wins.find((w) => w.txid === params.txid)
   if (!win) {
     set.status = 404;
-    return {}
+    return {
+      error: "win not found"
+    }
   }
 
   // see if the win exists on chain
@@ -227,7 +235,8 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   set.status = 409;
   return {
     win,
-    claimed: true
+    claimed: true,
+    error: "already claimed"
   }
 
 }, {
