@@ -189,6 +189,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     set.status = 404;
     return {}
   }
+  console.log({ user })
   return JSON.parse(user)
 }, {
   params: t.Object({
