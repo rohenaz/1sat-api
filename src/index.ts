@@ -172,7 +172,16 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   // template 1 - all buyers
 
   // template 2 - all holders
-  return []
+
+  // template 3 - all redis bot user addresses
+  const users = await botRedis.keys("user-*")
+  console.log({ users })
+  // we need user.address for each user
+  const addresses = await Promise.all(users.map(async (userKey: string) => {
+    const user = await botRedis.get(userKey)
+    return JSON.parse(user).address
+  }))
+  return addresses || []
 }).get("/status", async ({ set }) => {
   set.headers["Content-Type"] = "application/json";
   const chainInfo = await fetchChainInfo();
