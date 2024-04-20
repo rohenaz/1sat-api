@@ -191,87 +191,88 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
         return JSON.parse(user).address
       }))
     }
-      return addresses || []
-  }).get("/status", async ({ set }) => {
-    set.headers["Content-Type"] = "application/json";
-    const chainInfo = await fetchChainInfo();
-    const exchangeRate = await fetchExchangeRate();
-    const indexers = await fetchStats()
+  }
+  return addresses || []
+}).get("/status", async ({ set }) => {
+  set.headers["Content-Type"] = "application/json";
+  const chainInfo = await fetchChainInfo();
+  const exchangeRate = await fetchExchangeRate();
+  const indexers = await fetchStats()
+  return {
+    chainInfo,
+    exchangeRate,
+    indexers
+  };
+}).get("/user/:discordId", async ({ params, set }) => {
+  // return user info
+  const discordId = params.discordId
+
+  // get the user from redis by discord id
+  const user = await botRedis.get(`user-${discordId}`)
+  if (!user) {
+    set.status = 404;
+    return {}
+  }
+  console.log({ user })
+  return JSON.parse(user)
+}, {
+  params: t.Object({
+    discordId: t.String()
+  })
+}).get("/user/:discordId/check/:txid", async ({ params, set }) => {
+  // return user info
+  const discordId = params.discordId
+
+  // get the user from redis by discord id
+  const userStr = await botRedis.get(`user-${discordId}`)
+  if (!userStr) {
+    set.status = 404;
     return {
-      chainInfo,
-      exchangeRate,
-      indexers
-    };
-  }).get("/user/:discordId", async ({ params, set }) => {
-    // return user info
-    const discordId = params.discordId
-
-    // get the user from redis by discord id
-    const user = await botRedis.get(`user-${discordId}`)
-    if (!user) {
-      set.status = 404;
-      return {}
+      error: "user not found"
     }
-    console.log({ user })
-    return JSON.parse(user)
-  }, {
-    params: t.Object({
-      discordId: t.String()
-    })
-  }).get("/user/:discordId/check/:txid", async ({ params, set }) => {
-    // return user info
-    const discordId = params.discordId
+  }
+  const user = JSON.parse(userStr) as User
 
-    // get the user from redis by discord id
-    const userStr = await botRedis.get(`user-${discordId}`)
-    if (!userStr) {
-      set.status = 404;
-      return {
-        error: "user not found"
-      }
-    }
-    const user = JSON.parse(userStr) as User
+  // find the tx in the user wins
+  const win = user.wins.find((w) => w.txid === params.txid)
+  const airdrop = user.airdrops.find((a) => a.txid === params.txid)
+  const gift = user.giftsGiven.find((g) => g.txid === params.txid)
 
-    // find the tx in the user wins
-    const win = user.wins.find((w) => w.txid === params.txid)
-    const airdrop = user.airdrops.find((a) => a.txid === params.txid)
-    const gift = user.giftsGiven.find((g) => g.txid === params.txid)
-
-    if (!win && !airdrop) {
-      set.status = 404;
-      return {
-        error: "no win or airdrop with that txid"
-      }
-    }
-
-    // see if the win exists on chain
-    // if it already does we cacnnot claim anything
-    const tx = fetchJSON(`https://api.whatsonchain.com/v1/bsv/main/tx/hash/${params.txid}`)
-    if (!tx) {
-      // if it doesn't, we can claim it
-      const claim = {
-        win,
-        gift,
-        airdrop,
-        claimed: false
-      }
-
-      return claim
-    }
-    // already claimed - conflict status
-    set.status = 409;
+  if (!win && !airdrop) {
+    set.status = 404;
     return {
-      win, airdrop, gift,
-      claimed: true,
-      error: "already claimed"
+      error: "no win or airdrop with that txid"
+    }
+  }
+
+  // see if the win exists on chain
+  // if it already does we cacnnot claim anything
+  const tx = fetchJSON(`https://api.whatsonchain.com/v1/bsv/main/tx/hash/${params.txid}`)
+  if (!tx) {
+    // if it doesn't, we can claim it
+    const claim = {
+      win,
+      gift,
+      airdrop,
+      claimed: false
     }
 
-  }, {
-    params: t.Object({
-      discordId: t.String(),
-      txid: t.String()
-    })
-  }).listen(process.env.PORT ?? 3000);
+    return claim
+  }
+  // already claimed - conflict status
+  set.status = 409;
+  return {
+    win, airdrop, gift,
+    claimed: true,
+    error: "already claimed"
+  }
+
+}, {
+  params: t.Object({
+    discordId: t.String(),
+    txid: t.String()
+  })
+}).listen(process.env.PORT ?? 3000);
 
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
