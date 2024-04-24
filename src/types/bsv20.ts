@@ -49,9 +49,12 @@ export interface BSV21 extends BaseTxo {
   fundUsed?: string;
   fundBalance: string;
   included: boolean;
-  contract?: "pow-20" | undefined;
+  contract?: "pow-20" | "LockToMintBsv20" | undefined;
   difficulty?: string | undefined;
   startingReward?: string | undefined;
+  contractStart?: string | undefined;
+  lockTime?: string | undefined;
+  lockPerToken?: string | undefined;
 }
 
 export interface ListingsV2 extends BSV21 {

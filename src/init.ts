@@ -175,8 +175,8 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) =
     const parsed = JSON.parse(cached);
     const ticker = Object.assign(parsed, t) as MarketDataV2;
 
-    const [pow20Data, sales, listings, holders] = await Promise.all([
-      fetchPow20Data(id, ticker),
+    const [contractData, sales, listings, holders] = await Promise.all([
+      fetchContractData(id, ticker),
       fetchSales(id),
       fetchListings(id),
       fetchHolders(id, ticker),
@@ -202,11 +202,25 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) =
   return results;
 };
 
-async function fetchPow20Data(id: string, ticker: MarketDataV2): Promise<Partial<BSV21>> {
-  const urlPow20 = `${API_HOST}/content/${id}?fuzzy=false`;
-  const pow20Data = await fetchJSON(urlPow20) as Partial<BSV21>
-  updateTickerWithPow20Data(ticker, pow20Data);
-  return pow20Data;
+async function fetchContractData(id: string, ticker: MarketDataV2): Promise<Partial<BSV21>> {
+  const url = `${API_HOST}/content/${id}?fuzzy=false`;
+  const contractData = await fetchJSON(url) as Partial<BSV21>
+
+  // pow20
+  if (contractData && contractData.contract === "pow-20") {
+
+    updateTickerWithPow20Data(ticker, contractData);
+
+    return contractData;
+  }
+
+  // lock to mint
+  if (contractData && contractData.contract === "LockToMintBsv20") {
+    updateTickerWithLTMData(ticker, contractData);
+    return contractData;
+  }
+
+  return {};
 }
 
 async function fetchSales(id: string): Promise<ListingsV2[]> {
@@ -230,13 +244,20 @@ async function fetchHolders(id: string, ticker: MarketDataV2): Promise<void> {
 }
 
 function updateTickerWithPow20Data(ticker: MarketDataV2, pow20Data: Partial<BSV21>): void {
-  if (pow20Data && pow20Data.contract === "pow-20") {
-    const { contract, startingReward, difficulty } = pow20Data;
-    console.log({ contract, startingReward, difficulty });
-    ticker.contract = contract;
-    ticker.startingReward = startingReward;
-    ticker.difficulty = difficulty;
-  }
+  const { contract, startingReward, difficulty } = pow20Data;
+  console.log({ contract, startingReward, difficulty });
+  ticker.contract = contract;
+  ticker.startingReward = startingReward;
+  ticker.difficulty = difficulty;
+}
+
+function updateTickerWithLTMData(ticker: MarketDataV2, ltmData: Partial<BSV21>): void {
+  const { contract, contractStart, lockTime, lockPerToken } = ltmData;
+  console.log({ contract, contractStart, lockTime, lockPerToken });
+  ticker.contract = contract;
+  ticker.contractStart = contractStart;
+  ticker.lockTime = lockTime;
+  ticker.lockPerToken = lockPerToken;
 }
 
 async function updateListingsCache(id: string, listings: ListingsV2[]): Promise<void> {
