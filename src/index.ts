@@ -152,6 +152,12 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       // default sort by recentSales
       const aHeight = aSales.length > 0 ? aSales[0]?.height : 0;
       const bHeight = bSales.length > 0 ? bSales[0]?.height : 0;
+      if (aSales.length === 0) {
+        return 1;
+      }
+      if (bSales.length === 0) {
+        return -1;
+      }
       if (aHeight === bHeight) {
         const aIdx = aSales.length > 0 ? aSales[0]?.idx : 0;
         const bIdx = bSales.length > 0 ? bSales[0]?.idx : 0;
