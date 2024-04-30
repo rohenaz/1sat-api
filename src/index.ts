@@ -121,15 +121,23 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   params: t.Object({
     assetType: t.String()
   })
-}).get("/market/:assetType/:id", async ({ set, params }) => {
+}).get("/market/:assetType/:id", async ({ set, params, query }) => {
   const id = decodeURIComponent(params.id);
   console.log("WITH ID", params.assetType, id)
+  const sortBy = query.sortBy || "price_per_token";
   try {
     const marketData = await fetchMarketData(params.assetType as AssetType, id);
     return marketData.sort((a, b) => {
       // find the most recent sales
       const aSales = a.sales || [];
       const bSales = b.sales || [];
+      if (sortBy === "price_per_token") {
+        const aPrice = aSales.length > 0 ? aSales[0]?.pricePer : 0;
+        const bPrice = bSales.length > 0 ? bSales[0]?.pricePer : 0;
+        return aPrice > bPrice ? 1 : -1;
+
+      }
+      // default sort by height
       const aHeight = aSales.length > 0 ? aSales[0]?.height : 0;
       const bHeight = bSales.length > 0 ? bSales[0]?.height : 0;
       if (aHeight === bHeight) {
@@ -138,6 +146,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
         return aIdx > bIdx ? 1 : -1;
       }
       return aHeight > bHeight ? 1 : -1;
+
     })
   } catch (e) {
     console.error("Error fetching market data:", e);
