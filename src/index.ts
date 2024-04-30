@@ -124,14 +124,26 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
 }).get("/market/:assetType/:id", async ({ set, params, query }) => {
   const id = decodeURIComponent(params.id);
   console.log("WITH ID", params.assetType, id)
-  const sortBy = query.sort || "price_per_token";
+  const sort = query.sort || "price_per_token";
   try {
     const marketData = await fetchMarketData(params.assetType as AssetType, id);
     return marketData.sort((a, b) => {
       // find the most recent sales
       const aSales = a.sales || [];
       const bSales = b.sales || [];
-      if (sortBy === "price_per_token") {
+      if (sort === "name") {
+        if (params.assetType === AssetType.BSV20) {
+          const bsv20a = (a as MarketDataV1).tick
+          const bsv20b = (b as MarketDataV1).tick
+          return bsv20a > bsv20b ? 1 : -1;
+        }
+        if (params.assetType === AssetType.BSV21) {
+          const bsv21a = (a as MarketDataV2).sym
+          const bsv21b = (b as MarketDataV2).sym
+          return bsv21a > bsv21b ? 1 : -1;
+        }
+      }
+      if (sort === "price_per_token") {
         const aPrice = aSales.length > 0 ? aSales[0]?.pricePer : 0;
         const bPrice = bSales.length > 0 ? bSales[0]?.pricePer : 0;
         return aPrice > bPrice ? 1 : -1;
