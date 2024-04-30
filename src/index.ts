@@ -152,10 +152,11 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       // default sort by recentSales
       const aHeight = aSales.length > 0 ? aSales[0]?.height : 0;
       const bHeight = bSales.length > 0 ? bSales[0]?.height : 0;
-      if (aSales.length === 0) {
+      // must have 2 sales for a pctChange to be calculated. omit 1 or less.
+      if (aSales.length <= 1) {
         return 1;
       }
-      if (bSales.length === 0) {
+      if (bSales.length <= 1) {
         return -1;
       }
       if (aHeight === bHeight) {
