@@ -127,12 +127,15 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   try {
     const marketData = await fetchMarketData(params.assetType as AssetType, id);
     return marketData.sort((a, b) => {
-      // find the most recent from a.sales and b.sales
+      // find the most recent sales
       const aSales = a.sales || [];
       const bSales = b.sales || [];
-      const aPrice = aSales.length > 0 ? Number.parseFloat(aSales[0]?.pricePer) : 0;
-      const bPrice = bSales.length > 0 ? Number.parseFloat(bSales[0]?.pricePer) : 0;
-      return bPrice - aPrice;
+      const aHeight = aSales.length > 0 ? aSales[0]?.height : 0;
+      const bHeight = bSales.length > 0 ? bSales[0]?.height : 0;
+      if (aHeight === bHeight) {
+        return a.idx > b.idx ? 1 : -1;
+      }
+      return aHeight > bHeight ? 1 : -1;
     })
   } catch (e) {
     console.error("Error fetching market data:", e);
