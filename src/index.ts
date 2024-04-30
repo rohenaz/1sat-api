@@ -126,7 +126,14 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   console.log("WITH ID", params.assetType, id)
   try {
     const marketData = await fetchMarketData(params.assetType as AssetType, id);
-    return marketData;
+    return marketData.sort((a, b) => {
+      // find the most recent from a.sales and b.sales
+      const aSales = a.sales || [];
+      const bSales = b.sales || [];
+      const aPrice = aSales.length > 0 ? Number.parseFloat(aSales[0]?.pricePer) : 0;
+      const bPrice = bSales.length > 0 ? Number.parseFloat(bSales[0]?.pricePer) : 0;
+      return bPrice - aPrice;
+    })
   } catch (e) {
     console.error("Error fetching market data:", e);
     set.status = 500;
