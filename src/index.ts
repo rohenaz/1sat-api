@@ -161,6 +161,9 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   params: t.Object({
     assetType: t.String(),
     id: t.String()
+  }),
+  query: t.Object({
+    sort: t.String()
   })
 }).get("/mint/:assetType/:id", async ({ set, params }) => {
   // same as /market/:assetType/:id but doesn't return minted out tokens
