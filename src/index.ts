@@ -149,7 +149,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
         return aPrice > bPrice ? 1 : -1;
 
       }
-      // default sort by height
+      // default sort by recentSales
       const aHeight = aSales.length > 0 ? aSales[0]?.height : 0;
       const bHeight = bSales.length > 0 ? bSales[0]?.height : 0;
       if (aHeight === bHeight) {
@@ -158,7 +158,6 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
         return aIdx > bIdx ? 1 : -1;
       }
       return aHeight > bHeight ? 1 : -1;
-
     })
   } catch (e) {
     console.error("Error fetching market data:", e);
