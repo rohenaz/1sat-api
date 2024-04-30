@@ -124,7 +124,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
 }).get("/market/:assetType/:id", async ({ set, params, query }) => {
   const id = decodeURIComponent(params.id);
   console.log("WITH ID", params.assetType, id)
-  const sortBy = query.sortBy || "price_per_token";
+  const sortBy = query.sort || "price_per_token";
   try {
     const marketData = await fetchMarketData(params.assetType as AssetType, id);
     return marketData.sort((a, b) => {
