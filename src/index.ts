@@ -133,7 +133,9 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       const aHeight = aSales.length > 0 ? aSales[0]?.height : 0;
       const bHeight = bSales.length > 0 ? bSales[0]?.height : 0;
       if (aHeight === bHeight) {
-        return a.idx > b.idx ? 1 : -1;
+        const aIdx = aSales.length > 0 ? aSales[0]?.idx : 0;
+        const bIdx = bSales.length > 0 ? bSales[0]?.idx : 0;
+        return aIdx > bIdx ? 1 : -1;
       }
       return aHeight > bHeight ? 1 : -1;
     })
