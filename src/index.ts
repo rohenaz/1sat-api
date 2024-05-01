@@ -88,6 +88,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     ids: t.Array(t.String())
   })
 }).get('/market/:assetType', async ({ set, params, query }) => {
+  // sort can be name, market_cap, price, pct_change, holders, most_recent_sale (default)
   const { limit, offset, sort, dir } = query;
   console.log({ limit, offset, sort, dir, params });
 
@@ -138,7 +139,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
         if (!b.lastSaleHeight) {
           return -1;
         }
-        return b.lastSaleHeight - a.lastSaleHeight;
+        return a.lastSaleHeight - b.lastSaleHeight;
       };
 
       const compareFunctions: Record<string, () => number> = {
