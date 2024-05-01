@@ -100,33 +100,14 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     //   await redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
     // }
     console.log("marketData", marketData?.length)
-    return marketData;
-    //}
-    //return JSON.parse(market);
-  } catch (e) {
-    console.error("Error fetching market data:", e);
-    set.status = 500;
-    return {};
-  }
-}, {
-  transform({ params }) {
-    params.assetType = params.assetType.toLowerCase();
-  },
-  query: t.Object({
-    limit: t.String(),
-    offset: t.String(),
-    sort: t.String(),
-    dir: t.String()
-  }),
-  params: t.Object({
-    assetType: t.String()
-  })
-}).get("/market/:assetType/:id", async ({ set, params, query }) => {
-  const id = decodeURIComponent(params.id);
-  console.log("WITH ID", params.assetType, id)
-  const sort = query.sort || "price_per_token";
-  try {
-    const marketData = await fetchMarketData(params.assetType as AssetType, id);
+
+    if (!marketData) {
+      set.status = 404;
+      return [];
+    }
+
+    const sort = query.sort || "price_per_token";
+
     return marketData.sort((a, b) => {
       // find the most recent sales
       const aSales = a.sales.sort((c, d) => {
@@ -170,6 +151,35 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       }
       return aHeight > bHeight ? 1 : -1;
     })
+
+    return marketData;
+    //}
+    //return JSON.parse(market);
+  } catch (e) {
+    console.error("Error fetching market data:", e);
+    set.status = 500;
+    return {};
+  }
+}, {
+  transform({ params }) {
+    params.assetType = params.assetType.toLowerCase();
+  },
+  query: t.Object({
+    limit: t.String(),
+    offset: t.String(),
+    sort: t.String(),
+    dir: t.String()
+  }),
+  params: t.Object({
+    assetType: t.String()
+  })
+}).get("/market/:assetType/:id", async ({ set, params, query }) => {
+  const id = decodeURIComponent(params.id);
+  console.log("WITH ID", params.assetType, id)
+  const sort = query.sort || "price_per_token";
+  try {
+    const marketData = await fetchMarketData(params.assetType as AssetType, id);
+    return marketData;
   } catch (e) {
     console.error("Error fetching market data:", e);
     set.status = 500;
