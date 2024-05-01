@@ -149,7 +149,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
         const bIdx = bSales.length > 0 ? bSales[0]?.idx : 0;
         return aIdx > bIdx ? 1 : -1;
       }
-      return aHeight > bHeight ? 1 : -1;
+      return aHeight > bHeight ? -1 : 1;
     })
 
     //}
