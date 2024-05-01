@@ -152,7 +152,6 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       return aHeight > bHeight ? 1 : -1;
     })
 
-    return marketData;
     //}
     //return JSON.parse(market);
   } catch (e) {
