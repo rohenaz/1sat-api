@@ -146,12 +146,14 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     const price = sales.length > 0 ? Number.parseFloat(sales[0]?.pricePer) : 0;
     const marketCap = calculateMarketCap(price, Number.parseInt(ticker.max));
     const pctChange = await setPctChange(ticker.tick, sales, info.blocks);
+    const lastSaleHeight = sales.length > 0 ? sales[0]?.height || 0 : undefined;
 
     const result = {
       ...ticker,
       price,
       pctChange,
       marketCap,
+      lastSaleHeight,
     } as MarketDataV1
 
     const autofillData = await redis.hget(`autofill-${AssetType.BSV20}`, ticker.tick.toLowerCase());
@@ -186,6 +188,7 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) =
     await updateIncludedCache(id, ticker);
 
     const price = sales.length > 0 ? Number.parseFloat(sales[0]?.pricePer) : 0;
+    const lastSaleHeight = sales.length > 0 ? sales[0]?.height || 0 : undefined;
     const marketCap = calculateMarketCap(price, Number.parseInt(ticker.amt));
     const pctChange = await setPctChange(id, sales, info.blocks);
 
@@ -194,6 +197,7 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) =
       price,
       pctChange,
       marketCap,
+      lastSaleHeight,
     } as MarketDataV2;
 
     await redis.set(`token-${AssetType.BSV21}-${id}`, JSON.stringify(result));

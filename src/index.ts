@@ -104,8 +104,6 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     const sortDirection = query.dir === "asc" ? 1 : -1;
 
     return marketData.sort((a: MarketDataV1 | MarketDataV2, b: MarketDataV1 | MarketDataV2) => {
-      const aSales = a.sales?.sort((c, d) => d.height - c.height) || [];
-      const bSales = b.sales?.sort((c, d) => d.height - c.height) || [];
 
       const compareByName = (): number => {
         if (params.assetType === AssetType.BSV20) {
@@ -134,14 +132,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       };
 
       const compareByMostRecentSale = (): number => {
-        const aSaleHeight = aSales.length > 0 ? aSales[0]?.height || Infinity : Infinity;
-        const bSaleHeight = bSales.length > 0 ? bSales[0]?.height || Infinity : Infinity;
-
-        if (aSaleHeight === Infinity && bSaleHeight === Infinity) {
-          return compareByName();
-        }
-
-        return bSaleHeight - aSaleHeight;
+        return b.lastSaleHeight - a.lastSaleHeight;
       };
 
       const compareFunctions: Record<string, () => number> = {

@@ -110,12 +110,14 @@ export interface MarketDataV2 extends BSV21Details {
   price: number;
   marketCap: number;
   pctChange: number;
+  lastSaleHeight?: number | undefined;
 }
 
 export interface MarketDataV1 extends BSV20Details {
   price: number;
   marketCap: number;
   pctChange: number;
+  lastSaleHeight?: number | undefined;
   num: number;
 }
 export interface BalanceUpdate {
