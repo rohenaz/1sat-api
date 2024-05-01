@@ -134,10 +134,10 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       };
 
       const compareByMostRecentSale = (): number => {
-        const aSaleHeight = aSales.length > 0 ? aSales[0]?.height || 0 : 0;
-        const bSaleHeight = bSales.length > 0 ? bSales[0]?.height || 0 : 0;
+        const aSaleHeight = aSales.length > 0 ? aSales[0]?.height || Infinity : Infinity;
+        const bSaleHeight = bSales.length > 0 ? bSales[0]?.height || Infinity : Infinity;
 
-        if (aSaleHeight === 0 && bSaleHeight === 0) {
+        if (aSaleHeight === Infinity && bSaleHeight === Infinity) {
           return compareByName();
         }
 
