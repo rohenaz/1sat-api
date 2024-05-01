@@ -89,71 +89,73 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   })
 }).get('/market/:assetType', async ({ set, params, query }) => {
   const { limit, offset, sort, dir } = query;
-  console.log({ limit, offset, sort, dir, params })
+  console.log({ limit, offset, sort, dir, params });
 
   try {
-    // let market = await redis.get(`market-${params.assetType}`);
-    // console.log("In cache?", market)
-    // if (!market) {
     const marketData = await fetchShallowMarketData(params.assetType as AssetType, Number.parseInt(offset), Number.parseInt(limit));
-    // if (marketData) {
-    //   await redis.set(`market-${params.assetType}`, JSON.stringify(marketData), "EX", defaults.expirationTime);
-    // }
-    console.log("marketData", marketData?.length)
+    console.log("marketData", marketData?.length);
 
     if (!marketData) {
       set.status = 404;
       return [];
     }
 
-    const sort = query.sort || "price_per_token";
+    const sortMethod = query.sort || "most_recent_sale";
+    const sortDirection = query.dir === "asc" ? 1 : -1;
 
-    return marketData.sort((a, b) => {
-      // find the most recent sales
-      const aSales = a.sales?.sort((c, d) => {
-        return d.height - c.height
-      }) || [];
-      const bSales = b.sales?.sort((c, d) => {
-        return d.height - c.height
-      }) || [];
-      if (sort === "name") {
+    return marketData.sort((a: MarketDataV1 | MarketDataV2, b: MarketDataV1 | MarketDataV2) => {
+      const aSales = a.sales?.sort((c, d) => d.height - c.height) || [];
+      const bSales = b.sales?.sort((c, d) => d.height - c.height) || [];
+
+      const compareByName = (): number => {
         if (params.assetType === AssetType.BSV20) {
-          const bsv20a = (a as MarketDataV1).tick
-          const bsv20b = (b as MarketDataV1).tick
-          return bsv20a > bsv20b ? 1 : -1;
+          const bsv20a = (a as MarketDataV1).tick || "";
+          const bsv20b = (b as MarketDataV1).tick || "";
+          return bsv20a.localeCompare(bsv20b);
         }
         if (params.assetType === AssetType.BSV21) {
-          const bsv21a = (a as MarketDataV2).sym
-          const bsv21b = (b as MarketDataV2).sym
-          return bsv21a > bsv21b ? 1 : -1;
+          const bsv21a = (a as MarketDataV2).sym || "";
+          const bsv21b = (b as MarketDataV2).sym || "";
+          return bsv21a.localeCompare(bsv21b);
         }
-      }
-      if (sort === "price_per_token") {
-        const aPrice = aSales.length > 0 ? aSales[0]?.pricePer : 0;
-        const bPrice = bSales.length > 0 ? bSales[0]?.pricePer : 0;
-        return aPrice > bPrice ? 1 : -1;
+        return 0;
+      };
 
-      }
-      // default sort by recentSales
-      const aHeight = aSales.length > 0 ? aSales[0]?.height : 0;
-      const bHeight = bSales.length > 0 ? bSales[0]?.height : 0;
-      // must have 2 sales for a pctChange to be calculated. omit 1 or less.
-      if (aSales.length <= 1) {
-        return 1;
-      }
-      if (bSales.length <= 1) {
-        return -1;
-      }
-      if (aHeight === bHeight) {
-        const aIdx = aSales.length > 0 ? aSales[0]?.idx : 0;
-        const bIdx = bSales.length > 0 ? bSales[0]?.idx : 0;
-        return aIdx > bIdx ? 1 : -1;
-      }
-      return aHeight > bHeight ? -1 : 1;
-    })
+      const compareByNumber = (propName: keyof (MarketDataV1 | MarketDataV2)): number => {
+        const aProp = Number((a as MarketDataV1 | MarketDataV2)[propName] || 0);
+        const bProp = Number((b as MarketDataV1 | MarketDataV2)[propName] || 0);
+        return aProp - bProp;
+      };
 
-    //}
-    //return JSON.parse(market);
+      const compareByHolders = (): number => {
+        const aHolders = (a as MarketDataV1 | MarketDataV2).holders?.length || 0;
+        const bHolders = (b as MarketDataV1 | MarketDataV2).holders?.length || 0;
+        return aHolders - bHolders;
+      };
+
+      const compareByMostRecentSale = (): number => {
+        const aSaleHeight = aSales.length > 0 ? aSales[0]?.height || 0 : 0;
+        const bSaleHeight = bSales.length > 0 ? bSales[0]?.height || 0 : 0;
+
+        if (aSaleHeight === 0 && bSaleHeight === 0) {
+          return compareByName();
+        }
+
+        return bSaleHeight - aSaleHeight;
+      };
+
+      const compareFunctions: Record<string, () => number> = {
+        name: compareByName,
+        market_cap: () => compareByNumber("marketCap"),
+        price: () => compareByNumber("price"),
+        pct_change: () => compareByNumber("pctChange"),
+        holders: compareByHolders,
+        most_recent_sale: compareByMostRecentSale,
+      };
+
+      const compareFunction = compareFunctions[sortMethod] || compareByMostRecentSale;
+      return compareFunction() * sortDirection;
+    });
   } catch (e) {
     console.error("Error fetching market data:", e);
     set.status = 500;
