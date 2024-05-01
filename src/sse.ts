@@ -1,7 +1,6 @@
 import EventSource from "eventsource";
-import { find } from "lodash";
 import { redis } from ".";
-import { API_HOST, AssetType, defaults } from "./constants";
+import { API_HOST, AssetType } from "./constants";
 import { loadV1TickerDetails, loadV2TickerDetails } from "./init";
 import { BSV20Details, BalanceUpdate, ListingsV1, ListingsV2 } from "./types/bsv20";
 import { fetchChainInfo, fetchTokensDetails } from "./utils";
@@ -112,7 +111,7 @@ const sseInit = async () => {
     const ticker = t ? JSON.parse(t) : null;
     const wasIncluded = !!ticker ? ticker.included === true : false;
     const redisTickers = await redis.get(`tickers-${assetType}`);
-    let tickers = redisTickers ? JSON.parse(redisTickers) : [];
+    const tickers = redisTickers ? JSON.parse(redisTickers) : [];
     if (ticker) {
       ticker.included = included;
       ticker.fundTotal = fundTotal;
@@ -137,7 +136,8 @@ const sseInit = async () => {
       //   console.log("Ticker set to included", id)
       // }
     }
-    await loadV2TickerDetails(tickers);
+    const info = await fetchChainInfo()
+    await loadV2TickerDetails(tickers, info)
 
   })
 

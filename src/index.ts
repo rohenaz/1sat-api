@@ -110,10 +110,10 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
 
     return marketData.sort((a, b) => {
       // find the most recent sales
-      const aSales = a.sales.sort((c, d) => {
+      const aSales = a.sales?.sort((c, d) => {
         return d.height - c.height
       }) || [];
-      const bSales = b.sales.sort((c, d) => {
+      const bSales = b.sales?.sort((c, d) => {
         return d.height - c.height
       }) || [];
       if (sort === "name") {
