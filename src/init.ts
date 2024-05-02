@@ -146,7 +146,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     const price = sales.length > 0 ? Number.parseFloat(sales[0]?.pricePer) : 0;
     const marketCap = calculateMarketCap(price, Number.parseInt(ticker.max));
     const pctChange = await setPctChange(ticker.tick, sales, info.blocks);
-    const lastSaleHeight = sales.length > 0 ? sales[0]?.height || 0 : undefined;
+    const lastSaleHeight = sales.length > 0 ? sales[0]?.spendHeight || 0 : undefined;
 
     const result = {
       ...ticker,
@@ -188,7 +188,7 @@ export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) =
     await updateIncludedCache(id, ticker);
 
     const price = sales.length > 0 ? Number.parseFloat(sales[0]?.pricePer) : 0;
-    const lastSaleHeight = sales.length > 0 ? sales[0]?.height || 0 : undefined;
+    const lastSaleHeight = sales.length > 0 ? sales[0]?.spendHeight || 0 : undefined;
     const marketCap = calculateMarketCap(price, Number.parseInt(ticker.amt));
     const pctChange = await setPctChange(id, sales, info.blocks);
 
