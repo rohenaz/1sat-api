@@ -139,7 +139,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
         if (!b.lastSaleHeight) {
           return -1;
         }
-        return a.lastSaleHeight - b.lastSaleHeight;
+        return a.lastSaleHeight === 0 || a.lastSaleHeight > b.lastSaleHeight ? -1 : 1;
       };
 
       const compareFunctions: Record<string, () => number> = {
