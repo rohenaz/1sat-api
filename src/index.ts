@@ -133,11 +133,12 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       };
 
       const compareByMostRecentSale = (): number => {
+        // unconfirmed is most recent
         if (a.lastSaleHeight === 0) {
           return -1;
         }
         if (b.lastSaleHeight === 0) {
-          return -1;
+          return 1;
         }
         if (a.lastSaleHeight === undefined) {
           return 1;
