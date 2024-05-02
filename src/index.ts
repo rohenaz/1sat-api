@@ -133,13 +133,19 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       };
 
       const compareByMostRecentSale = (): number => {
-        if (!a.lastSaleHeight) {
-          return 1;
-        }
-        if (!b.lastSaleHeight) {
+        if (a.lastSaleHeight === 0) {
           return -1;
         }
-        return a.lastSaleHeight === 0 || a.lastSaleHeight > b.lastSaleHeight ? -1 : 1;
+        if (b.lastSaleHeight === 0) {
+          return -1;
+        }
+        if (a.lastSaleHeight === undefined) {
+          return 1;
+        }
+        if (b.lastSaleHeight === undefined) {
+          return -1;
+        }
+        return a.lastSaleHeight - b.lastSaleHeight;
       };
 
       const compareFunctions: Record<string, () => number> = {
