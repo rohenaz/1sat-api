@@ -131,7 +131,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
 
     // Fetch the collection data from the API
     // Fetch the collection data from the API
-    const response = await fetch(`${API_HOST}/inscription/${collectionId}`);
+    const response = await fetch(`${API_HOST}/inscriptions/${collectionId}`);
     let collectionData = await response.json();
 
     // Store the collection data in a hash
