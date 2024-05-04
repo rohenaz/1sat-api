@@ -121,7 +121,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
 
   try {
     // Check if the collection items are already cached
-    const cachedItems = await redis.hget(`collections-${AssetType.Ordinals}`, collectionId);
+    const cachedItems = await redis.hget(`collection-${AssetType.Ordinals}`, collectionId);
     if (cachedItems) {
       return JSON.parse(cachedItems).items;
     }
@@ -135,7 +135,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     const collectionData = await response.json();
 
     // Store the collection data in a hash
-    await redis.hset(`collections-${AssetType.Ordinals}`, collectionId, JSON.stringify({ data: collectionData, items }));
+    await redis.hset(`collection-${AssetType.Ordinals}`, collectionId, JSON.stringify({ data: collectionData, items }));
 
     return items;
   } catch (e) {
