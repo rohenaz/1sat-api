@@ -3,16 +3,6 @@ import type { FetchItemsQuery } from "./types/collection";
 import type { OrdUtxo } from "./types/ordinals";
 import { fetchJSON } from "./utils";
 
-const fetchCollectionData = async (url: string) => {
-  try {
-    return fetchJSON<OrdUtxo[]>(url);
-
-
-  } catch (e) {
-    console.error("Error fetching collection data", e, url);
-  }
-};
-
 export const fetchCollectionItems = async (
   q: FetchItemsQuery,
   offset = 0,
@@ -21,7 +11,7 @@ export const fetchCollectionItems = async (
   const collectionItemsUrl = `${API_HOST}/api/inscriptions/search?offset=${offset}&limit=${limit}&q=${btoa(
     JSON.stringify(q)
   )}`;
-  const items = await fetchCollectionData(collectionItemsUrl);
+  const items = await fetchJSON<OrdUtxo[]>(collectionItemsUrl);
 
   return (items ?? []).filter((i) => !i?.data?.list?.price);
 };
@@ -35,5 +25,5 @@ export const fetchCollectionMarket = async (
     JSON.stringify(q)
   )}`;
 
-  return await fetchCollectionData(collectionMarketUrl);
+  return await fetchJSON<OrdUtxo[]>(collectionMarketUrl);
 };

@@ -93,8 +93,14 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const { offset, limit } = query;
   const collectionId = params.collectionId;
   console.log({ collectionId, offset, limit });
+  try {
 
-  return await fetchCollectionMarket({ map: { subTypeData: { collectionId } } }, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
+    return await fetchCollectionMarket({ map: { subTypeData: { collectionId } } }, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
+  } catch (e) {
+    console.error("Error fetching collection market:", e);
+    set.status = 500;
+    return [];
+  }
   // use the search endpoint to find listings for a collection by id
 }).get("/collection/:collectionId/items", async ({ params, query, set }) => {
   // ofset and limit
@@ -102,7 +108,14 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const collectionId = params.collectionId;
 
   console.log({ collectionId, offset, limit });
-  return await fetchCollectionItems({ map: { subTypeData: { collectionId } } }, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
+  try {
+
+    return await fetchCollectionItems({ map: { subTypeData: { collectionId } } }, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
+  } catch (e) {
+    console.error("Error fetching collection items:", e);
+    set.status = 500;
+    return [];
+  }
 
   // use the search endpoint to find listings for a collection by id
 }).get('/market/:assetType', async ({ set, params, query }) => {
