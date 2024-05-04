@@ -108,7 +108,6 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     // Retrieve the cached collections using findMatchingKeysWithOffset
     const collections = await findMatchingKeysWithOffset(redis, "collection", "", AssetType.Ordinals, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
     console.log("### Found collections", collections.length)
-
     return collections;
   } catch (e) {
     console.error("Error fetching collections:", e);
@@ -124,10 +123,15 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
 
     // Fetch the collection data from the API
     const response = await fetch(`${API_HOST}/api/inscriptions/${collectionId}`);
-    const collectionData = await response.json();
+    const collectionData = await response.json() as any;
 
     // Store the collection data in a hash
     if (response.status === 200) {
+
+      // get the stats for the collection
+      const stats = await fetchJSON(`${API_HOST}/api/collections/${collectionId}/stats`);
+      collectionData.stats = stats;
+
       await redis.hset(`collection-${AssetType.Ordinals}`, collectionId, JSON.stringify(collectionData), "EX", defaults.expirationTime);
     }
 
