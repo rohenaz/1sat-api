@@ -107,8 +107,14 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   try {
     // Retrieve the cached collections using findMatchingKeysWithOffset
     const collections = await findMatchingKeysWithOffset(redis, "collection", "", AssetType.Ordinals, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
-    return collections;
+    console.log("### Found collections", collections.length)
 
+    // Parse the collection data and extract the relevant information
+    const parsedCollections = collections.map((collectionData) => {
+      return JSON.parse(collectionData);
+    });
+
+    return parsedCollections;
   } catch (e) {
     console.error("Error fetching collections:", e);
     set.status = 500;
