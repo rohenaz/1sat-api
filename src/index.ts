@@ -135,11 +135,12 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     const items = await fetchCollectionItems({ map: { subTypeData: { collectionId } } }, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
 
     // Fetch the collection data from the API
+    // Fetch the collection data from the API
     const response = await fetch(`${API_HOST}/inscription/${collectionId}`);
     const collectionData = await response.json();
 
-    // Cache the collection data along with the items
-    await redis.set(`collection-${AssetType.Ordinals}-${collectionId}`, JSON.stringify({ items, data: collectionData }));
+    // Store the collection data in a hash
+    await redis.hset(`collections-${AssetType.Ordinals}`, collectionId, JSON.stringify(collectionData));
 
     return items;
   } catch (e) {

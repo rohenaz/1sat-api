@@ -21,11 +21,8 @@ export const findMatchingKeys = async (redis: Redis, prefix: string, partial: st
 // takes a offset and limit
 export const findMatchingKeysWithOffset = async (redis: Redis, prefix: string, partial: string, type: AssetType, offset: number, limit: number) => {
   const pattern = `${partial}*`;
-  let cursor = offset.toString();
   const results = [];
-
-  const reply = await redis.hscan(`${prefix}-${type}`, cursor, 'MATCH', pattern, 'COUNT', limit);
-  cursor = reply[0];
+  const reply = await redis.hscan(`${prefix}-${type}`, offset, 'MATCH', pattern, 'COUNT', limit);
   const keys = reply[1];
 
   // Fetch the value for each matching key
