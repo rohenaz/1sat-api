@@ -3,7 +3,7 @@ import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
 import { fetchCollectionItems, fetchCollectionMarket } from './collection';
 import { API_HOST, AssetType, NUMBER_OF_ITEMS_PER_PAGE, defaults } from './constants';
-import { findMatchingKeys, findOneExactMatchingKey } from './db';
+import { findMatchingKeys, findMatchingKeysWithOffset, findOneExactMatchingKey } from './db';
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
 import { sseInit } from './sse';
 import type { BSV20Details, BSV21Details, MarketDataV1, MarketDataV2 } from './types/bsv20';
@@ -102,14 +102,20 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     return [];
   }
   // use the search endpoint to find listings for a collection by id
+}).get("/collection", async ({ params, set, query }) => {
+  // reach the collections from cache
+  const { offset, limit } = query;
+  const collections = await findMatchingKeysWithOffset(redis, "collection", "", AssetType.Ordinals, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
+
+  return collections
 }).get("/collection/:collectionId/items", async ({ params, query, set }) => {
   // ofset and limit
   const { offset, limit } = query;
   const collectionId = params.collectionId;
 
+  // if we dont know about this collection, cache a record for it (will cause it to show in the collections list)
   console.log({ collectionId, offset, limit });
   try {
-
     return await fetchCollectionItems({ map: { subTypeData: { collectionId } } }, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
   } catch (e) {
     console.error("Error fetching collection items:", e);

@@ -1,5 +1,5 @@
-import { Redis } from "ioredis";
-import { AssetType } from "./constants";
+import type { Redis } from "ioredis";
+import type { AssetType } from "./constants";
 
 export const findMatchingKeys = async (redis: Redis, prefix: string, partial: string, type: AssetType) => {
   const pattern = `${partial}*`;
@@ -16,6 +16,24 @@ export const findMatchingKeys = async (redis: Redis, prefix: string, partial: st
     }
   } while (cursor !== '0');
   return results;
+}
+
+// takes a offset and limit
+export const findMatchingKeysWithOffset = async (redis: Redis, prefix: string, partial: string, type: AssetType, offset: number, limit: number) => {
+  const pattern = `${partial}*`;
+  let cursor = offset.toString();
+  const results = [];
+
+  const reply = await redis.hscan(`${prefix}-${type}`, cursor, 'MATCH', pattern, 'COUNT', limit);
+  cursor = reply[0];
+  const keys = reply[1];
+
+  // Fetch the value for each matching key
+  for (let i = 0; i < keys.length; i += 2) {
+    results.push(JSON.parse(keys[i + 1]));
+  }
+
+  return results.slice(offset, offset + limit);
 }
 
 export const findOneExactMatchingKey = async (redis: Redis, prefix: string, key: string, type: AssetType) => {
