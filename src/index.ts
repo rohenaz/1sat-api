@@ -123,7 +123,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     // Check if the collection items are already cached
     const cachedItems = await redis.hget(`collection-${AssetType.Ordinals}`, collectionId);
     if (cachedItems) {
-      return JSON.parse(cachedItems).items;
+      // return JSON.parse(cachedItems).items;
     }
 
     // If not cached, fetch the collection items from the API
