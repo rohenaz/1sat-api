@@ -1,7 +1,7 @@
 import { cors } from '@elysiajs/cors';
 import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
-import { fetchCollectionMarket } from './collection';
+import { fetchCollectionItems, fetchCollectionMarket } from './collection';
 import { API_HOST, AssetType, NUMBER_OF_ITEMS_PER_PAGE, defaults } from './constants';
 import { findMatchingKeys, findOneExactMatchingKey } from './db';
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
@@ -96,7 +96,13 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
 
   return await fetchCollectionMarket({ map: { subTypeData: { collectionId } } }, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
   // use the search endpoint to find listings for a collection by id
-}).get("/collection/:collectionId/items", async () => {
+}).get("/collection/:collectionId/items", async ({ params, query, set }) => {
+  // ofset and limit
+  const { offset, limit } = query;
+  const collectionId = params.collectionId;
+
+  console.log({ collectionId, offset, limit });
+  return await fetchCollectionItems({ map: { subTypeData: { collectionId } } }, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
 
   // use the search endpoint to find listings for a collection by id
 }).get('/market/:assetType', async ({ set, params, query }) => {
