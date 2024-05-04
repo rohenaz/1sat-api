@@ -323,7 +323,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     }
   }))
   return enriched
-}).get("/user/:discordId", async ({ params, set }) => {
+}).get("/user/:discordId/discord", async ({ params, set }) => {
   // return user info
   const discordId = params.discordId
 
