@@ -108,6 +108,19 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     // Retrieve the cached collections using findMatchingKeysWithOffset
     const collections = await findMatchingKeysWithOffset(redis, "collection", "", AssetType.Ordinals, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
     console.log("### Found collections", collections.length)
+
+    // ok now we need to sort these by last sale.... crap.
+    for (const collection of collections) {
+      // find any sales with this collection id
+      const sales = await findMatchingKeys(redis, "sale", collection.id, AssetType.Ordinals)
+      // sort by last sale
+      const sorted = sales.sort((a, b) => {
+        return b.lastSaleHeight - a.lastSaleHeight
+      })
+      // get the last sale
+      const lastSale = sorted[0]
+      collection.lastSale = lastSale
+    }
     return collections;
   } catch (e) {
     console.error("Error fetching collections:", e);
