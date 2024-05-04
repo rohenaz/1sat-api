@@ -121,7 +121,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
 
   try {
     // Check if the collection items are already cached
-    const cachedItems = await findOneExactMatchingKey(redis, "collection", collectionId, AssetType.Ordinals);
+    const cachedItems = await redis.hget(`collections-${AssetType.Ordinals}`, collectionId);
     if (cachedItems) {
       return JSON.parse(cachedItems).items;
     }
