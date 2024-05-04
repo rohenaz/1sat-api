@@ -102,28 +102,53 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     return [];
   }
   // use the search endpoint to find listings for a collection by id
-}).get("/collection", async ({ params, set, query }) => {
-  // reach the collections from cache
+}).get("/collection", async ({ set, query }) => {
   const { offset, limit } = query;
-  const collections = await findMatchingKeysWithOffset(redis, "collection", "", AssetType.Ordinals, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
+  try {
+    // Retrieve the cached collections using findMatchingKeysWithOffset
+    const collections = await findMatchingKeysWithOffset(redis, "collection", "", AssetType.Ordinals, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
 
-  return collections
+    // Extract the collection data from each cached collection
+    const collectionsWithData = collections.map((collection) => {
+      return {
+        ...collection,
+        data: collection.data,
+      };
+    });
+
+    return collectionsWithData;
+  } catch (e) {
+    console.error("Error fetching collections:", e);
+    set.status = 500;
+    return [];
+  }
 }).get("/collection/:collectionId/items", async ({ params, query, set }) => {
-  // ofset and limit
   const { offset, limit } = query;
   const collectionId = params.collectionId;
 
-  // if we dont know about this collection, cache a record for it (will cause it to show in the collections list)
-  console.log({ collectionId, offset, limit });
   try {
-    return await fetchCollectionItems({ map: { subTypeData: { collectionId } } }, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
+    // Check if the collection items are already cached
+    const cachedItems = await findOneExactMatchingKey(redis, "collection", collectionId, AssetType.Ordinals);
+    if (cachedItems) {
+      return JSON.parse(cachedItems);
+    }
+
+    // If not cached, fetch the collection items from the API
+    const items = await fetchCollectionItems({ map: { subTypeData: { collectionId } } }, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
+
+    // Fetch the collection data from the API
+    const response = await fetch(`${API_HOST}/inscription/${collectionId}`);
+    const collectionData = await response.json();
+
+    // Cache the collection data along with the items
+    await redis.set(`collection-${AssetType.Ordinals}-${collectionId}`, JSON.stringify({ items, data: collectionData }));
+
+    return items;
   } catch (e) {
     console.error("Error fetching collection items:", e);
     set.status = 500;
     return [];
   }
-
-  // use the search endpoint to find listings for a collection by id
 }).get('/market/:assetType', async ({ set, params, query }) => {
   // sort can be name, market_cap, price, pct_change, holders, most_recent_sale (default)
   const { limit, offset, sort, dir } = query;
