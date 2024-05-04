@@ -135,8 +135,9 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     const collectionData = await response.json();
 
     // Store the collection data in a hash
-    await redis.hset(`collection-${AssetType.Ordinals}`, collectionId, JSON.stringify({ data: collectionData, items }));
-
+    if (response.status === 200) {
+      await redis.hset(`collection-${AssetType.Ordinals}`, collectionId, JSON.stringify({ data: collectionData, items }));
+    }
     return items;
   } catch (e) {
     console.error("Error fetching collection items:", e);
