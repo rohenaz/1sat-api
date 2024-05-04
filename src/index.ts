@@ -139,7 +139,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       collectionData = []
     }
 
-    await redis.hset(`collection-${AssetType.Ordinals}`, collectionId, JSON.stringify({ data: collectionData, items }));
+    await redis.hset(`collection-${AssetType.Ordinals}`, collectionId, JSON.stringify({ data: collectionData, items }), "EX", defaults.expirationTime * 10);
     return items;
   } catch (e) {
     console.error("Error fetching collection items:", e);
