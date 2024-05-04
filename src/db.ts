@@ -27,11 +27,17 @@ export const findMatchingKeysWithOffset = async (redis: Redis, prefix: string, p
 
   // Fetch the value for each matching field
   for (let i = 0; i < fields.length; i += 2) {
-    const data = JSON.parse(fields[i + 1]);
-    if (data) {
-      results.push(data);
-    } else {
-      console.log(`No data found for ${fields[i]}`);
+    if (fields[i + 1]) {
+      try {
+        const data = JSON.parse(fields[i + 1]);
+        if (data) {
+          results.push(data);
+        } else {
+          console.log(`No data found for ${fields[i]}`);
+        }
+      } catch (e) {
+        console.log('Error parsing data', e);
+      }
     }
   }
 

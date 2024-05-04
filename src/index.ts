@@ -121,7 +121,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     //   const lastSale = sorted[0]
     //   collection.lastSale = lastSale
     // }
-    return collections;
+    return collections.filter((c) => c.origin)
   } catch (e) {
     console.error("Error fetching collections:", e);
     set.status = 500;
