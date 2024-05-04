@@ -23,14 +23,14 @@ export const findMatchingKeysWithOffset = async (redis: Redis, prefix: string, p
   const pattern = `${partial}*`;
   const results = [];
   const reply = await redis.hscan(`${prefix}-${type}`, offset, 'MATCH', pattern, 'COUNT', limit);
-  const keys = reply[1];
+  const fields = reply[1];
 
-  // Fetch the value for each matching key
-  for (let i = 0; i < keys.length; i += 2) {
-    results.push(JSON.parse(keys[i + 1]));
+  // Fetch the value for each matching field
+  for (let i = 0; i < fields.length; i += 2) {
+    results.push(JSON.parse(fields[i + 1]));
   }
 
-  return results
+  return results;
 }
 
 export const findOneExactMatchingKey = async (redis: Redis, prefix: string, key: string, type: AssetType) => {

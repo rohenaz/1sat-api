@@ -109,12 +109,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     const collections = await findMatchingKeysWithOffset(redis, "collection", "", AssetType.Ordinals, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
     console.log("### Found collections", collections.length)
 
-    // Parse the collection data and extract the relevant information
-    const parsedCollections = collections.map((collectionData) => {
-      return JSON.parse(collectionData);
-    });
-
-    return parsedCollections;
+    return collections;
   } catch (e) {
     console.error("Error fetching collections:", e);
     set.status = 500;
@@ -140,7 +135,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     const collectionData = await response.json();
 
     // Store the collection data in a hash
-    await redis.hset(`collections-${AssetType.Ordinals}`, collectionId, JSON.stringify(collectionData));
+    await redis.hset(`collections-${AssetType.Ordinals}`, collectionId, JSON.stringify({ data: collectionData, items }));
 
     return items;
   } catch (e) {
