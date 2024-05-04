@@ -1,12 +1,12 @@
 import { cors } from '@elysiajs/cors';
 import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
-import { AssetType, defaults } from './constants';
+import { API_HOST, AssetType, defaults } from './constants';
 import { findMatchingKeys, findOneExactMatchingKey } from './db';
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
 import { sseInit } from './sse';
 import type { BSV20Details, BSV21Details, MarketDataV1, MarketDataV2 } from './types/bsv20';
-import { User } from './types/user';
+import type { User } from './types/user';
 import { fetchChainInfo, fetchExchangeRate, fetchJSON, fetchStats, fetchTokensDetails } from './utils';
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
@@ -265,6 +265,64 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     exchangeRate,
     indexers
   };
+}).get("/user/:address/balance", async ({ params, set }) => {
+  // [
+  //   {
+  //     "listed": {
+  //       "pending": "string",
+  //       "confirmed": "string"
+  //     },
+  //     "all": {
+  //       "pending": "string",
+  //       "confirmed": "string"
+  //     },
+  //     "icon": "string",
+  //     "dec": 0,
+  //     "sym": "string",
+  //     "id": "string",
+  //     "tick": "string"
+  //   }
+  // ]
+  type Balance = {
+    listed: {
+      pending: string,
+      confirmed: string
+    },
+    all: {
+      pending: string,
+      confirmed: string
+    },
+    icon: string,
+    dec: number,
+    sym: string,
+    id: string,
+    tick: string
+  }
+
+  interface EnrichedBalance extends Balance {
+    price: number
+  }
+
+  // wrap the api balance request and enrich w price info from ticker cache
+  const resp = await fetchJSON<Balance[]>(`${API_HOST}/api/bsv20/${params.address}/balance`)
+  if (!resp) {
+    set.status = 404;
+    return []
+  }
+
+  // enrich with cached pricing data
+  const enriched: EnrichedBalance[] = await Promise.all(resp.map(async (b) => {
+    const cached = await redis.get(`token-${b.tick ? AssetType.BSV20 : AssetType.BSV21}-${b.tick || b.id}`)
+    if (!cached) {
+      return { ...b, price: 0 }
+    }
+    const token = JSON.parse(cached) as MarketDataV1
+    return {
+      ...b,
+      price: token.price
+    }
+  }))
+  return enriched
 }).get("/user/:discordId", async ({ params, set }) => {
   // return user info
   const discordId = params.discordId
