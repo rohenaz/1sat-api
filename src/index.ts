@@ -123,15 +123,14 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     // Check if the collection items are already cached
     const cachedItems = await redis.hget(`collection-${AssetType.Ordinals}`, collectionId);
     if (cachedItems) {
-      // return JSON.parse(cachedItems).items;
+      return JSON.parse(cachedItems).items;
     }
 
     // If not cached, fetch the collection items from the API
     const items = await fetchCollectionItems({ map: { subTypeData: { collectionId } } }, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
 
     // Fetch the collection data from the API
-    // Fetch the collection data from the API
-    const response = await fetch(`${API_HOST}/inscriptions/${collectionId}`);
+    const response = await fetch(`${API_HOST}/api/inscriptions/${collectionId}`);
     let collectionData = await response.json();
 
     // Store the collection data in a hash
@@ -139,7 +138,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       collectionData = []
     }
 
-    await redis.hset(`collection-${AssetType.Ordinals}`, collectionId, JSON.stringify({ data: collectionData, items }), "EX", defaults.expirationTime * 10);
+    await redis.hset(`collection-${AssetType.Ordinals}`, collectionId, JSON.stringify({ data: collectionData, items }), "EX", defaults.expirationTime);
     return items;
   } catch (e) {
     console.error("Error fetching collection items:", e);
