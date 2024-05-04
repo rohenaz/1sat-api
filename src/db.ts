@@ -33,7 +33,7 @@ export const findMatchingKeysWithOffset = async (redis: Redis, prefix: string, p
     results.push(JSON.parse(keys[i + 1]));
   }
 
-  return results.slice(offset, offset + limit);
+  return results
 }
 
 export const findOneExactMatchingKey = async (redis: Redis, prefix: string, key: string, type: AssetType) => {
