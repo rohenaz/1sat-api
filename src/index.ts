@@ -159,7 +159,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
         collectionData.lastSale = null
       } else {
         collectionData.lastSale = sales.sort((a, b) => {
-          return (b.spend_height || 0) - (a.spend_height || 0)
+          return (b.spendHeight || 0) - (a.spendHeight || 0)
         })[0]
       }
     } catch (e) {
