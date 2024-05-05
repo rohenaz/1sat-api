@@ -27,3 +27,22 @@ export const fetchCollectionMarket = async (
 
   return await fetchJSON<OrdUtxo[]>(collectionMarketUrl);
 };
+
+export const fetchCollectionSales = async (
+  collectionId: string,
+  offset = 0,
+  limit: number = NUMBER_OF_ITEMS_PER_PAGE
+) => {
+  const q = {
+    map: {
+      subTypeData: {
+        collectionId,
+      },
+    },
+  };
+  const collectionSalesUrl = `${API_HOST}/api/market/sales?offset=${offset}&limit=${limit}&q=${btoa(
+    JSON.stringify(q)
+  )}`;
+
+  return await fetchJSON<OrdUtxo[]>(collectionSalesUrl);
+}

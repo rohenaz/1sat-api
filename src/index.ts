@@ -1,7 +1,7 @@
 import { cors } from '@elysiajs/cors';
 import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
-import { fetchCollectionItems, fetchCollectionMarket } from './collection';
+import { fetchCollectionItems, fetchCollectionMarket, fetchCollectionSales } from './collection';
 import { API_HOST, AssetType, NUMBER_OF_ITEMS_PER_PAGE, defaults } from './constants';
 import { findMatchingKeys, findMatchingKeysWithOffset, findOneExactMatchingKey } from './db';
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
@@ -94,7 +94,6 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const collectionId = params.collectionId;
   console.log({ collectionId, offset, limit });
   try {
-
     return await fetchCollectionMarket({ map: { subTypeData: { collectionId } } }, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
   } catch (e) {
     console.error("Error fetching collection market:", e);
@@ -121,7 +120,10 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     //   const lastSale = sorted[0]
     //   collection.lastSale = lastSale
     // }
-    return collections.filter((c) => c.origin)
+
+    return collections.filter((c) => c.origin).sort((a, b) => {
+      return b.lastSaleHeight - a.lastSaleHeight
+    })
   } catch (e) {
     console.error("Error fetching collections:", e);
     set.status = 500;
@@ -148,6 +150,21 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       await redis.hset(`collection-${AssetType.Ordinals}`, collectionId, JSON.stringify(collectionData), "EX", defaults.expirationTime);
     }
 
+    try {
+      const sales = await fetchCollectionSales(collectionId, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
+      collectionData.sales = sales || [];
+
+      // get the last sale
+      if (!sales) {
+        collectionData.lastSale = null
+      } else {
+        collectionData.lastSale = sales.sort((a, b) => {
+          return (b.spend_height || 0) - (a.spend_height || 0)
+        })[0]
+      }
+    } catch (e) {
+      console.error("Error fetching collection sales:", e);
+    }
     // we're not doing any caching on items themselves
     return items;
   } catch (e) {
