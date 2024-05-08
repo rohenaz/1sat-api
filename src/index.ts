@@ -357,7 +357,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       tokens.push(parsed)
     }
   }
-
+  return tokens
   // const q = {
   //   insc: {
   //     json: { contract: "pow-20", sym: params.sym }
