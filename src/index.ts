@@ -352,7 +352,11 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     if (!element) {
       continue
     }
-    const token = JSON.parse(element)
+    const tokenStr = await redis.get(element)
+    if (!tokenStr) {
+      continue
+    }
+    const token = JSON.parse(tokenStr) as MarketDataV2
     if (token.sym.toLowerCase().startsWith(sym)) {
       tokens.push(token)
     }
