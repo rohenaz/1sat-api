@@ -2,7 +2,7 @@ import EventSource from "eventsource";
 import { redis } from ".";
 import { API_HOST, AssetType } from "./constants";
 import { loadV1TickerDetails, loadV2TickerDetails } from "./init";
-import { BSV20Details, BalanceUpdate, ListingsV1, ListingsV2 } from "./types/bsv20";
+import type { BSV20Details, BalanceUpdate, ListingsV1, ListingsV2 } from "./types/bsv20";
 import { fetchChainInfo, fetchTokensDetails } from "./utils";
 
 const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funds&channel=v2funds&channel=bsv20listings&channel=bsv20sales`);
