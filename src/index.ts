@@ -343,15 +343,21 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   const sym = params.sym.toLowerCase()
   const tokens: MarketDataV2[] = []
   console.log("Runging scan...", sym)
-  const [cursor, keys] = await redis.scan(0, "MATCH", `token-${AssetType.BSV21}-${sym}*`, "COUNT", 1000)
+
+  // sym is not in the key itself we have to find it in the data
+  const [cursor, keys] = await redis.scan(0, "MATCH", `token-${AssetType.BSV21}-*`)
+  console.log({ cursor, keys })
   for (const key of keys) {
     const token = await redis.get(key)
     if (!token) {
       continue
     }
-    tokens.push(JSON.parse(token))
+    const parsed = JSON.parse(token) as MarketDataV2
+    if (parsed.sym.toLowerCase().startsWith(sym)) {
+      tokens.push(parsed)
+    }
   }
-  return tokens
+
   // const q = {
   //   insc: {
   //     json: { contract: "pow-20", sym: params.sym }
