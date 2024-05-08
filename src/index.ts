@@ -7,6 +7,7 @@ import { findMatchingKeys, findMatchingKeysWithOffset, findOneExactMatchingKey }
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
 import { sseInit } from './sse';
 import type { BSV20Details, BSV21Details, MarketDataV1, MarketDataV2 } from './types/bsv20';
+import { OrdUtxo } from './types/ordinals';
 import type { User } from './types/user';
 import { fetchChainInfo, fetchExchangeRate, fetchJSON, fetchStats, fetchTokensDetails } from './utils';
 
@@ -311,6 +312,33 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     assetType: t.String(),
     id: t.String()
   })
+}).get("/mine/pow20", async ({ params, set }) => {
+  // find all the pow20 contracts
+  const q = {
+    insc: {
+      json: { contract: "pow-20" }
+    }
+  }
+  try {
+
+    const resp = await fetchJSON(`${API_HOST}/api/inscriptions/search?q=${JSON.stringify(q)}`)
+
+    const tokens: MarketDataV2[] = []
+    for (const insc of resp as OrdUtxo[]) {
+      // get the token details from redis
+      const token = await redis.get(`token-${AssetType.BSV21}-${insc.origin?.data?.bsv20?.id}`)
+      if (!token) {
+        continue
+      }
+      tokens.push(JSON.parse(token))
+    }
+    return tokens
+  } catch (e) {
+    console.error("Error fetching mine pow20:", e);
+    set.status = 500;
+    return []
+  }
+
 }).get("/airdrop/:template", async ({ params }) => {
   let addresses: string[] = []
   // return a list of addresses
