@@ -346,11 +346,13 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   console.log("Runging scan...", sym)
 
   // sym is not in the key itself we have to find it in the data
-  const results: MarketDataV2[] = await findMatchingKeys(redis, "token", "", AssetType.BSV21)
-  for (const token of results) {
-    if (!token) {
+  const [cursor, elements] = await redis.scan(0, "MATCH", `token-${AssetType.BSV21}-*`)
+  console.log({ cursor, elements })
+  for (const element of elements) {
+    if (!element) {
       continue
     }
+    const token = JSON.parse(element)
     if (token.sym.toLowerCase().startsWith(sym)) {
       tokens.push(token)
     }
