@@ -258,10 +258,10 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     params.assetType = params.assetType.toLowerCase();
   },
   query: t.Object({
-    limit: t.String(),
-    offset: t.String(),
-    sort: t.String(),
-    dir: t.String()
+    limit: t.Optional(t.String()),
+    offset: t.Optional(t.String()),
+    sort: t.Optional(t.String()),
+    dir: t.Optional(t.String())
   }),
   params: t.Object({
     assetType: t.String()
