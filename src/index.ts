@@ -176,7 +176,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   }
 }).get('/market/:assetType', async ({ set, params, query }) => {
   // sort can be name, market_cap, price, pct_change, holders, most_recent_sale (default)
-  const { limit = NUMBER_OF_ITEMS_PER_PAGE, offset = "0", sort = "most_recent_sale", dir = "asc" } = query;
+  const { limit = NUMBER_OF_ITEMS_PER_PAGE.toString(), offset = "0", sort = "most_recent_sale", dir = "asc" } = query;
   console.log({ limit, offset, sort, dir, params });
 
   try {
