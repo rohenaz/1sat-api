@@ -321,7 +321,8 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   }
   try {
 
-    const resp = await fetchJSON(`${API_HOST}/api/inscriptions/search?q=${JSON.stringify(q)}`)
+    const b64 = Buffer.from(JSON.stringify(q)).toString("base64")
+    const resp = await fetchJSON(`${API_HOST}/api/inscriptions/search?q=${b64}`)
 
     const tokens: MarketDataV2[] = []
     for (const insc of resp as OrdUtxo[]) {
