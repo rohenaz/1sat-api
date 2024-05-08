@@ -312,7 +312,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     assetType: t.String(),
     id: t.String()
   })
-}).get("/mine/pow20", async ({ params, set }) => {
+}).get("/mine/pow20/", async ({ params, set }) => {
   // find all the pow20 contracts
   const q = {
     insc: {
@@ -320,7 +320,6 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     }
   }
   try {
-
     const b64 = Buffer.from(JSON.stringify(q)).toString("base64")
     const resp = await fetchJSON(`${API_HOST}/api/inscriptions/search?q=${b64}`)
 
@@ -339,7 +338,32 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     set.status = 500;
     return []
   }
+}).get("/mine/pow20/:sym", async ({ params, set }) => {
+  // find all the pow20 contracts
+  const q = {
+    insc: {
+      json: { contract: "pow-20", sym: params.sym }
+    }
+  }
+  try {
+    const b64 = Buffer.from(JSON.stringify(q)).toString("base64")
+    const resp = await fetchJSON(`${API_HOST}/api/inscriptions/search?q=${b64}`)
 
+    const tokens: MarketDataV2[] = []
+    for (const insc of resp as OrdUtxo[]) {
+      // get the token details from redis
+      const token = await redis.get(`token-${AssetType.BSV21}-${insc.origin?.data?.bsv20?.id}`)
+      if (!token) {
+        continue
+      }
+      tokens.push(JSON.parse(token))
+    }
+    return tokens
+  } catch (e) {
+    console.error("Error fetching mine pow20:", e);
+    set.status = 500;
+    return []
+  }
 }).get("/airdrop/:template", async ({ params }) => {
   let addresses: string[] = []
   // return a list of addresses
