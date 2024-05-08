@@ -66,7 +66,6 @@ export const loadAllV1Names = async (): Promise<void> => {
   let includedCount = 0;
   let unincludedCount = 0;
   let resultsPerPage = 200;
-  let done = false;
 
   while (true) {
     // const offset = page * resultsPerPage;
@@ -95,7 +94,6 @@ export const loadAllV2Names = async (): Promise<void> => {
   let includedCount = 0;
   let unincludedCount = 0;
   let resultsPerPage = 200;
-  let done = false;
 
   while (true) {
     // const offset = page * resultsPerPage;
