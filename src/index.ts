@@ -176,7 +176,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   }
 }).get('/market/:assetType', async ({ set, params, query }) => {
   // sort can be name, market_cap, price, pct_change, holders, most_recent_sale (default)
-  const { limit = "100", offset = "0", sort = "desc", dir = "most_Recent_sale" } = query;
+  const { limit = NUMBER_OF_ITEMS_PER_PAGE, offset = "0", sort = "most_recent_sale", dir = "asc" } = query;
   console.log({ limit, offset, sort, dir, params });
 
   try {
@@ -188,8 +188,8 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
       return [];
     }
 
-    const sortMethod = query.sort || "most_recent_sale";
-    const sortDirection = query.dir === "asc" ? 1 : -1;
+    const sortMethod = sort;
+    const sortDirection = dir === "asc" ? 1 : -1;
 
     return marketData.sort((a: MarketDataV1 | MarketDataV2, b: MarketDataV1 | MarketDataV2) => {
 
