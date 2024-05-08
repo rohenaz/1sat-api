@@ -107,14 +107,13 @@ export const loadAllV2Names = async (): Promise<void> => {
 
     for (const result of results) {
       console.log("AutoFill", result.tick, result.id)
-      await redis.hset(`autofill-${AssetType.BSV21}`, `${result.tick}-${result.id}`, JSON.stringify(result));
+      await redis.hset(`autofill-${AssetType.BSV21}`, `${result.tick.toLowerCase()}-${result.id.toLowerCase()}`, JSON.stringify(result));
     }
     if (results.length < resultsPerPage) {
       break
     }
   }
   console.log("All v2 tickers cached for autofill", includedCount, unincludedCount)
-
 }
 
 export const fetchV2Tickers = async () => {
