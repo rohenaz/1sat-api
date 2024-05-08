@@ -340,7 +340,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   }
 }).get("/mine/pow20/:sym", async ({ params, set }) => {
   // // find all the pow20 contracts in redis that start with the given sym
-  const sym = params.sym
+  const sym = params.sym.toLowerCase()
   const tokens: MarketDataV2[] = []
   const [cursor, keys] = await redis.scan(0, "MATCH", `token-${AssetType.BSV21}-${sym}*`, "COUNT", 1000)
   for (const key of keys) {
