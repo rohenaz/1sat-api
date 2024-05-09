@@ -40,9 +40,9 @@ export const setPctChange = async (id: string, sales: ListingsV1[] | ListingsV2[
   filteredSales = sales;
   if (filteredSales.length > 0) {
     // Parse the price of the most recent sale
-    const lastPrice = parseFloat(filteredSales[0].pricePer);
+    const lastPrice = Number.parseFloat(filteredSales[0].pricePer);
     // Parse the price of the oldest sale
-    const firstPrice = parseFloat(
+    const firstPrice = Number.parseFloat(
       filteredSales[filteredSales.length - 1].pricePer
     );
     const pctChange = ((lastPrice - firstPrice) / firstPrice) * 100;
@@ -58,30 +58,25 @@ export const setPctChange = async (id: string, sales: ListingsV1[] | ListingsV2[
 // pasing in sales will save the value to cache
 // omitting sales will check cache for value
 export const getPctChange = async (id: string) => {
-
   const timeframe = timeframes[4].label.toLowerCase();
-
   // check cache
   const cached = await redis.get(`pct-${timeframe}-${id.toLowerCase()}`);
   if (cached) {
     return JSON.parse(cached);
   }
-
 }
-
-
 
 export const fetchChainInfo = async (): Promise<ChainInfo> => {
   // check cache
-  const cached = await redis.get(`chainInfo`);
+  const cached = await redis.get("chainInfo");
   if (cached) {
     return JSON.parse(cached) as ChainInfo;
   }
   // TODO: We have an endpoint for this now https://junglebus.gorillapool.io/v1/block_header/tip
-  const url = `https://api.whatsonchain.com/v1/bsv/main/chain/info`;
+  const url = "https://api.whatsonchain.com/v1/bsv/main/chain/info";
   const chainInfo = await fetchJSON(url) as ChainInfo | null;
   // this one has to update pretty frequently blocks can be found sub-minute
-  await redis.set(`chainInfo`, JSON.stringify(chainInfo), "EX", 60);
+  await redis.set("chainInfo", JSON.stringify(chainInfo), "EX", 60);
   return chainInfo as ChainInfo || { blocks: 0, headers: 0, bestblockhash: "" };
 }
 
@@ -90,12 +85,12 @@ export const fetchChainInfo = async (): Promise<ChainInfo> => {
 // each is a JB subscription
 interface Stats {
   "bsv20-deploy": number,
-  "bsv20": number,
+  bsv20: number,
   "market-spends": number,
-  "locks": number,
-  "opns": number,
-  "market": number,
-  "ord": number
+  locks: number,
+  opns: number,
+  market: number,
+  ord: number
 }
 
 export const fetchStats = () => {
@@ -106,7 +101,7 @@ export const fetchStats = () => {
 // Function to fetch exchange rate
 export const fetchExchangeRate = async (): Promise<number> => {
   // check cache
-  const cached = await redis.get(`exchangeRate`);
+  const cached = await redis.get("exchangeRate");
   if (cached) {
     return JSON.parse(cached).rate;
   }
@@ -114,7 +109,7 @@ export const fetchExchangeRate = async (): Promise<number> => {
   if (!exchangeRateData) {
     return 0;
   }
-  await redis.set(`exchangeRate`, JSON.stringify(exchangeRateData), "EX", defaults.expirationTime);
+  await redis.set("exchangeRate", JSON.stringify(exchangeRateData), "EX", defaults.expirationTime);
   return exchangeRateData.rate;
 };
 
@@ -150,34 +145,11 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
       break;
     case AssetType.BSV21:
       for (const id of tokenIDs) {
-        //check cache 
-        // const cached = await redis.get(`token-${assetType}-${id}`);
-        // if (cached) {
-        //   d.push(JSON.parse(cached));
-        //   continue;
-        // }
-
         const url = `${API_HOST}/api/bsv20/id/${id}?refresh=false`;
         const details = await fetchJSON<T>(url)
         if (!details) {
           continue;
         }
-
-        // add listings
-        // const urlListings = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&id=${id}`;
-        // details.listings = (await fetchJSON<ListingsV2[]>(urlListings) || [])
-
-        // add holders
-        // const urlHolders = `${API_HOST}/api/bsv20/id/${id}/holders?limit=20&offset=0`;
-        // details.holders = [] // (await fetchJSON(urlHolders) || [])
-        // TODO: For some reason accounts is not populated
-        // if (!details.accounts || details.accounts === 0) {
-        //   details.accounts = details.holders.length;
-        // }
-        // add sales
-        // const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&id=${id}`;
-        // details.sales = (await fetchJSON<ListingsV2[]>(urlSales) || [])
-
         // cache
         await redis.set(`token-${assetType}-${id}`, JSON.stringify(details), "EX", defaults.expirationTime);
 

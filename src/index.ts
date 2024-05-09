@@ -251,7 +251,7 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   } catch (e) {
     console.error("Error fetching market data:", e);
     set.status = 500;
-    return {};
+    return [];
   }
 }, {
   transform({ params }) {
@@ -269,7 +269,6 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
 }).get("/market/:assetType/:id", async ({ set, params, query }) => {
   const id = decodeURIComponent(params.id);
   console.log("WITH ID", params.assetType, id)
-  const sort = query.sort || "price_per_token";
   try {
     const marketData = await fetchMarketData(params.assetType as AssetType, id);
     return marketData;
@@ -287,8 +286,30 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     assetType: t.String(),
     id: t.String()
   }),
+}).get("/market/:assetType/search/:term", async ({ set, params, query }) => {
+  const term = decodeURIComponent(params.term);
+  console.log("WITH SEARCH TERM", params.assetType, term)
+  // TODO: Implement sorting
+  const sort = query.sort || "price_per_token";
+  try {
+    const marketData = await findMarketData(params.assetType as AssetType, term);
+    return marketData;
+  } catch (e) {
+    console.error("Error fetching market data:", e);
+    set.status = 500;
+    return {};
+  }
+}, {
+  transform({ params }) {
+    params.assetType = params.assetType.toLowerCase();
+    params.term = params.term.toLowerCase();
+  },
+  params: t.Object({
+    assetType: t.String(),
+    term: t.String()
+  }),
   query: t.Object({
-    sort: t.String()
+    sort: t.Optional(t.String())
   })
 }).get("/mint/:assetType/:id", async ({ set, params }) => {
   // same as /market/:assetType/:id but doesn't return minted out tokens
@@ -602,6 +623,51 @@ const fetchMarketData = async (assetType: AssetType, id: string) => {
       let detailedTokensV2: BSV21Details[] = [];
       let resultsv2: MarketDataV2[] = [];
       detailedTokensV2 = await fetchTokensDetails<BSV21Details>([id], assetType);
+
+      resultsv2 = await loadV2TickerDetails(detailedTokensV2, info);
+
+      return resultsv2.sort((a, b) => {
+        return b.marketCap - a.marketCap;
+      });
+    }
+
+    default:
+      return [];
+  }
+};
+
+// Function to fetch and process market data
+const findMarketData = async (assetType: AssetType, term: string) => {
+  term = term?.toLowerCase();
+  const info = await fetchChainInfo()
+  switch (assetType) {
+    case AssetType.BSV20: {
+      let detailedTokensV1: BSV20Details[] = [];
+      let resultsv1: MarketDataV1[] = [];
+      // if (id) {
+      console.log("Finding token details for", term)
+      // first we get them from redis autofill
+      const results = await findMatchingKeys(redis, "autofill", term, assetType)
+      console.log("Found", results.length, "results")
+      // then we collect up the ids
+      const ids = results.map((r) => r.id)
+      detailedTokensV1 = await fetchTokensDetails<BSV20Details>(ids, assetType);
+      resultsv1 = await loadV1TickerDetails(detailedTokensV1, info);
+
+      return resultsv1.sort((a, b) => {
+        return b.marketCap - a.marketCap;
+      });
+    }
+    case AssetType.BSV21: {
+      let detailedTokensV2: BSV21Details[] = [];
+      let resultsv2: MarketDataV2[] = [];
+
+      // first we get them from redis autofill
+      const results = await findMatchingKeys(redis, "autofill", term, assetType)
+      console.log("Found", results.length, "results")
+      // then we collect up the ids
+      const ids = results.map((r) => r.id)
+      detailedTokensV2 = await fetchTokensDetails<BSV21Details>(ids, assetType);
 
       resultsv2 = await loadV2TickerDetails(detailedTokensV2, info);
 
