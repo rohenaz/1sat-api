@@ -4,7 +4,7 @@ import Redis from "ioredis";
 import { fetchCollectionItems, fetchCollectionMarket, fetchCollectionSales } from './collection';
 import { API_HOST, AssetType, NUMBER_OF_ITEMS_PER_PAGE, defaults } from './constants';
 import { findMatchingKeys, findMatchingKeysWithOffset, findOneExactMatchingKey } from './db';
-import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadAllV2Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
+import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadIncludedV2Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
 import { sseInit } from './sse';
 import type { BSV20Details, BSV21Details, MarketDataV1, MarketDataV2 } from './types/bsv20';
 import type { OrdUtxo } from './types/ordinals';
@@ -21,7 +21,7 @@ redis.on("connect", () => console.log("Connected to Redis"));
 redis.on("error", (err) => console.error("Redis Error", err));
 
 await loadAllV1Names();
-await loadAllV2Names();
+await loadIncludedV2Names();
 await fetchV1Tickers();
 await fetchV2Tickers();
 await sseInit();

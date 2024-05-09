@@ -20,6 +20,7 @@ type TickerName = {
   type: AssetType.BSV20 | AssetType.BSV21
   icon?: string
   num: number
+  contract?: string
 }
 
 const fetchV1TickerNames = async (offset: number, resultsPerPage: number, included: boolean) => {
@@ -51,12 +52,16 @@ const fetchV2TickerNames = async (offset: number, resultsPerPage: number, includ
     return v2.sym && v2.id
   }).map((t) => {
     const v2 = t as BSV21
-    return {
+    const res = {
       tick: v2.sym,
       id: v2.id,
       icon: v2.icon,
       type: AssetType.BSV21
     } as TickerName
+    if (v2.contract) {
+      res.contract = v2.contract
+    }
+    return res
   })
 }
 
@@ -88,12 +93,11 @@ export const loadAllV1Names = async (): Promise<void> => {
   console.log("All tickers cached for autofill", includedCount, unincludedCount)
 }
 
-export const loadAllV2Names = async (): Promise<void> => {
+export const loadIncludedV2Names = async (): Promise<void> => {
   // TODO: implement 
   let offset = (await redis.hlen(`autofill-${AssetType.BSV21}`)) || 0
   let includedCount = 0;
-  let unincludedCount = 0;
-  let resultsPerPage = 200;
+  const resultsPerPage = 200;
 
   while (true) {
     // const offset = page * resultsPerPage;
@@ -103,7 +107,7 @@ export const loadAllV2Names = async (): Promise<void> => {
       break
     }
     offset += results.length
-    unincludedCount += results.length
+    includedCount += results.length
 
     for (const result of results) {
       console.log("AutoFill", result.tick, result.id)
@@ -113,7 +117,7 @@ export const loadAllV2Names = async (): Promise<void> => {
       break
     }
   }
-  console.log("All v2 tickers cached for autofill", includedCount, unincludedCount)
+  console.log("All v2 tickers cached for autofill", includedCount, includedCount)
 }
 
 export const fetchV2Tickers = async () => {
