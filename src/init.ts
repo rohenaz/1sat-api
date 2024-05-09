@@ -47,8 +47,7 @@ const fetchV2TickerNames = async (offset: number, resultsPerPage: number, includ
   const url = `${API_HOST}/api/bsv20/v2?limit=${resultsPerPage}&offset=${offset}&included=${included}`
   const response = await fetch(url)
   const ticker = (await response.json()) as BSV21[]
-  return (ticker || []).filter((t) => {
-    const v2 = t as BSV21
+  return (ticker || []).filter((v2) => {
     return v2.sym && v2.id
   }).map((t) => {
     const v2 = t as BSV21
@@ -59,7 +58,7 @@ const fetchV2TickerNames = async (offset: number, resultsPerPage: number, includ
       type: AssetType.BSV21
     } as TickerName
     if (v2.contract) {
-      res.contract = v2.contract
+      res.contract = v2.data?.insc?.json.contract
     }
     return res
   })
