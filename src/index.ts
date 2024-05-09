@@ -17,14 +17,17 @@ export const botRedis = new Redis(`${process.env.BOT_REDIS_URL}`);
 botRedis.on("connect", () => console.log("Connected to Bot Redis"));
 botRedis.on("error", (err) => console.error("Bot Redis Error", err));
 
-redis.on("connect", () => console.log("Connected to Redis"));
-redis.on("error", (err) => console.error("Redis Error", err));
+redis.on("connect", async () => {
+  console.log("Connected to Redis")
 
-await loadAllV1Names();
-await loadIncludedV2Names();
-await fetchV1Tickers();
-await fetchV2Tickers();
-await sseInit();
+  await loadAllV1Names();
+  await loadIncludedV2Names();
+  await fetchV1Tickers();
+  await fetchV2Tickers();
+  await sseInit();
+});
+
+redis.on("error", (err) => console.error("Redis Error", err));
 
 const app = new Elysia().use(cors()).get("/", ({ set }) => {
   set.headers["Content-Type"] = "text/html";
