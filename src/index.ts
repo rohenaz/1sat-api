@@ -266,26 +266,6 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   params: t.Object({
     assetType: t.String()
   })
-}).get("/market/:assetType/:id", async ({ set, params, query }) => {
-  const id = decodeURIComponent(params.id);
-  console.log("WITH ID", params.assetType, id)
-  try {
-    const marketData = await fetchMarketData(params.assetType as AssetType, id);
-    return marketData;
-  } catch (e) {
-    console.error("Error fetching market data:", e);
-    set.status = 500;
-    return {};
-  }
-}, {
-  transform({ params }) {
-    params.assetType = params.assetType.toLowerCase();
-    params.id = params.id.toLowerCase();
-  },
-  params: t.Object({
-    assetType: t.String(),
-    id: t.String()
-  }),
 }).get("/market/:assetType/search/:term", async ({ set, params, query }) => {
   const term = decodeURIComponent(params.term);
   console.log("WITH SEARCH TERM", params.assetType, term)
@@ -311,6 +291,26 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   query: t.Object({
     sort: t.Optional(t.String())
   })
+}).get("/market/:assetType/:id", async ({ set, params, query }) => {
+  const id = decodeURIComponent(params.id);
+  console.log("WITH ID", params.assetType, id)
+  try {
+    const marketData = await fetchMarketData(params.assetType as AssetType, id);
+    return marketData;
+  } catch (e) {
+    console.error("Error fetching market data:", e);
+    set.status = 500;
+    return {};
+  }
+}, {
+  transform({ params }) {
+    params.assetType = params.assetType.toLowerCase();
+    params.id = params.id.toLowerCase();
+  },
+  params: t.Object({
+    assetType: t.String(),
+    id: t.String()
+  }),
 }).get("/mint/:assetType/:id", async ({ set, params }) => {
   // same as /market/:assetType/:id but doesn't return minted out tokens
   const id = decodeURIComponent(params.id);

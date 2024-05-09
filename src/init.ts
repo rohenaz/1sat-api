@@ -97,7 +97,7 @@ export const loadAllV2Names = async (): Promise<void> => {
 
   while (true) {
     // const offset = page * resultsPerPage;
-    const results = await fetchV2TickerNames(offset, resultsPerPage, false)
+    const results = await fetchV2TickerNames(offset, resultsPerPage, true)
     // page++
     if (!results) {
       break
