@@ -294,12 +294,11 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   query: t.Object({
     sort: t.Optional(t.String())
   })
-}).get("leaderboard", async ({ params }) => {
+}).get("/leaderboard", async ({ params }) => {
   // get the top buyers in the last 24 hours
 
   // get sales from redis
   // const sales = await findMatchingKeys(redis, "listings", "", "*" as AssetType)
-
   const leaderboard: LeaderboardEntry[] = []
   leaderboard.push({
     address: "1NVoMjzjAgskT5dqWtTXVjQXUns7RqYp2m",
