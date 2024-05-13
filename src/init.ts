@@ -58,7 +58,7 @@ const fetchV2TickerNames = async (offset: number, resultsPerPage: number, includ
       type: AssetType.BSV21
     } as TickerName
     if (v2.data?.insc?.json?.contract) {
-      res.contract = v2.data?.insc?.json.contract
+      res.contract = v2.data.insc.json.contract
     }
     return res
   })

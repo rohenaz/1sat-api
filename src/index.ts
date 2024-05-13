@@ -8,7 +8,7 @@ import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadIncludedV2Names, lo
 import { sseInit } from './sse';
 import type { BSV20Details, BSV21Details, MarketDataV1, MarketDataV2 } from './types/bsv20';
 import type { OrdUtxo } from './types/ordinals';
-import type { User } from './types/user';
+import type { LeaderboardEntry, User } from './types/user';
 import { fetchChainInfo, fetchExchangeRate, fetchJSON, fetchStats, fetchTokensDetails } from './utils';
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
@@ -294,6 +294,22 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
   query: t.Object({
     sort: t.Optional(t.String())
   })
+}).get("leaderboard", async ({ params }) => {
+  // get the top buyers in the last 24 hours
+
+  // get sales from redis
+  // const sales = await findMatchingKeys(redis, "listings", "", "*" as AssetType)
+
+  const leaderboard: LeaderboardEntry[] = []
+  leaderboard.push({
+    address: "1NVoMjzjAgskT5dqWtTXVjQXUns7RqYp2m",
+    totalSpent: 100000,
+    numPurchases: 10,
+    timeframe: 86400,
+    lastPurchaseTimestamp: Date.now()
+  })
+  return leaderboard
+
 }).get("/market/:assetType/:id", async ({ set, params, query }) => {
   const id = decodeURIComponent(params.id);
   console.log("WITH ID", params.assetType, id)
