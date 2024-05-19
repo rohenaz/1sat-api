@@ -594,7 +594,8 @@ const app = new Elysia().use(cors()).use(basicAuth({
     totalSatoshis += utxo.satoshis;
   }
 
-  const feeSats = 20;
+
+  const feeSats = Math.ceil(txIns.length / 5)
   const outputSatoshis = totalSatoshis - feeSats;
 
   tx.add_output(
