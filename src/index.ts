@@ -564,7 +564,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
       return []
     }
   }
-  console.log({ utxos });
+  // console.log({ utxos });
 
   const tx = new Transaction(1, 0);
 
