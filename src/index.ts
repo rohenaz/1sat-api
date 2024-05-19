@@ -531,7 +531,6 @@ const app = new Elysia().use(cors()).use(basicAuth({
   // if its "bot" use PAYPK if its "broadcaster" we use FUNDING_WIF
   const key = params.key
 
-
   const fundingKey = key === "bot" ? process.env.PAYPK : process.env.BROADCAST_FUNDING_WIF;
   if (!fundingKey) {
     throw new Error("FUNDING_KEY environment variable is not set");
@@ -562,138 +561,137 @@ const app = new Elysia().use(cors()).use(basicAuth({
       console.error("Error fetching utxos:", e);
       set.status = 500;
       return []
-
     }
+  }
+  console.log({ utxos });
 
-    console.log({ utxos });
+  const tx = new Transaction(1, 0);
 
-    const tx = new Transaction(1, 0);
+  let totalSatoshis = 0;
+  const txIns: TxIn[] = [];
 
-    let totalSatoshis = 0;
-    const txIns: TxIn[] = [];
+  for (const utxo of utxos) {
+    const txIn = new TxIn(
+      Buffer.from(utxo.txid, "hex"),
+      utxo.vout,
+      Script.from_asm_string("")
+    );
+    txIn.set_satoshis(BigInt(utxo.satoshis));
+    txIns.push(txIn);
+    totalSatoshis += utxo.satoshis;
+  }
 
-    for (const utxo of utxos) {
-      const txIn = new TxIn(
-        Buffer.from(utxo.txid, "hex"),
-        utxo.vout,
-        Script.from_asm_string("")
-      );
-      txIn.set_satoshis(BigInt(utxo.satoshis));
-      txIns.push(txIn);
-      totalSatoshis += utxo.satoshis;
-    }
+  const feeSats = 20;
+  const outputSatoshis = totalSatoshis - feeSats;
 
-    const feeSats = 20;
-    const outputSatoshis = totalSatoshis - feeSats;
+  tx.add_output(
+    new TxOut(
+      BigInt(outputSatoshis),
+      address.get_locking_script()
+    )
+  );
 
-    tx.add_output(
-      new TxOut(
-        BigInt(outputSatoshis),
-        address.get_locking_script()
+  txIns.forEach((txIn, index) => {
+    tx.add_input(txIn);
+
+    const utxo = utxos[index];
+    const sig = tx.sign(
+      privateKey,
+      SigHash.InputOutputs,
+      index,
+      Script.from_asm_string(utxo.script),
+      BigInt(utxo.satoshis)
+    );
+
+    txIn.set_unlocking_script(
+      Script.from_asm_string(
+        `${sig.to_hex()} ${privateKey.to_public_key().to_hex()}`
       )
     );
 
-    txIns.forEach((txIn, index) => {
-      tx.add_input(txIn);
+    tx.set_input(index, txIn);
+  });
 
-      const utxo = utxos[index];
-      const sig = tx.sign(
-        privateKey,
-        SigHash.InputOutputs,
-        index,
-        Script.from_asm_string(utxo.script),
-        BigInt(utxo.satoshis)
-      );
+  const rawTx = tx.to_hex();
 
-      txIn.set_unlocking_script(
-        Script.from_asm_string(
-          `${sig.to_hex()} ${privateKey.to_public_key().to_hex()}`
-        )
-      );
+  return {
+    rawTx,
+    size: Math.ceil(rawTx.length / 2),
+    fee: feeSats,
+    numInputs: tx.get_ninputs(),
+    numOutputs: tx.get_noutputs(),
+    txid: tx.get_id_hex(),
+  };
+}).get("/discord/:discordId", async ({ params, set }) => {
+  // return user info
+  const discordId = params.discordId
 
-      tx.set_input(index, txIn);
-    });
+  // get the user from redis by discord id
+  const user = await botRedis.get(`user-${discordId}`)
+  if (!user) {
+    set.status = 404;
+    return {}
+  }
+  console.log({ user })
+  return JSON.parse(user)
+}, {
+  params: t.Object({
+    discordId: t.String()
+  })
+}).get("/discord/:discordId/check/:txid", async ({ params, set }) => {
+  // return user info
+  const discordId = params.discordId
 
-    const rawTx = tx.to_hex();
-
+  // get the user from redis by discord id
+  const userStr = await botRedis.get(`user-${discordId}`)
+  if (!userStr) {
+    set.status = 404;
     return {
-      rawTx,
-      size: Math.ceil(rawTx.length / 2),
-      fee: feeSats,
-      numInputs: tx.get_ninputs(),
-      numOutputs: tx.get_noutputs(),
-      txid: tx.get_id_hex(),
-    };
-  }).get("/discord/:discordId", async ({ params, set }) => {
-    // return user info
-    const discordId = params.discordId
-
-    // get the user from redis by discord id
-    const user = await botRedis.get(`user-${discordId}`)
-    if (!user) {
-      set.status = 404;
-      return {}
+      error: "user not found"
     }
-    console.log({ user })
-    return JSON.parse(user)
-  }, {
-    params: t.Object({
-      discordId: t.String()
-    })
-  }).get("/discord/:discordId/check/:txid", async ({ params, set }) => {
-    // return user info
-    const discordId = params.discordId
+  }
+  const user = JSON.parse(userStr) as User
 
-    // get the user from redis by discord id
-    const userStr = await botRedis.get(`user-${discordId}`)
-    if (!userStr) {
-      set.status = 404;
-      return {
-        error: "user not found"
-      }
-    }
-    const user = JSON.parse(userStr) as User
+  // find the tx in the user wins
+  const win = user.wins.find((w) => w.txid === params.txid)
+  const airdrop = user.airdrops.find((a) => a.txid === params.txid)
+  const gift = user.giftsGiven.find((g) => g.txid === params.txid)
 
-    // find the tx in the user wins
-    const win = user.wins.find((w) => w.txid === params.txid)
-    const airdrop = user.airdrops.find((a) => a.txid === params.txid)
-    const gift = user.giftsGiven.find((g) => g.txid === params.txid)
-
-    if (!win && !airdrop) {
-      set.status = 404;
-      return {
-        error: "no win or airdrop with that txid"
-      }
-    }
-
-    // see if the win exists on chain
-    // if it already does we cacnnot claim anything
-    const tx = fetchJSON(`https://api.whatsonchain.com/v1/bsv/main/tx/hash/${params.txid}`)
-    if (!tx) {
-      // if it doesn't, we can claim it
-      const claim = {
-        win,
-        gift,
-        airdrop,
-        claimed: false
-      }
-
-      return claim
-    }
-    // already claimed - conflict status
-    set.status = 409;
+  if (!win && !airdrop) {
+    set.status = 404;
     return {
-      win, airdrop, gift,
-      claimed: true,
-      error: "already claimed"
+      error: "no win or airdrop with that txid"
+    }
+  }
+
+  // see if the win exists on chain
+  // if it already does we cacnnot claim anything
+  const tx = fetchJSON(`https://api.whatsonchain.com/v1/bsv/main/tx/hash/${params.txid}`)
+  if (!tx) {
+    // if it doesn't, we can claim it
+    const claim = {
+      win,
+      gift,
+      airdrop,
+      claimed: false
     }
 
-  }, {
-    params: t.Object({
-      discordId: t.String(),
-      txid: t.String()
-    })
-  }).listen(process.env.PORT ?? 3000);
+    return claim
+  }
+  // already claimed - conflict status
+  set.status = 409;
+  return {
+    win, airdrop, gift,
+    claimed: true,
+    error: "already claimed"
+  }
+
+}, {
+  params: t.Object({
+    discordId: t.String(),
+    txid: t.String()
+  })
+}).listen(process.env.PORT ?? 3000);
 
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
