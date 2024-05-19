@@ -1,4 +1,6 @@
+import { basicAuth } from '@eelkevdbos/elysia-basic-auth';
 import { cors } from '@elysiajs/cors';
+import { P2PKHAddress, PrivateKey, Script, SigHash, Transaction, TxIn, TxOut } from 'bsv-wasm';
 import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
 import { API_HOST, AssetType, defaults } from './constants';
@@ -23,7 +25,9 @@ await fetchV1Tickers();
 await fetchV2Tickers();
 await sseInit();
 
-const app = new Elysia().use(cors()).get("/", ({ set }) => {
+const app = new Elysia().use(cors()).use(basicAuth({
+  credentials: { env: 'BASIC_AUTH_CREDENTIALS' }, scope: "/admin",
+})).get("/", ({ set }) => {
   set.headers["Content-Type"] = "text/html";
   return ":)";
 }).onError(({ error }) => {
@@ -323,6 +327,85 @@ const app = new Elysia().use(cors()).get("/", ({ set }) => {
     }
   }))
   return enriched
+}).get("/admin/utxo/consolidate/:key", async ({ params }) => {
+
+  // key can be either "bot" or "broadcaster"
+  // if its "bot" use PAYPK if its "broadcaster" we use FUNDING_WIF
+  const key = params.key
+
+  // Get all UTXOs from Redis
+  const utxoKeys = await redis.keys("utxo-*");
+  const utxos = await Promise.all(
+    utxoKeys.map(async (key) => JSON.parse(await redis.get(key) as string))
+  );
+
+  console.log({ utxos });
+
+  const fundingKey = key === "bot" ? process.env.PAYPK : process.env.FUNDING_WIF;
+  if (!fundingKey) {
+    throw new Error("FUNDING_KEY environment variable is not set");
+  }
+
+  const privateKey = PrivateKey.from_wif(fundingKey);
+  const address = P2PKHAddress.from_pubkey(privateKey.to_public_key());
+
+  const tx = new Transaction(1, 0);
+
+  let totalSatoshis = 0;
+  const txIns: TxIn[] = [];
+
+  for (const utxo of utxos) {
+    const txIn = new TxIn(
+      Buffer.from(utxo.txid, "hex"),
+      utxo.vout,
+      Script.from_asm_string("")
+    );
+    txIn.set_satoshis(BigInt(utxo.satoshis));
+    txIns.push(txIn);
+    totalSatoshis += utxo.satoshis;
+  }
+
+  const feeSats = 20;
+  const outputSatoshis = totalSatoshis - feeSats;
+
+  tx.add_output(
+    new TxOut(
+      BigInt(outputSatoshis),
+      address.get_locking_script()
+    )
+  );
+
+  txIns.forEach((txIn, index) => {
+    tx.add_input(txIn);
+
+    const utxo = utxos[index];
+    const sig = tx.sign(
+      privateKey,
+      SigHash.InputOutputs,
+      index,
+      Script.from_asm_string(utxo.script),
+      BigInt(utxo.satoshis)
+    );
+
+    txIn.set_unlocking_script(
+      Script.from_asm_string(
+        `${sig.to_hex()} ${privateKey.to_public_key().to_hex()}`
+      )
+    );
+
+    tx.set_input(index, txIn);
+  });
+
+  const rawTx = tx.to_hex();
+
+  return {
+    rawTx,
+    size: Math.ceil(rawTx.length / 2),
+    fee: feeSats,
+    numInputs: tx.get_ninputs(),
+    numOutputs: tx.get_noutputs(),
+    txid: tx.get_id_hex(),
+  };
 }).get("/discord/:discordId", async ({ params, set }) => {
   // return user info
   const discordId = params.discordId
