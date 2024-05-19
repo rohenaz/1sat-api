@@ -527,6 +527,18 @@ const app = new Elysia().use(cors()).use(basicAuth({
   return enriched
 }).get("/admin/utxo/consolidate/:key", async ({ params, set }) => {
 
+  // txid: "559864a5c74186f0680ce6d769a287c02277075d0af7f1b3c308d61ee522c20f",
+  // vout: 2,
+  // outpoint: "559864a5c74186f0680ce6d769a287c02277075d0af7f1b3c308d61ee522c20f_2",
+  // satoshis: 2,
+  // accSats: "2",
+  // height: 844724,
+  // idx: "254",
+  // owner: "13RFswAAjAEcwzb2uP7PvNxCoS9hhqonQ7",
+  // spend: "",
+  // spend_height: null,
+  // spend_idx: null,
+
   // key can be either "bot" or "broadcaster"
   // if its "bot" use PAYPK if its "broadcaster" we use FUNDING_WIF
   const key = params.key
@@ -575,7 +587,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
     const txIn = new TxIn(
       Buffer.from(utxo.txid, "hex"),
       utxo.vout,
-      Script.from_asm_string("")
+      address.get_locking_script()
     );
     txIn.set_satoshis(BigInt(utxo.satoshis));
     txIns.push(txIn);
