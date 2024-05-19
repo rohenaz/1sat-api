@@ -451,7 +451,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
       console.log({ users })
       // we need user.address for each user
       addresses = await Promise.all(users.map(async (userKey: string) => {
-        const user = await botRedis.get(userKey)
+        const user = await botRedis.get(userKey) as string
         return JSON.parse(user).address
       }))
     }
