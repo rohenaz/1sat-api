@@ -537,7 +537,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
   }
 
   const privateKey = PrivateKey.from_wif(fundingKey);
-  const address = P2PKHAddress.from_pubkey(privateKey.to_public_key());
+  const address = P2PKHAddress.from_pubkey(privateKey.to_public_key()).to_string();
 
   // Get all UTXOs from Redis
   let utxos: OrdUtxo[] = [];
@@ -552,7 +552,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
 
     try {
       const u = await fetchJSON<OrdUtxo[]>(`${API_HOST}/api/txos/address/${address}/unspent`)
-      console.log("Hitting url", u)
+      console.log("Hitting url", u, "with address", address)
       if (!u) {
         throw new Error("No UTXOs found for address")
       }
