@@ -612,7 +612,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
       privateKey,
       SigHash.InputOutputs,
       index,
-      Script.from_asm_string(utxo.script),
+      address.get_locking_script(),
       BigInt(utxo.satoshis)
     );
 
