@@ -551,7 +551,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
   } else {
     // broadcaster does not store utxos in redis, fetch from gorillapool
 
-    const u = await fetchJSON<OrdUtxo[]>(`https://api.gorillapool.io/bsv/utxos/${address}`)
+    const u = await fetchJSON<OrdUtxo[]>(`${API_HOST}/api/txos/${address}/unspent`)
     if (!u) {
       throw new Error("No UTXOs found for address")
     }
