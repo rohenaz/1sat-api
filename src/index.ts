@@ -561,9 +561,8 @@ const app = new Elysia().use(cors()).use(basicAuth({
     utxos = JSON.parse(utxosData) as OrdUtxo[]
   } else {
     // broadcaster does not store utxos in redis, fetch from gorillapool
-
     try {
-      const url = `${API_HOST}/api/txos/address/${address.to_string()}/unspent?limit=1000&refresh=true`
+      const url = `${API_HOST}/api/txos/address/${address.to_string()}/unspent?limit=10000&refresh=true`
       const u = await fetchJSON<OrdUtxo[]>(url)
       console.log("Hitting url", url, "with address", address.to_string())
       if (!u) {
