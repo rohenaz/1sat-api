@@ -531,21 +531,34 @@ const app = new Elysia().use(cors()).use(basicAuth({
   // if its "bot" use PAYPK if its "broadcaster" we use FUNDING_WIF
   const key = params.key
 
-  // Get all UTXOs from Redis
-  const utxoKeys = await redis.keys("utxo-*");
-  const utxos = await Promise.all(
-    utxoKeys.map(async (key) => JSON.parse(await redis.get(key) as string))
-  );
 
-  console.log({ utxos });
-
-  const fundingKey = key === "bot" ? process.env.PAYPK : process.env.FUNDING_WIF;
+  const fundingKey = key === "bot" ? process.env.PAYPK : process.env.BROADCAST_FUNDING_WIF;
   if (!fundingKey) {
     throw new Error("FUNDING_KEY environment variable is not set");
   }
 
   const privateKey = PrivateKey.from_wif(fundingKey);
   const address = P2PKHAddress.from_pubkey(privateKey.to_public_key());
+
+  // Get all UTXOs from Redis
+  let utxos: OrdUtxo[] = [];
+  if (key === "bot") {
+    const utxosData = await botRedis.get("pay-utxos") as string
+    if (!utxosData) {
+      throw new Error("No UTXOs found for address")
+    }
+    utxos = JSON.parse(utxosData) as OrdUtxo[]
+  } else {
+    // broadcaster does not store utxos in redis, fetch from gorillapool
+
+    const u = await fetchJSON<OrdUtxo[]>(`https://api.gorillapool.io/bsv/utxos/${address}`)
+    if (!u) {
+      throw new Error("No UTXOs found for address")
+    }
+    utxos = u
+  }
+
+  console.log({ utxos });
 
   const tx = new Transaction(1, 0);
 
