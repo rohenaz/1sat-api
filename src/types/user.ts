@@ -12,3 +12,11 @@ export interface Airdrop {
   txid: string;
   timestamp: number;
 }
+
+export type LeaderboardEntry = {
+  address: string;
+  totalSpent: number;
+  numPurchases: number;
+  lastPurchaseTimestamp: number;
+  timeframe: number;
+};

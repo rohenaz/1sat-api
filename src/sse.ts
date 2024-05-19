@@ -2,7 +2,7 @@ import EventSource from "eventsource";
 import { redis } from ".";
 import { API_HOST, AssetType } from "./constants";
 import { loadV1TickerDetails, loadV2TickerDetails } from "./init";
-import { BSV20Details, BalanceUpdate, ListingsV1, ListingsV2 } from "./types/bsv20";
+import type { BSV20Details, BalanceUpdate, ListingsV1, ListingsV2 } from "./types/bsv20";
 import { fetchChainInfo, fetchTokensDetails } from "./utils";
 
 const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funds&channel=v2funds&channel=bsv20listings&channel=bsv20sales`);
@@ -39,7 +39,7 @@ const sseInit = async () => {
   })
 
   sse.addEventListener("bsv20sales", async (event) => {
-    console.log("Sale or cencel", event.data);
+    console.log("Sale or cencel");
     let { id, tick, outpoint, txid, sale } = event.data;
     // txid is the txid from which is was spend
     const assetType = tick ? AssetType.BSV20 : AssetType.BSV21;
@@ -77,7 +77,7 @@ const sseInit = async () => {
 
   sse.addEventListener("v1funds", async (event) => {
     const assetType = AssetType.BSV20;
-    console.log("V1 Funds", event.data);
+    console.log("V1 Funds event");
     const data = JSON.parse(event.data) as BalanceUpdate;
     const { tick, fundTotal, fundUsed, pendingOps, included } = data;
 
@@ -103,7 +103,7 @@ const sseInit = async () => {
 
   sse.addEventListener("v2funds", async (event) => {
     const assetType = AssetType.BSV21;
-    console.log("V2 Funds", event.data);
+    console.log("V2 Funds event");
     const data = JSON.parse(event.data) as BalanceUpdate;
     const { id, fundTotal, fundUsed, pendingOps, included } = data;
 
@@ -144,7 +144,7 @@ const sseInit = async () => {
   return sse;
 }
 sse.onopen = (event) => {
-  console.log("SSE Open", event);
+  // console.log("SSE Open", event);
 }
 sse.onerror = (event) => {
   console.error("SSE Error", event);

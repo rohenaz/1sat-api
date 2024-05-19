@@ -1,5 +1,6 @@
 import type { Bsv20Status } from "../constants";
 import type { BaseTxo } from "./common";
+import { TxoData } from "./ordinals";
 
 export interface BSV20 extends BaseTxo {
   max?: string;
@@ -55,6 +56,7 @@ export interface BSV21 extends BaseTxo {
   contractStart?: string | undefined;
   lockTime?: string | undefined;
   lockPerToken?: string | undefined;
+  data?: TxoData | undefined;
 }
 
 export interface ListingsV2 extends BSV21 {

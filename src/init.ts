@@ -20,6 +20,7 @@ type TickerName = {
   type: AssetType.BSV20 | AssetType.BSV21
   icon?: string
   num: number
+  contract?: string
 }
 
 const fetchV1TickerNames = async (offset: number, resultsPerPage: number, included: boolean) => {
@@ -42,18 +43,24 @@ const fetchV1TickerNames = async (offset: number, resultsPerPage: number, includ
   return tickers
 }
 
-const fetchV2TickerNames = async (offset: number, resultsPerPage: number) => {
-  const url = `${API_HOST}/api/bsv20/v2?limit=${resultsPerPage}&offset=${offset}`
+const fetchV2TickerNames = async (offset: number, resultsPerPage: number, included: boolean) => {
+  const url = `${API_HOST}/api/bsv20/v2?limit=${resultsPerPage}&offset=${offset}&included=${included}`
   const response = await fetch(url)
   const ticker = (await response.json()) as BSV21[]
-  return (ticker || []).map((t) => {
+  return (ticker || []).filter((v2) => {
+    return v2.sym && v2.id
+  }).map((t) => {
     const v2 = t as BSV21
-    return {
+    const res = {
       tick: v2.sym,
       id: v2.id,
       icon: v2.icon,
       type: AssetType.BSV21
     } as TickerName
+    if (v2.data?.insc?.json?.contract) {
+      res.contract = v2.data.insc.json.contract
+    }
+    return res
   })
 }
 
@@ -63,7 +70,6 @@ export const loadAllV1Names = async (): Promise<void> => {
   let includedCount = 0;
   let unincludedCount = 0;
   let resultsPerPage = 200;
-  let done = false;
 
   while (true) {
     // const offset = page * resultsPerPage;
@@ -86,8 +92,31 @@ export const loadAllV1Names = async (): Promise<void> => {
   console.log("All tickers cached for autofill", includedCount, unincludedCount)
 }
 
-export const loadAllV2Names = async (): Promise<void> => {
+export const loadIncludedV2Names = async (): Promise<void> => {
   // TODO: implement 
+  let offset = (await redis.hlen(`autofill-${AssetType.BSV21}`)) || 0
+  let includedCount = 0;
+  const resultsPerPage = 200;
+
+  while (true) {
+    // const offset = page * resultsPerPage;
+    const results = await fetchV2TickerNames(offset, resultsPerPage, true)
+    // page++
+    if (!results) {
+      break
+    }
+    offset += results.length
+    includedCount += results.length
+
+    for (const result of results) {
+      console.log("AutoFill", result.tick, result.id)
+      await redis.hset(`autofill-${AssetType.BSV21}`, `${result.tick.toLowerCase()}-${result.id.toLowerCase()}`, JSON.stringify(result));
+    }
+    if (results.length < resultsPerPage) {
+      break
+    }
+  }
+  console.log("All v2 tickers cached for autofill", includedCount, includedCount)
 }
 
 export const fetchV2Tickers = async () => {

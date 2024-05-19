@@ -3,12 +3,14 @@ import { cors } from '@elysiajs/cors';
 import { P2PKHAddress, PrivateKey, Script, SigHash, Transaction, TxIn, TxOut } from 'bsv-wasm';
 import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
-import { API_HOST, AssetType, defaults } from './constants';
-import { findMatchingKeys, findOneExactMatchingKey } from './db';
-import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
+import { fetchCollectionItems, fetchCollectionMarket, fetchCollectionSales } from './collection';
+import { API_HOST, AssetType, NUMBER_OF_ITEMS_PER_PAGE, defaults } from './constants';
+import { findMatchingKeys, findMatchingKeysWithOffset, findOneExactMatchingKey } from './db';
+import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadIncludedV2Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
 import { sseInit } from './sse';
 import type { BSV20Details, BSV21Details, MarketDataV1, MarketDataV2 } from './types/bsv20';
-import type { User } from './types/user';
+import type { OrdUtxo } from './types/ordinals';
+import type { LeaderboardEntry, User } from './types/user';
 import { fetchChainInfo, fetchExchangeRate, fetchJSON, fetchStats, fetchTokensDetails } from './utils';
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
@@ -17,13 +19,17 @@ export const botRedis = new Redis(`${process.env.BOT_REDIS_URL}`);
 botRedis.on("connect", () => console.log("Connected to Bot Redis"));
 botRedis.on("error", (err) => console.error("Bot Redis Error", err));
 
-redis.on("connect", () => console.log("Connected to Redis"));
-redis.on("error", (err) => console.error("Redis Error", err));
+redis.on("connect", async () => {
+  console.log("Connected to Redis")
 
-await loadAllV1Names();
-await fetchV1Tickers();
-await fetchV2Tickers();
-await sseInit();
+  await fetchV1Tickers();
+  await fetchV2Tickers();
+  await loadAllV1Names();
+  await loadIncludedV2Names();
+  await sseInit();
+});
+
+redis.on("error", (err) => console.error("Redis Error", err));
 
 const app = new Elysia().use(cors()).use(basicAuth({
   credentials: { env: 'BASIC_AUTH_CREDENTIALS' }, scope: "/admin",
@@ -38,7 +44,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
   const id = params.id
 
   const results = await findMatchingKeys(redis, "autofill", id, type)
-  console.log({ results })
+  // console.log({ results })
   // bring exact matches to the top
   return results.sort((a, b) => a.id.toLowerCase() === id ? -1 : b.id.toLowerCase() === id ? 1 : 0)
 }, {
@@ -91,9 +97,93 @@ const app = new Elysia().use(cors()).use(basicAuth({
   body: t.Object({
     ids: t.Array(t.String())
   })
+}).get("/collection/:collectionId/market", async ({ params, query, set }) => {
+  // ofset and limit
+  const { offset, limit } = query;
+  const collectionId = params.collectionId;
+  console.log({ collectionId, offset, limit });
+  try {
+    return await fetchCollectionMarket({ map: { subTypeData: { collectionId } } }, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
+  } catch (e) {
+    console.error("Error fetching collection market:", e);
+    set.status = 500;
+    return [];
+  }
+  // use the search endpoint to find listings for a collection by id
+}).get("/collection", async ({ set, query }) => {
+  const { offset, limit } = query;
+  try {
+    // Retrieve the cached collections using findMatchingKeysWithOffset
+    const collections = await findMatchingKeysWithOffset(redis, "collection", "", AssetType.Ordinals, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
+    console.log("### Found collections", collections.length)
+
+    // ok now we need to sort these by last sale.... crap.
+    // for (const collection of collections) {
+    //   // find any sales with this collection id
+    //   const sales = await findMatchingKeys(redis, "sale", collection.id, AssetType.Ordinals)
+    //   // sort by last sale
+    //   const sorted = sales.sort((a, b) => {
+    //     return b.lastSaleHeight - a.lastSaleHeight
+    //   })
+    //   // get the last sale
+    //   const lastSale = sorted[0]
+    //   collection.lastSale = lastSale
+    // }
+
+    return collections.filter((c) => c.origin).sort((a, b) => {
+      return b.lastSaleHeight - a.lastSaleHeight
+    })
+  } catch (e) {
+    console.error("Error fetching collections:", e);
+    set.status = 500;
+    return [];
+  }
+}).get("/collection/:collectionId/items", async ({ params, query, set }) => {
+  const { offset, limit } = query;
+  const collectionId = params.collectionId;
+
+  try {
+    const items = await fetchCollectionItems({ map: { subTypeData: { collectionId } } }, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
+
+    // Fetch the collection data from the API
+    const response = await fetch(`${API_HOST}/api/inscriptions/${collectionId}`);
+    const collectionData = await response.json() as any;
+
+    // Store the collection data in a hash
+    if (response.status === 200) {
+
+      // get the stats for the collection
+      const stats = await fetchJSON(`${API_HOST}/api/collections/${collectionId}/stats`);
+      collectionData.stats = stats;
+
+      await redis.hset(`collection-${AssetType.Ordinals}`, collectionId, JSON.stringify(collectionData), "EX", defaults.expirationTime);
+    }
+
+    try {
+      const sales = await fetchCollectionSales(collectionId, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
+      collectionData.sales = sales || [];
+
+      // get the last sale
+      if (!sales) {
+        collectionData.lastSale = null
+      } else {
+        collectionData.lastSale = sales.sort((a, b) => {
+          return (b.spendHeight || 0) - (a.spendHeight || 0)
+        })[0]
+      }
+    } catch (e) {
+      console.error("Error fetching collection sales:", e);
+    }
+    // we're not doing any caching on items themselves
+    return items;
+  } catch (e) {
+    console.error("Error fetching collection items:", e);
+    set.status = 500;
+    return [];
+  }
 }).get('/market/:assetType', async ({ set, params, query }) => {
   // sort can be name, market_cap, price, pct_change, holders, most_recent_sale (default)
-  const { limit, offset, sort, dir } = query;
+  const { limit = NUMBER_OF_ITEMS_PER_PAGE.toString(), offset = "0", sort = "most_recent_sale", dir = "asc" } = query;
   console.log({ limit, offset, sort, dir, params });
 
   try {
@@ -105,8 +195,8 @@ const app = new Elysia().use(cors()).use(basicAuth({
       return [];
     }
 
-    const sortMethod = query.sort || "most_recent_sale";
-    const sortDirection = query.dir === "asc" ? 1 : -1;
+    const sortMethod = sort;
+    const sortDirection = dir === "asc" ? 1 : -1;
 
     return marketData.sort((a: MarketDataV1 | MarketDataV2, b: MarketDataV1 | MarketDataV2) => {
 
@@ -168,25 +258,64 @@ const app = new Elysia().use(cors()).use(basicAuth({
   } catch (e) {
     console.error("Error fetching market data:", e);
     set.status = 500;
-    return {};
+    return [];
   }
 }, {
   transform({ params }) {
     params.assetType = params.assetType.toLowerCase();
   },
   query: t.Object({
-    limit: t.String(),
-    offset: t.String(),
-    sort: t.String(),
-    dir: t.String()
+    limit: t.Optional(t.String()),
+    offset: t.Optional(t.String()),
+    sort: t.Optional(t.String()),
+    dir: t.Optional(t.String())
   }),
   params: t.Object({
     assetType: t.String()
   })
+}).get("/market/:assetType/search/:term", async ({ set, params, query }) => {
+  const term = decodeURIComponent(params.term);
+  console.log("WITH SEARCH TERM", params.assetType, term)
+  // TODO: Implement sorting
+  const sort = query.sort || "price_per_token";
+  try {
+    const marketData = await findMarketData(params.assetType as AssetType, term);
+    return marketData;
+  } catch (e) {
+    console.error("Error fetching market data:", e);
+    set.status = 500;
+    return {};
+  }
+}, {
+  transform({ params }) {
+    params.assetType = params.assetType.toLowerCase();
+    params.term = params.term.toLowerCase();
+  },
+  params: t.Object({
+    assetType: t.String(),
+    term: t.String()
+  }),
+  query: t.Object({
+    sort: t.Optional(t.String())
+  })
+}).get("/leaderboard", async ({ params }) => {
+  // get the top buyers in the last 24 hours
+
+  // get sales from redis
+  // const sales = await findMatchingKeys(redis, "listings", "", "*" as AssetType)
+  const leaderboard: LeaderboardEntry[] = []
+  leaderboard.push({
+    address: "1NVoMjzjAgskT5dqWtTXVjQXUns7RqYp2m",
+    totalSpent: 100000,
+    numPurchases: 10,
+    timeframe: 86400,
+    lastPurchaseTimestamp: Date.now()
+  })
+  return leaderboard
+
 }).get("/market/:assetType/:id", async ({ set, params, query }) => {
   const id = decodeURIComponent(params.id);
   console.log("WITH ID", params.assetType, id)
-  const sort = query.sort || "price_per_token";
   try {
     const marketData = await fetchMarketData(params.assetType as AssetType, id);
     return marketData;
@@ -204,9 +333,6 @@ const app = new Elysia().use(cors()).use(basicAuth({
     assetType: t.String(),
     id: t.String()
   }),
-  query: t.Object({
-    sort: t.String()
-  })
 }).get("/mint/:assetType/:id", async ({ set, params }) => {
   // same as /market/:assetType/:id but doesn't return minted out tokens
   const id = decodeURIComponent(params.id);
@@ -230,6 +356,78 @@ const app = new Elysia().use(cors()).use(basicAuth({
     assetType: t.String(),
     id: t.String()
   })
+}).get("/mine/pow20/", async ({ params, set }) => {
+  // find all the pow20 contracts
+  const q = {
+    insc: {
+      json: { contract: "pow-20" }
+    }
+  }
+  try {
+    const b64 = Buffer.from(JSON.stringify(q)).toString("base64")
+    const resp = await fetchJSON(`${API_HOST}/api/inscriptions/search?q=${b64}`)
+
+    const tokens: MarketDataV2[] = []
+    for (const insc of resp as OrdUtxo[]) {
+      // get the token details from redis
+      const token = await redis.get(`token-${AssetType.BSV21}-${insc.origin?.data?.bsv20?.id}`)
+      if (!token) {
+        continue
+      }
+      tokens.push(JSON.parse(token))
+    }
+    return tokens
+  } catch (e) {
+    console.error("Error fetching mine pow20:", e);
+    set.status = 500;
+    return []
+  }
+}).get("/mine/pow20/:sym", async ({ params, set }) => {
+  // // find all the pow20 contracts in redis that start with the given sym
+  const sym = params.sym.toLowerCase()
+  const tokens: MarketDataV2[] = []
+  console.log("Runging scan...", sym)
+
+  // sym is not in the key itself we have to find it in the data
+  const keys = await redis.keys(`token-${AssetType.BSV21}-*`)
+  console.log({ keys })
+  for (const key of keys) {
+    if (!key) {
+      continue
+    }
+    const tokenStr = await redis.get(key)
+    if (!tokenStr) {
+      continue
+    }
+    const token = JSON.parse(tokenStr) as MarketDataV2
+    if (token.sym.toLowerCase().startsWith(sym)) {
+      tokens.push(token)
+    }
+  }
+  return tokens
+  // const q = {
+  //   insc: {
+  //     json: { contract: "pow-20", sym: params.sym }
+  //   }
+  // }
+  // try {
+  //   const b64 = Buffer.from(JSON.stringify(q)).toString("base64")
+  //   const resp = await fetchJSON(`${API_HOST}/api/inscriptions/search?q=${b64}`)
+  //   const tokens: MarketDataV2[] = []
+  //   for (const insc of resp as OrdUtxo[]) {
+  //     // get the token details from redis
+  //     const token = await redis.get(`token-${AssetType.BSV21}-${insc.origin?.data?.bsv20?.id}`)
+  //     if (!token) {
+  //       continue
+  //     }
+  //     tokens.push(JSON.parse(token))
+  //   }
+  //   return tokens
+  // } catch (e) {
+  //   console.error("Error fetching mine pow20:", e);
+  //   set.status = 500;
+  //   return []
+  // }
 }).get("/airdrop/:template", async ({ params }) => {
   let addresses: string[] = []
   // return a list of addresses
@@ -526,6 +724,51 @@ const fetchMarketData = async (assetType: AssetType, id: string) => {
       let detailedTokensV2: BSV21Details[] = [];
       let resultsv2: MarketDataV2[] = [];
       detailedTokensV2 = await fetchTokensDetails<BSV21Details>([id], assetType);
+
+      resultsv2 = await loadV2TickerDetails(detailedTokensV2, info);
+
+      return resultsv2.sort((a, b) => {
+        return b.marketCap - a.marketCap;
+      });
+    }
+
+    default:
+      return [];
+  }
+};
+
+// Function to fetch and process market data
+const findMarketData = async (assetType: AssetType, term: string) => {
+  term = term?.toLowerCase();
+  const info = await fetchChainInfo()
+  switch (assetType) {
+    case AssetType.BSV20: {
+      let detailedTokensV1: BSV20Details[] = [];
+      let resultsv1: MarketDataV1[] = [];
+      // if (id) {
+      console.log("Finding token details for", term)
+      // first we get them from redis autofill
+      const results = await findMatchingKeys(redis, "autofill", term, assetType)
+      console.log("Found", results.length, "results")
+      // then we collect up the ids
+      const ids = results.map((r) => r.id)
+      detailedTokensV1 = await fetchTokensDetails<BSV20Details>(ids, assetType);
+      resultsv1 = await loadV1TickerDetails(detailedTokensV1, info);
+
+      return resultsv1.sort((a, b) => {
+        return b.marketCap - a.marketCap;
+      });
+    }
+    case AssetType.BSV21: {
+      let detailedTokensV2: BSV21Details[] = [];
+      let resultsv2: MarketDataV2[] = [];
+
+      // first we get them from redis autofill
+      const results = await findMatchingKeys(redis, "autofill", term, assetType)
+      console.log("Found", results.length, "results")
+      // then we collect up the ids
+      const ids = results.map((r) => r.id)
+      detailedTokensV2 = await fetchTokensDetails<BSV21Details>(ids, assetType);
 
       resultsv2 = await loadV2TickerDetails(detailedTokensV2, info);
 
