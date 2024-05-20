@@ -527,6 +527,8 @@ const app = new Elysia().use(cors()).use(basicAuth({
   return enriched
 }).get("/admin/utxo/consolidate/:key", async ({ params, set, query }) => {
 
+  const evilUtxo = query.exclude || "cf86adda3cf3926838b469b1b19c4fa447602186b98b68cb1a893d1d8223ae89"
+
   // txid: "559864a5c74186f0680ce6d769a287c02277075d0af7f1b3c308d61ee522c20f",
   // vout: 2,
   // outpoint: "559864a5c74186f0680ce6d769a287c02277075d0af7f1b3c308d61ee522c20f_2",
@@ -568,7 +570,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
       if (!u) {
         throw new Error("No UTXOs found for address")
       }
-      utxos = u
+      utxos = u.filter((o) => evilUtxo === o.txid)
     } catch (e) {
       console.error("Error fetching utxos:", e);
       set.status = 500;
