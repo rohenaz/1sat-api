@@ -525,7 +525,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
     }
   }))
   return enriched
-}).get("/admin/utxo/consolidate/:key", async ({ params, set }) => {
+}).get("/admin/utxo/consolidate/:key", async ({ params, set, query }) => {
 
   // txid: "559864a5c74186f0680ce6d769a287c02277075d0af7f1b3c308d61ee522c20f",
   // vout: 2,
@@ -542,7 +542,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
   // key can be either "bot" or "broadcaster"
   // if its "bot" use PAYPK if its "broadcaster" we use FUNDING_WIF
   const key = params.key
-
+  const limit = query.limit || 1000
   const fundingKey = key === "bot" ? process.env.PAYPK : process.env.BROADCAST_FUNDING_WIF;
   if (!fundingKey) {
     throw new Error("FUNDING_KEY environment variable is not set");
@@ -562,7 +562,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
   } else {
     // broadcaster does not store utxos in redis, fetch from gorillapool
     try {
-      const url = `${API_HOST}/api/txos/address/${address.to_string()}/unspent?limit=25&refresh=true`
+      const url = `${API_HOST}/api/txos/address/${address.to_string()}/unspent?limit=${limit}&refresh=true`
       const u = await fetchJSON<OrdUtxo[]>(url)
       console.log("Hitting url", url, "with address", address.to_string())
       if (!u) {
