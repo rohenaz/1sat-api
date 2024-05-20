@@ -570,7 +570,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
       if (!u) {
         throw new Error("No UTXOs found for address")
       }
-      utxos = u.filter((o) => evilUtxo === o.txid)
+      utxos = u.filter((o) => evilUtxo !== o.txid)
     } catch (e) {
       console.error("Error fetching utxos:", e);
       set.status = 500;
@@ -594,7 +594,6 @@ const app = new Elysia().use(cors()).use(basicAuth({
     txIns.push(txIn);
     totalSatoshis += utxo.satoshis;
   }
-
 
   const feeSats = Math.ceil(txIns.length / 5)
   const outputSatoshis = totalSatoshis - feeSats;
