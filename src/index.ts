@@ -627,14 +627,15 @@ const app = new Elysia().use(cors()).use(basicAuth({
 
   const rawTx = Buffer.from(tx.to_bytes()).toString("base64")
 
-  return {
-    rawTx,
-    size: Math.ceil(rawTx.length / 2),
-    fee: feeSats,
-    numInputs: tx.get_ninputs(),
-    numOutputs: tx.get_noutputs(),
-    txid: tx.get_id_hex(),
-  };
+  // return {
+  //   rawTx,
+  //   size: Math.ceil(rawTx.length / 2),
+  //   fee: feeSats,
+  //   numInputs: tx.get_ninputs(),
+  //   numOutputs: tx.get_noutputs(),
+  //   txid: tx.get_id_hex(),
+  // };
+  return rawTx
 }).get("/discord/:discordId", async ({ params, set }) => {
   // return user info
   const discordId = params.discordId
