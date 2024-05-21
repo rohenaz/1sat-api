@@ -545,7 +545,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
   // if its "bot" use PAYPK if its "broadcaster" we use FUNDING_WIF
   const key = params.key
   const limit = query.limit || 1000
-  const fundingKey = key === "bot" ? process.env.PAYPK : process.env.BROADCAST_FUNDING_WIF;
+  const fundingKey = key === "bot" ? process.env.PAYPK : process.env.BROADCAST_FUNDING_WIF2;
   if (!fundingKey) {
     throw new Error("FUNDING_KEY environment variable is not set");
   }
