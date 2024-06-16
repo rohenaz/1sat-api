@@ -8,7 +8,7 @@ import { API_HOST, AssetType, NUMBER_OF_ITEMS_PER_PAGE, defaults } from './const
 import { findMatchingKeys, findMatchingKeysWithOffset, findOneExactMatchingKey } from './db';
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadIncludedV2Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
 import { sseInit } from './sse';
-import type { BSV20Details, BSV21Details, MarketDataV1, MarketDataV2 } from './types/bsv20';
+import { type BSV20Details, type BSV21Details, type MarketDataV1, type MarketDataV2, SortBy } from './types/bsv20';
 import type { OrdUtxo } from './types/ordinals';
 import type { LeaderboardEntry, User } from './types/user';
 import { fetchChainInfo, fetchExchangeRate, fetchJSON, fetchStats, fetchTokensDetails } from './utils';
@@ -183,7 +183,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
   }
 }).get('/market/:assetType', async ({ set, params, query }) => {
   // sort can be name, market_cap, price, pct_change, holders, most_recent_sale (default)
-  const { limit = NUMBER_OF_ITEMS_PER_PAGE.toString(), offset = "0", sort = "most_recent_sale", dir = "asc" } = query;
+  const { limit = NUMBER_OF_ITEMS_PER_PAGE.toString(), offset = "0", sort = SortBy.MostRecentSale, dir = "asc" } = query;
   console.log({ limit, offset, sort, dir, params });
 
   try {

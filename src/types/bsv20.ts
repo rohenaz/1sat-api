@@ -1,6 +1,6 @@
 import type { Bsv20Status } from "../constants";
 import type { BaseTxo } from "./common";
-import { TxoData } from "./ordinals";
+import type { TxoData } from "./ordinals";
 
 export interface BSV20 extends BaseTxo {
   max?: string;
@@ -131,3 +131,10 @@ export interface BalanceUpdate {
   included: boolean
 }
 
+export enum SortBy {
+  MostRecentSale = "mode_recent_sale",
+  MarketCap = "market_cap",
+  Price = "price",
+  PctChange = "pct_change",
+  Holders = "holders"
+}

@@ -1,4 +1,4 @@
-import { redis, type ChainInfo } from ".";
+import { type ChainInfo, redis } from ".";
 import { API_HOST, AssetType } from "./constants";
 import type { BSV20V1, BSV21, Holder, ListingsV1, ListingsV2, MarketDataV1, MarketDataV2 } from "./types/bsv20";
 import { calculateMarketCap, fetchChainInfo, fetchJSON, setPctChange } from "./utils";
