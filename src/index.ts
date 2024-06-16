@@ -184,7 +184,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
 }).get('/market/:assetType', async ({ set, params, query }) => {
   // sort can be name, market_cap, price, pct_change, holders, most_recent_sale (default)
   const { limit = NUMBER_OF_ITEMS_PER_PAGE.toString(), offset = "0", sort = SortBy.MostRecentSale, dir = "asc" } = query;
-  console.log({ limit, offset, sort, dir, params });
+  console.log({ query });
 
   try {
     const marketData = await fetchShallowMarketData(params.assetType as AssetType, Number.parseInt(offset), Number.parseInt(limit));
