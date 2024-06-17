@@ -221,8 +221,8 @@ const app = new Elysia().use(cors()).use(basicAuth({
       };
 
       const compareByHolders = (): number => {
-        const aHolders = (a as MarketDataV1 | MarketDataV2).holders?.length || 0;
-        const bHolders = (b as MarketDataV1 | MarketDataV2).holders?.length || 0;
+        const aHolders = (a as MarketDataV1 | MarketDataV2).accounts || 0;
+        const bHolders = (b as MarketDataV1 | MarketDataV2).accounts || 0;
         return aHolders - bHolders;
       };
 
