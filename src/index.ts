@@ -853,7 +853,12 @@ const fetchShallowMarketData = async (assetType: AssetType, offset = 0, limit = 
           continue;
         }
         const token = JSON.parse(cached);
-        tv2.push(token);
+
+        const cachedListings = await redis.keys(`listings-${AssetType.BSV21}-${id}`)
+        // only push if there are open listings
+        if (cachedListings.length > 0) {
+          tv2.push(token);
+        }
       }
       return tv2;
     }
