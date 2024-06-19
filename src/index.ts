@@ -829,9 +829,13 @@ const fetchShallowMarketData = async (assetType: AssetType, offset = 0, limit = 
         if (!cached) {
           continue;
         }
-        const token = JSON.parse(cached);
+        const token = JSON.parse(cached) as MarketDataV1;
         // console.log(key, value)
-        tv1.push(token);
+
+        // only push if there are open listings
+        if (token.listings && token.listings.length > 0) {
+          tv1.push(token);
+        }
       }
       return tv1;
     }
