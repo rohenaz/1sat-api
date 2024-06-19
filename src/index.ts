@@ -835,7 +835,7 @@ const fetchShallowMarketData = async (assetType: AssetType, offset = 0, limit = 
         // can we limit this to 1 result
         const cachedListings = await redis.keys(`listings-${AssetType.BSV20}-${tick}`)
         // only push if there are open listings
-        if (cachedListings) {
+        if (cachedListings.length > 0) {
           tv1.push(token);
         }
       }
