@@ -132,6 +132,7 @@ export interface BalanceUpdate {
 }
 
 export enum SortBy {
+  Num = "num",
   Name = "name",
   MostRecentSale = "mode_recent_sale",
   MarketCap = "market_cap",

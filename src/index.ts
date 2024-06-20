@@ -214,6 +214,12 @@ const app = new Elysia().use(cors()).use(basicAuth({
         return 0;
       };
 
+      const compareByNum = (propName: keyof (MarketDataV1)): number => {
+        const aProp = Number((a as MarketDataV1)[propName] || 0);
+        const bProp = Number((b as MarketDataV1)[propName] || 0);
+        return aProp - bProp;
+      };
+
       const compareByNumber = (propName: keyof (MarketDataV1 | MarketDataV2)): number => {
         const aProp = Number((a as MarketDataV1 | MarketDataV2)[propName] || 0);
         const bProp = Number((b as MarketDataV1 | MarketDataV2)[propName] || 0);
@@ -245,6 +251,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
 
       const compareFunctions: Record<string, () => number> = {
         name: compareByName,
+        num: () => compareByNum("num"),
         market_cap: () => compareByNumber("marketCap"),
         price: () => compareByNumber("price"),
         pct_change: () => compareByNumber("pctChange"),
