@@ -1,5 +1,5 @@
 import { type ChainInfo, redis } from ".";
-import { API_HOST, AssetType } from "./constants";
+import { API_HOST, AssetType, bsv21Blacklist } from "./constants";
 import type { BSV20V1, BSV21, Holder, ListingsV1, ListingsV2, MarketDataV1, MarketDataV2 } from "./types/bsv20";
 import { calculateMarketCap, fetchChainInfo, fetchJSON, setPctChange } from "./utils";
 
@@ -126,7 +126,9 @@ export const fetchV2Tickers = async () => {
     return []
   }
   const info = await fetchChainInfo()
-  return await loadV2TickerDetails(tickersV2, info);
+  return await loadV2TickerDetails(tickersV2.filter((t) => {
+    return bsv21Blacklist.includes(t.id) === false
+  }), info);
 }
 
 // saves tickers to caches and adds pctChange
@@ -201,6 +203,9 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
 export const loadV2TickerDetails = async (tickersV2: BSV21[], info: ChainInfo) => {
   const results: MarketDataV2[] = [];
   for (const t of tickersV2) {
+    if (bsv21Blacklist.includes(t.id)) {
+      continue
+    }
     const id = t.id;
     const cached = (await redis.get(`token-${AssetType.BSV21}-${id}`) || "{}") as string;
     const parsed = JSON.parse(cached);
