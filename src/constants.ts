@@ -22,4 +22,7 @@ export const defaults = {
 
 
 
-export const bsv21Blacklist = ["d9776ed54276526a88c3388b09c46c1dc6cffe8f14e7d407ef9f20db73621ec5_0"]
+export const bsv21Blacklist = [
+  // MELA - Requested in Discord by issuer KURO to delist
+  "d9776ed54276526a88c3388b09c46c1dc6cffe8f14e7d407ef9f20db73621ec5_0"
+]
