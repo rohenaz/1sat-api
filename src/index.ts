@@ -577,7 +577,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
       if (!u) {
         throw new Error("No UTXOs found for address")
       }
-      utxos = u.filter((o) => !evilUtxos.includeds(o.txid))
+      utxos = u.filter((o) => !evilUtxos.includes(o.txid))
     } catch (e) {
       console.error("Error fetching utxos:", e);
       set.status = 500;
