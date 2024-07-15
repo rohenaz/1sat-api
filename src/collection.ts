@@ -8,7 +8,7 @@ export const fetchCollectionItems = async (
   offset = 0,
   limit: number = NUMBER_OF_ITEMS_PER_PAGE
 ) => {
-  const collectionItemsUrl = `${API_HOST}/api/inscriptions/search?offset=${offset}&limit=${limit}&q=${btoa(
+  const collectionItemsUrl = `${API_HOST}/api/txos/search/unspent?offset=${offset}&limit=${limit}&q=${btoa(
     JSON.stringify(q)
   )}`;
   const items = await fetchJSON<OrdUtxo[]>(collectionItemsUrl);

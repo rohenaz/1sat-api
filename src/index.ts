@@ -175,7 +175,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
       console.error("Error fetching collection sales:", e);
     }
     // we're not doing any caching on items themselves
-    return items;
+    return items.filter((i) => !i.spend)
   } catch (e) {
     console.error("Error fetching collection items:", e);
     set.status = 500;
