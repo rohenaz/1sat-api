@@ -363,6 +363,20 @@ const app = new Elysia().use(cors()).use(basicAuth({
     assetType: t.String(),
     id: t.String()
   })
+}).get("/mine/pow20/latest/:id", async ({ params, set }) => {
+  // find the latest txo for the given pow20 contract
+  const id = params.id
+  try {
+    const resp = await fetchJSON<OrdUtxo>(`${API_HOST}/api/inscriptions/${id}/latest?script=true`)
+    if (!resp?.owner) {
+      redis.sadd('pow20-exhausted', id)
+    }
+    return resp
+  } catch (e) {
+    console.error("Error fetching mine pow20:", e);
+    set.status = 500;
+    return []
+  }
 }).get("/mine/pow20/", async ({ params, set }) => {
   // find all the pow20 contracts
   const q = {
@@ -377,7 +391,11 @@ const app = new Elysia().use(cors()).use(basicAuth({
     const tokens: MarketDataV2[] = []
     for (const insc of resp as OrdUtxo[]) {
       // get the token details from redis
-      const token = await redis.get(`token-${AssetType.BSV21}-${insc.origin?.data?.bsv20?.id}`)
+      const id = insc.origin?.data?.bsv20?.id
+      if (!id || await redis.sismember('pow20-exhausted', id)) {
+        continue
+      }
+      const token = await redis.get(`token-${AssetType.BSV21}-${id}`)
       if (!token) {
         continue
       }
