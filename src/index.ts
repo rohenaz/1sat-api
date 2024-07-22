@@ -368,7 +368,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
   const id = params.id
   try {
     const resp = await fetchJSON<OrdUtxo>(`${API_HOST}/api/inscriptions/${id}/latest?script=true`)
-    if (!resp?.owner) {
+    if (resp?.owner) {
       redis.sadd('pow20-exhausted', id)
     }
     return resp
