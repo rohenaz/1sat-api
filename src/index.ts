@@ -175,7 +175,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
       console.error("Error fetching collection sales:", e);
     }
     // we're not doing any caching on items themselves
-    return items.filter((i) => !i.spend)
+    return items
   } catch (e) {
     console.error("Error fetching collection items:", e);
     set.status = 500;
@@ -372,7 +372,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
   }
   try {
     const b64 = Buffer.from(JSON.stringify(q)).toString("base64")
-    const resp = await fetchJSON(`${API_HOST}/api/inscriptions/search?q=${b64}`)
+    const resp = await fetchJSON(`${API_HOST}/api/txos/search/unspent?q=${b64}`)
 
     const tokens: MarketDataV2[] = []
     for (const insc of resp as OrdUtxo[]) {
