@@ -484,9 +484,37 @@ const app = new Elysia().use(cors()).use(basicAuth({
   return addresses || []
 }).get("/status", async ({ set }) => {
   set.headers["Content-Type"] = "application/json";
-  const chainInfo = await fetchChainInfo();
-  const exchangeRate = await fetchExchangeRate();
-  const indexers = await fetchStats()
+  // get chaininfo from cache
+  const chainInfoStr = await redis.get("chain-info")
+  let chainInfo: ChainInfo = JSON.parse(chainInfoStr || "{}")
+  try {
+    chainInfo = await fetchChainInfo();
+    // cache for 5 minutes
+    await redis.set("chain-info", JSON.stringify(chainInfo), "EX", 60 * 5);
+  } catch (e) {
+    console.error("Error fetching chain info:", e);
+  }
+
+  // get exchange rate from cache
+  const exchangeRateStr = await redis.get("exchangeRate")
+  let exchangeRate = JSON.parse(exchangeRateStr || "{}")
+  try {
+    exchangeRate = await fetchExchangeRate();
+    // cache for 5 minutes
+    await redis.set("exchangeRate", JSON.stringify(exchangeRate), "EX", 60 * 5);
+  } catch (e) {
+    console.error("Error fetching exchange rate:", e);
+  }
+  const statsStr = await redis.get("indexers")
+  let indexers = JSON.parse(statsStr || "{}")
+  try {
+    indexers = await fetchStats()
+    // cache for 5 minutes
+    await redis.set("indexers", JSON.stringify(indexers), "EX", 60 * 5);
+  } catch (e) {
+    console.error("Error fetching stats", e)
+  }
+  // return the chain info, fresh, or cached in case of failure
   return {
     chainInfo,
     exchangeRate,
@@ -765,6 +793,7 @@ export type ChainInfo = {
 const fetchMarketData = async (assetType: AssetType, id: string) => {
   id = id?.toLowerCase();
   const info = await fetchChainInfo()
+
   switch (assetType) {
     case AssetType.BSV20: {
       let detailedTokensV1: BSV20Details[] = [];
