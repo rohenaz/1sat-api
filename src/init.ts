@@ -9,6 +9,7 @@ export const fetchV1Tickers = async (): Promise<MarketDataV1[]> => {
   const urlV1Tokens = `${API_HOST}/api/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
   const tickersV1 = (await fetchJSON<BSV20V1[]>(urlV1Tokens)) || [];
   console.log("Fetched v1 tickers", tickersV1.length)
+
   const info = await fetchChainInfo()
 
   return await loadV1TickerDetails(tickersV1, info);

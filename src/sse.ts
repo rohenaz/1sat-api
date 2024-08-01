@@ -1,5 +1,5 @@
 import EventSource from "eventsource";
-import { redis } from ".";
+import { ChainInfo, redis } from ".";
 import { API_HOST, AssetType } from "./constants";
 import { loadV1TickerDetails, loadV2TickerDetails } from "./init";
 import type { BSV20Details, BalanceUpdate, ListingsV1, ListingsV2 } from "./types/bsv20";
@@ -95,7 +95,14 @@ const sseInit = async () => {
       await redis.set(`token-${AssetType.BSV20}-${tick?.toLowerCase()}`, JSON.stringify(ticker));
 
     } else {
-      const info = await fetchChainInfo()
+      // try to get chainInfo from cache
+      const chainInfoStr = await redis.get("chainInfo");
+      const chainInfo = chainInfoStr ? JSON.parse(chainInfoStr) : null;
+      let info: ChainInfo = chainInfo;
+      if (!chainInfo) {
+        info = await fetchChainInfo();
+        await redis.set("chainInfo", JSON.stringify(info), "EX", 60 * 5);
+      }
       const detailedTokensV1 = await fetchTokensDetails<BSV20Details>([tick!], assetType);
       await loadV1TickerDetails(detailedTokensV1, info);
     }
@@ -136,7 +143,13 @@ const sseInit = async () => {
       //   console.log("Ticker set to included", id)
       // }
     }
-    const info = await fetchChainInfo()
+    const chainInfoStr = await redis.get("chainInfo");
+    const chainInfo = chainInfoStr ? JSON.parse(chainInfoStr) : null;
+    let info: ChainInfo = chainInfo;
+    if (!chainInfo) {
+      info = await fetchChainInfo();
+      await redis.set("chainInfo", JSON.stringify(info), "EX", 60 * 5);
+    }
     await loadV2TickerDetails(tickers, info)
 
   })
