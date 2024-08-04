@@ -103,7 +103,10 @@ export const fetchExchangeRate = async (): Promise<number> => {
   // check cache
   const cached = await redis.get("exchangeRate");
   if (cached) {
-    return JSON.parse(cached).rate;
+    const rate = JSON.parse(cached).rate;
+    if (rate) {
+      return rate;
+    }
   }
   const exchangeRateData = await fetchJSON("https://api.whatsonchain.com/v1/bsv/main/exchangerate") as { rate: number } | null;
   if (!exchangeRateData) {
