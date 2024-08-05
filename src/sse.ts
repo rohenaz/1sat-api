@@ -101,7 +101,7 @@ const sseInit = async () => {
       let info: ChainInfo = chainInfo;
       if (!chainInfo) {
         info = await fetchChainInfo();
-        await redis.set("chainInfo", JSON.stringify(info), "EX", 60 * 5);
+        // await redis.set("chainInfo", JSON.stringify(info), "EX", 60 * 5);
       }
       const detailedTokensV1 = await fetchTokensDetails<BSV20Details>([tick!], assetType);
       await loadV1TickerDetails(detailedTokensV1, info);
@@ -148,7 +148,7 @@ const sseInit = async () => {
     let info: ChainInfo = chainInfo;
     if (!chainInfo) {
       info = await fetchChainInfo();
-      await redis.set("chainInfo", JSON.stringify(info), "EX", 60 * 5);
+      // await redis.set("chainInfo", JSON.stringify(info), "EX", 60 * 5);
     }
     await loadV2TickerDetails(tickers, info)
 
