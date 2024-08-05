@@ -104,7 +104,7 @@ export const fetchChainInfo = async (): Promise<ChainInfo> => {
   }
   // this one has to update pretty frequently blocks can be found sub-minute
   await redis.set("chainInfo", JSON.stringify(normalChainInfo), "EX", 60);
-  return normalChainInfo as ChainInfo || { blocks: 0, headers: 0, bestblockhash: "" };
+  return normalChainInfo as ChainInfo;
 }
 
 
