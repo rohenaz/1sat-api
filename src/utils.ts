@@ -91,7 +91,10 @@ export const fetchChainInfo = async (): Promise<ChainInfo> => {
   // const url = "https://api.whatsonchain.com/v1/bsv/main/chain/info";
   const url = "https://junglebus.gorillapool.io/v1/block_header/tip";
   const chainInfo = await fetchJSON(url) as JBChainInfo | null;
-  // WOC Example: {"chain":"main","blocks":856311,"headers":856311,"bestblockhash":"000000000000000009ca1043179f7875ac7f06d6dd681f6e08e8a3d27eda9c23","difficulty":80781276269.82233,"mediantime":1722860434,"verificationprogress":0.9999972495373115,"pruned":false,"chainwork":"0000000000000000000000000000000000000000015aaabd74845149b6938815"}
+  if (!chainInfo) {
+    return { blocks: 0, headers: 0, bestblockhash: "" } as ChainInfo;
+  }
+
   const normalChainInfo: ChainInfo = {
     blocks: chainInfo?.height || 0,
     headers: chainInfo?.height || 0,
