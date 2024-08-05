@@ -177,12 +177,7 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
 
     const price = sales.length > 0 ? Number.parseFloat(sales[0]?.pricePer) : 0;
     const marketCap = calculateMarketCap(price, Number.parseInt(ticker.max));
-    let pctChange = 0;
-    if (info.blocks) {
-      pctChange = await setPctChange(ticker.tick, sales, info.blocks);
-    } else {
-      console.error("Failed to get block info")
-    }
+    const pctChange = await setPctChange(ticker.tick, sales, info.blocks);
     const lastSaleHeight = sales.length > 0 ? sales[0]?.spendHeight || 0 : undefined;
 
     const result = {

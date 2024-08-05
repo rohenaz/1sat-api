@@ -765,17 +765,17 @@ console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
 );
 
-// {"chain":"main","blocks":828211,"headers":661647,"bestblockhash":"000000000000000004aa4c183384a0bf13a49e6726fcc7bb7fb8c9bc9594b2f2","difficulty":119016070306.9696,"mediantime":1705928988,"verificationprogress":0.9999961584631301,"pruned":false,"chainwork":"00000000000000000000000000000000000000000150caf5c43a1446f852c8fe"}
+// WOC Example: {"chain":"main","blocks":856311,"headers":856311,"bestblockhash":"000000000000000009ca1043179f7875ac7f06d6dd681f6e08e8a3d27eda9c23","difficulty":80781276269.82233,"mediantime":1722860434,"verificationprogress":0.9999972495373115,"pruned":false,"chainwork":"0000000000000000000000000000000000000000015aaabd74845149b6938815"}
 export type ChainInfo = {
   chain: string,
   blocks: number,
   headers: number,
   bestblockhash: string,
-  difficulty: number,
+  difficulty?: number,
   mediantime: number,
-  verificationprogress: number,
-  pruned: boolean,
-  chainwork: string,
+  verificationprogress?: number,
+  pruned?: boolean,
+  chainwork?: string,
 }
 
 // if (type === AssetType.BSV21) {

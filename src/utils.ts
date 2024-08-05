@@ -65,6 +65,21 @@ export const getPctChange = async (id: string) => {
     return JSON.parse(cached);
   }
 }
+// {"hash":"000000000000000009ca1043179f7875ac7f06d6dd681f6e08e8a3d27eda9c23","coin":1,"height":856311,"time":1722861520,"nonce":1463873808,"version":586645504,"merkleroot":"35f4d87332f396c88f352b762d1420afaa45922e069b12d8ad2500cb0990ee20","bits":"180d9c5b","synced":118,"page_size":100000,"page_count":1}
+
+type JBChainInfo = {
+  hash: string,
+  coin: number,
+  height: number,
+  time: number,
+  nonce: number,
+  version: number,
+  merkleroot: string,
+  bits: string,
+  synced: number,
+  page_size: number,
+  page_count: number
+}
 
 export const fetchChainInfo = async (): Promise<ChainInfo> => {
   // check cache
@@ -73,12 +88,22 @@ export const fetchChainInfo = async (): Promise<ChainInfo> => {
     return JSON.parse(cached) as ChainInfo;
   }
   // TODO: We have an endpoint for this now https://junglebus.gorillapool.io/v1/block_header/tip
-  const url = "https://api.whatsonchain.com/v1/bsv/main/chain/info";
-  const chainInfo = await fetchJSON(url) as ChainInfo | null;
+  // const url = "https://api.whatsonchain.com/v1/bsv/main/chain/info";
+  const url = "https://junglebus.gorillapool.io/v1/block_header/tip";
+  const chainInfo = await fetchJSON(url) as JBChainInfo | null;
+  // WOC Example: {"chain":"main","blocks":856311,"headers":856311,"bestblockhash":"000000000000000009ca1043179f7875ac7f06d6dd681f6e08e8a3d27eda9c23","difficulty":80781276269.82233,"mediantime":1722860434,"verificationprogress":0.9999972495373115,"pruned":false,"chainwork":"0000000000000000000000000000000000000000015aaabd74845149b6938815"}
+  const normalChainInfo: ChainInfo = {
+    blocks: chainInfo?.height || 0,
+    headers: chainInfo?.height || 0,
+    bestblockhash: chainInfo?.hash || "",
+    chain: "main",
+    mediantime: chainInfo?.time || Date.now() / 1000,
+  }
   // this one has to update pretty frequently blocks can be found sub-minute
-  await redis.set("chainInfo", JSON.stringify(chainInfo), "EX", 60);
-  return chainInfo as ChainInfo || { blocks: 0, headers: 0, bestblockhash: "" };
+  await redis.set("chainInfo", JSON.stringify(normalChainInfo), "EX", 60);
+  return normalChainInfo as ChainInfo || { blocks: 0, headers: 0, bestblockhash: "" };
 }
+
 
 // eg. {"bsv20-deploy":829674,"bsv20":829667,"market-spends":829674,"locks":829674,"opns":829674,"market":829674,"ord":829674}
 
