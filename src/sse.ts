@@ -1,5 +1,5 @@
 import EventSource from "eventsource";
-import { ChainInfo, redis } from ".";
+import { type ChainInfo, redis } from ".";
 import { API_HOST, AssetType } from "./constants";
 import { loadV1TickerDetails, loadV2TickerDetails } from "./init";
 import type { BSV20Details, BalanceUpdate, ListingsV1, ListingsV2 } from "./types/bsv20";
