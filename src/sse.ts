@@ -5,7 +5,7 @@ import { loadV1TickerDetails, loadV2TickerDetails } from "./init";
 import type { BSV20Details, BalanceUpdate, ListingsV1, ListingsV2 } from "./types/bsv20";
 import { fetchChainInfo, fetchTokensDetails } from "./utils";
 
-const sse = new EventSource(`${API_HOST}/subscribe?channel=v1funds&channel=v2funds&channel=bsv20listings&channel=bsv20sales`);
+const sse = new EventSource(`${API_HOST}/subscribe?channel=v1funds&channel=v2funds&channel=bsv20listing&channel=bsv20sale`);
 
 const sseInit = async () => {
 
