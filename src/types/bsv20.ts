@@ -17,6 +17,7 @@ export interface BSV20 extends BaseTxo {
   tick?: string;
   amt: string;
   status?: Bsv20Status;
+
 }
 
 
