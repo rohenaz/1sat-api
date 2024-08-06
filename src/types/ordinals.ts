@@ -18,13 +18,6 @@ export type SIGMA = {
   signature: string;
 };
 
-export interface LRC20 extends BaseTxo {
-  op: string;
-  id: string;
-  amt: number;
-  p: "lrc-20";
-}
-
 export interface BSV20TXO extends BaseTxo {
   amt: string;
   tick: string;

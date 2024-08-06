@@ -3,12 +3,14 @@ import { cors } from '@elysiajs/cors';
 import { P2PKHAddress, PrivateKey, Script, SigHash, Transaction, TxIn, TxOut } from 'bsv-wasm';
 import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
+import { Utxo } from 'js-1sat-ord';
 import { fetchCollectionItems, fetchCollectionMarket, fetchCollectionSales } from './collection';
 import { API_HOST, AssetType, NUMBER_OF_ITEMS_PER_PAGE, defaults } from './constants';
 import { findMatchingKeys, findMatchingKeysWithOffset, findOneExactMatchingKey } from './db';
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadIncludedV2Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
 import { sseInit } from './sse';
-import { type BSV20Details, type BSV21Details, type MarketDataV1, type MarketDataV2, SortBy } from './types/bsv20';
+import { createAirdropTx } from './tx';
+import { BSV20, type BSV20Details, type BSV21Details, type MarketDataV1, type MarketDataV2, SortBy } from './types/bsv20';
 import type { OrdUtxo } from './types/ordinals';
 import type { LeaderboardEntry, User } from './types/user';
 import { fetchChainInfo, fetchExchangeRate, fetchJSON, fetchStats, fetchTokensDetails } from './utils';
@@ -146,14 +148,14 @@ const app = new Elysia().use(cors()).use(basicAuth({
     const items = await fetchCollectionItems({ map: { subTypeData: { collectionId } } }, Number.parseInt(offset || "0"), limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE);
 
     // Fetch the collection data from the API
-    const response = await fetch(`${API_HOST}/api/inscriptions/${collectionId}`);
+    const response = await fetch(`${API_HOST}/inscriptions/${collectionId}`);
     const collectionData = await response.json() as any;
 
     // Store the collection data in a hash
     if (response.status === 200) {
 
       // get the stats for the collection
-      const stats = await fetchJSON(`${API_HOST}/api/collections/${collectionId}/stats`);
+      const stats = await fetchJSON(`${API_HOST}/collections/${collectionId}/stats`);
       collectionData.stats = stats;
 
       await redis.hset(`collection-${AssetType.Ordinals}`, collectionId, JSON.stringify(collectionData), "EX", defaults.expirationTime);
@@ -386,8 +388,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
   }
   try {
     const b64 = Buffer.from(JSON.stringify(q)).toString("base64")
-    const resp = await fetchJSON(`${API_HOST}/api/txos/search/unspent?q=${b64}`)
-
+    const resp = await fetchJSON(`${API_HOST}/txos/search/unspent?q=${b64}`)
     const tokens: MarketDataV2[] = []
     for (const insc of resp as OrdUtxo[]) {
       // get the token details from redis
@@ -437,7 +438,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
   // }
   // try {
   //   const b64 = Buffer.from(JSON.stringify(q)).toString("base64")
-  //   const resp = await fetchJSON(`${API_HOST}/api/inscriptions/search?q=${b64}`)
+  //   const resp = await fetchJSON(`${API_HOST}/inscriptions/search?q=${b64}`)
   //   const tokens: MarketDataV2[] = []
   //   for (const insc of resp as OrdUtxo[]) {
   //     // get the token details from redis
@@ -482,6 +483,49 @@ const app = new Elysia().use(cors()).use(basicAuth({
     }
   }
   return addresses || []
+}).post("/airdrop/private/:airdropId", async ({ params, body }) => {
+  // get the password from the body
+  const password = body.password
+  // check the password
+  if (password !== process.env.AIRDROP_PASSWORD) {
+    return {
+      error: "incorrect password"
+    }
+  }
+
+  // Fetch UTXOs from Redis
+  // const paymentUtxosJson = await redisClient.get("pay-utxos");
+  const paymentUtxosJson = await botRedis.hgetall("pay-utxos");
+
+  // const tokenUtxosJson = await redisClient.get("ord-utxos");
+  const tokenUtxosJson = await botRedis.hgetall("ord-utxos");
+  if (!paymentUtxosJson || !tokenUtxosJson)
+    throw new Error("Missing UTXOs in Redis");
+  const paymentUtxos = Object.values(paymentUtxosJson).map(
+    (payUtxosJson) => JSON.parse(payUtxosJson) as Utxo
+  ); // const inputTokens = JSON.parse(tokenUtxosJson) as BSV20[];
+  const inputTokens = Object.values(tokenUtxosJson).map(
+    (tokenUtxosJson) => JSON.parse(tokenUtxosJson) as BSV20
+  );
+
+  // get the event id
+  const airdropId = params.airdropId
+
+  const to = body.to
+
+  const { rawTx, txid, spend } = await createAirdropTx(to, 50, paymentUtxos, inputTokens)
+  console.log({ rawTx, txid, spend })
+  return {
+    rawTx, txid, spend
+  }
+}, {
+  body: t.Object({
+    password: t.String(),
+    to: t.String()
+  }),
+  params: t.Object({
+    airdropId: t.String()
+  })
 }).get("/status", async ({ set }) => {
   set.headers["Content-Type"] = "application/json";
   // get chaininfo from cache
@@ -559,7 +603,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
   }
 
   // wrap the api balance request and enrich w price info from ticker cache
-  const resp = await fetchJSON<Balance[]>(`${API_HOST}/api/bsv20/${params.address}/balance`)
+  const resp = await fetchJSON<Balance[]>(`${API_HOST}/bsv20/${params.address}/balance`)
   if (!resp) {
     set.status = 404;
     return []
@@ -779,11 +823,11 @@ export type ChainInfo = {
 }
 
 // if (type === AssetType.BSV21) {
-//   const urlTokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1`;
+//   const urlTokens = `${API_HOST}/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v1`;
 //   const { promise: promiseBsv20 } = http.customFetch<BSV20TXO[]>(urlTokens);
 //   marketData.listings = await promiseBsv20;
 // } else {
-//   const urlV2Tokens = `${API_HOST}/api/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v2`;
+//   const urlV2Tokens = `${API_HOST}/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&type=v2`;
 //   const { promise: promiseBsv20v2 } =
 //     http.customFetch<BSV20TXO[]>(urlV2Tokens);
 //   listings = await promiseBsv20v2;

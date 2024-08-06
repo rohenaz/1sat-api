@@ -1,6 +1,6 @@
-import { ChainInfo, redis } from ".";
+import { redis, type ChainInfo } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
-import { BSV20Details, BSV21Details, ListingsV1, ListingsV2 } from "./types/bsv20";
+import type { BSV20Details, BSV21Details, ListingsV1, ListingsV2 } from "./types/bsv20";
 
 type Timeframe = {
   label: string;
@@ -16,8 +16,6 @@ const timeframes: Timeframe[] = [
   { label: "1Y", value: 365 },
   { label: "ALL", value: 9999 },
 ];
-
-
 
 // Helper function to fetch JSON
 export const fetchJSON = async <T>(url: string): Promise<T | null> => {
@@ -122,7 +120,7 @@ interface Stats {
 }
 
 export const fetchStats = () => {
-  const url = `${API_HOST}/api/stats`;
+  const url = `${API_HOST}/stats`;
   return fetchJSON<Stats>(url);
 }
 
@@ -159,7 +157,7 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
         //   console.log("Details: Using cached values for", tick)
         //   details = JSON.parse(cached);
         // } else {
-        const urlDetails = `${API_HOST}/api/bsv20/tick/${tick}`;
+        const urlDetails = `${API_HOST}/bsv20/tick/${tick}`;
         details = await fetchJSON<T>(urlDetails)
         // }
         if (!details) {
@@ -167,7 +165,7 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
           continue;
         }
 
-        // const urlSales = `${API_HOST}/api/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
+        // const urlSales = `${API_HOST}/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
         // details.sales = (await fetchJSON<ListingsV1[]>(urlSales) || []);
 
         d.push(details)
@@ -176,7 +174,7 @@ export const fetchTokensDetails = async <T extends BSV20Details | BSV21Details>(
       break;
     case AssetType.BSV21:
       for (const id of tokenIDs) {
-        const url = `${API_HOST}/api/bsv20/id/${id}?refresh=false`;
+        const url = `${API_HOST}/bsv20/id/${id}?refresh=false`;
         const details = await fetchJSON<T>(url)
         if (!details) {
           continue;

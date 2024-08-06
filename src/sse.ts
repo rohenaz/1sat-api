@@ -5,11 +5,11 @@ import { loadV1TickerDetails, loadV2TickerDetails } from "./init";
 import type { BSV20Details, BalanceUpdate, ListingsV1, ListingsV2 } from "./types/bsv20";
 import { fetchChainInfo, fetchTokensDetails } from "./utils";
 
-const sse = new EventSource(`${API_HOST}/api/subscribe?channel=v1funds&channel=v2funds&channel=bsv20listings&channel=bsv20sales`);
+const sse = new EventSource(`${API_HOST}/subscribe?channel=v1funds&channel=v2funds&channel=bsv20listings&channel=bsv20sales`);
 
 const sseInit = async () => {
 
-  sse.addEventListener("bsv20listings", async (event) => {
+  sse.addEventListener("bsv20listing", async (event) => {
     const data = JSON.parse(event.data);
     let { tick } = data as ListingsV1;
     const { id } = data as ListingsV2;
@@ -38,8 +38,8 @@ const sseInit = async () => {
     // await loadV1TickerDetails([ticker], info);
   })
 
-  sse.addEventListener("bsv20sales", async (event) => {
-    console.log("Sale or cencel");
+  sse.addEventListener("bsv20sale", async (event) => {
+    console.log("Sale or cancel");
     let { id, tick, outpoint, txid, sale } = event.data;
     // txid is the txid from which is was spend
     const assetType = tick ? AssetType.BSV20 : AssetType.BSV21;

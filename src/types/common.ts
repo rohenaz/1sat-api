@@ -3,6 +3,7 @@ export type BaseTxo = {
   vout: number;
   height: number;
   idx: number;
+  script?: string;
 };
 
 export type GPFile = {
