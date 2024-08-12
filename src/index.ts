@@ -3,14 +3,14 @@ import { cors } from '@elysiajs/cors';
 import { P2PKHAddress, PrivateKey, Script, SigHash, Transaction, TxIn, TxOut } from 'bsv-wasm';
 import { Elysia, t } from 'elysia';
 import Redis from "ioredis";
-import { Utxo } from 'js-1sat-ord';
+import type { Utxo } from 'js-1sat-ord';
 import { fetchCollectionItems, fetchCollectionMarket, fetchCollectionSales } from './collection';
 import { API_HOST, AssetType, NUMBER_OF_ITEMS_PER_PAGE, defaults } from './constants';
 import { findMatchingKeys, findMatchingKeysWithOffset, findOneExactMatchingKey } from './db';
 import { fetchV1Tickers, fetchV2Tickers, loadAllV1Names, loadIncludedV2Names, loadV1TickerDetails, loadV2TickerDetails } from './init';
 import { sseInit } from './sse';
 import { createAirdropTx } from './tx';
-import { BSV20, type BSV20Details, type BSV21Details, type MarketDataV1, type MarketDataV2, SortBy } from './types/bsv20';
+import { type BSV20, type BSV20Details, type BSV21Details, type MarketDataV1, type MarketDataV2, SortBy } from './types/bsv20';
 import type { OrdUtxo } from './types/ordinals';
 import type { LeaderboardEntry, User } from './types/user';
 import { fetchChainInfo, fetchExchangeRate, fetchJSON, fetchStats, fetchTokensDetails } from './utils';
@@ -408,7 +408,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
     set.status = 500;
     return []
   }
-}).get("/mine/pow20/:sym", async ({ params, set }) => {
+}).get("/mine/pow20/search/:sym", async ({ params, set }) => {
   // // find all the pow20 contracts in redis that start with the given sym
   const sym = params.sym.toLowerCase()
   const tokens: MarketDataV2[] = []
