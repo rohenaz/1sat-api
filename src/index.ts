@@ -369,8 +369,11 @@ const app = new Elysia().use(cors()).use(basicAuth({
   console.log("/mine/pow20/latest/:id/", { params })
   // find the latest txo for the given pow20 contract
   const id = decodeURIComponent(params.id)
+  const url = `${API_HOST}/api/inscriptions/${id}/latest?script=true`
   try {
-    const resp = await fetchJSON<OrdUtxo>(`${API_HOST}/api/inscriptions/${id}/latest?script=true`)
+
+    const resp = await fetchJSON<OrdUtxo>(url)
+    console.log({ resp })
     if (resp?.owner) {
       redis.sadd('pow20-exhausted', id)
     }
