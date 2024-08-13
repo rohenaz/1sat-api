@@ -365,7 +365,7 @@ const app = new Elysia().use(cors()).use(basicAuth({
     assetType: t.String(),
     id: t.String()
   })
-}).get("/mine/pow20/latest/:id", async ({ params, set }) => {
+}).get("/mine/pow20/latest/:id/", async ({ params, set }) => {
   // find the latest txo for the given pow20 contract
   const id = params.id
   try {
