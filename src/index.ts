@@ -370,8 +370,8 @@ const app = new Elysia().use(cors()).use(basicAuth({
   // find the latest txo for the given pow20 contract
   const id = decodeURIComponent(params.id)
   const url = `${API_HOST}/api/inscriptions/${id}/latest?script=true`
+  console.log("Hitting url", url)
   try {
-
     const resp = await fetchJSON<OrdUtxo>(url)
     console.log({ resp })
     if (resp?.owner) {
