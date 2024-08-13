@@ -366,8 +366,9 @@ const app = new Elysia().use(cors()).use(basicAuth({
     id: t.String()
   })
 }).get("/mine/pow20/latest/:id/", async ({ params, set }) => {
+  console.log("/mine/pow20/latest/:id/", { params })
   // find the latest txo for the given pow20 contract
-  const id = params.id
+  const id = decodeURIComponent(params.id)
   try {
     const resp = await fetchJSON<OrdUtxo>(`${API_HOST}/api/inscriptions/${id}/latest?script=true`)
     if (resp?.owner) {
