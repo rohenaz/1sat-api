@@ -122,10 +122,12 @@ export const loadIncludedV2Names = async (): Promise<void> => {
 
 export const fetchV2Tickers = async () => {
   const urlV2Tokens = `${API_HOST}/bsv20/v2?limit=2500&offset=0&included=true`;
+  console.log("Fetching v2 tickers from", urlV2Tokens);
   const tickersV2 = await fetchJSON<BSV21[]>(urlV2Tokens);
   if (!tickersV2 || !tickersV2.length) {
     return []
   }
+  console.log("Fetched v2 tickers", tickersV2.length)
   const info = await fetchChainInfo()
   return await loadV2TickerDetails(tickersV2.filter((t) => {
     return bsv21Blacklist.includes(t.id) === false
