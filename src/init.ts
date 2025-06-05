@@ -121,7 +121,7 @@ export const loadIncludedV2Names = async (): Promise<void> => {
 }
 
 export const fetchV2Tickers = async () => {
-  const urlV2Tokens = `${API_HOST}/bsv20/v2?limit=100&offset=0&included=true`;
+  const urlV2Tokens = `${API_HOST}/bsv20/v2?limit=2500&offset=0&included=true`;
   const tickersV2 = await fetchJSON<BSV21[]>(urlV2Tokens);
   if (!tickersV2 || !tickersV2.length) {
     return []
