@@ -95,7 +95,8 @@ export const loadAllV1Names = async (): Promise<void> => {
 
 export const loadIncludedV2Names = async (): Promise<void> => {
   // TODO: implement 
-  let offset = (await redis.hlen(`autofill-${AssetType.BSV21}`)) || 0
+  // let offset = (await redis.hlen(`autofill-${AssetType.BSV21}`)) || 0
+  let offset = 0
   let includedCount = 0;
   const resultsPerPage = 2000;
 
