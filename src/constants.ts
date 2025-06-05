@@ -1,6 +1,6 @@
 export const ORDFS = "https://ordfs.network";
 export const API_HOST = "https://ordinals.gorillapool.io/api";
-export const NUMBER_OF_ITEMS_PER_PAGE = 50;
+export const NUMBER_OF_ITEMS_PER_PAGE = 250;
 
 export enum AssetType {
   Ordinals = "ordinals",
