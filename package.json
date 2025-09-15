@@ -6,16 +6,16 @@
 		"start": "bun src/index.ts"
 	},
 	"devDependencies": {
-		"@types/bun": "^1.1.4"
+		"@types/bun": "^1.2.22"
 	},
 	"dependencies": {
 		"@eelkevdbos/elysia-basic-auth": "^1.4.1",
 		"@elysiajs/cors": "^0.8.0",
-		"@types/lodash": "^4.14.202",
+		"@types/lodash": "^4.17.20",
 		"bsv-wasm": "^2.1.1",
 		"elysia": "^0.8.17",
 		"eventsource": "^2.0.2",
-		"ioredis": "^5.3.2",
+		"ioredis": "^5.7.0",
 		"js-1sat-ord": "^0.0.37",
 		"lodash": "^4.17.21"
 	}
