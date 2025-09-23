@@ -68,9 +68,9 @@ const fetchV2TickerNames = async (offset: number, resultsPerPage: number, includ
 export const loadAllV1Names = async (): Promise<void> => {
   // hit the list endpoint over and over
   let offset = (await redis.hlen(`autofill-${AssetType.BSV20}`)) || 0
-  let includedCount = 0;
+  const includedCount = 0;
   let unincludedCount = 0;
-  let resultsPerPage = 200;
+  const resultsPerPage = 200;
 
   while (true) {
     // const offset = page * resultsPerPage;

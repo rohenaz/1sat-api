@@ -1,13 +1,14 @@
 {
-	"editor.codeActionsOnSave": {
-		"source.organizeImports.biome": "always"
-	},
-	"editor.defaultFormatter": "biomejs.biome",
-	"editor.formatOnSave": true,
-	"[typescript]": {
-		"editor.defaultFormatter": "vscode.typescript-language-features"
-	},
-	"workbench.colorCustomizations": {
+  "editor.codeActionsOnSave": {
+    "source.organizeImports.biome": "explicit",
+    "source.fixAll.biome": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "workbench.colorCustomizations": {
     "activityBar.activeBackground": "#a69506",
     "activityBar.background": "#a69506",
     "activityBar.foreground": "#15202b",
@@ -26,5 +27,11 @@
     "titleBar.inactiveBackground": "#75690499",
     "titleBar.inactiveForeground": "#e7e7e799"
   },
-	"peacock.color": "#756904"
+  "peacock.color": "#756904",
+  "[javascript][typescript][javascriptreact][typescriptreact][json][jsonc][css][graphql]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.formatOnPaste": true,
+  "emmet.showExpandedAbbreviation": "never"
 }

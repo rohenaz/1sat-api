@@ -1,22 +1,33 @@
 {
-	"name": "1sat-api",
-	"author": "satchmo",
-	"description": "API for 1satordinals.com",
-	"scripts": {
-		"start": "bun src/index.ts"
-	},
-	"devDependencies": {
-		"@types/bun": "^1.2.22"
-	},
-	"dependencies": {
-		"@eelkevdbos/elysia-basic-auth": "^1.4.1",
-		"@elysiajs/cors": "^0.8.0",
-		"@types/lodash": "^4.17.20",
-		"bsv-wasm": "^2.1.1",
-		"elysia": "^0.8.17",
-		"eventsource": "^2.0.2",
-		"ioredis": "^5.7.0",
-		"js-1sat-ord": "^0.0.37",
-		"lodash": "^4.17.21"
-	}
+  "name": "1sat-api",
+  "author": "satchmo",
+  "description": "API for 1satordinals.com",
+  "scripts": {
+    "start": "bun src/index.ts",
+    "lint": "bunx --bun biome lint ./src",
+    "lint:fix": "bunx --bun biome lint --write ./src",
+    "lint:unsafe": "bunx --bun biome lint --write --unsafe ./src"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.1.1",
+    "@types/bun": "^1.2.22"
+  },
+  "dependencies": {
+    "@eelkevdbos/elysia-basic-auth": "^1.4.1",
+    "@elysiajs/cors": "^0.8.0",
+    "@types/lodash": "^4.17.20",
+    "bsv-wasm": "^2.1.1",
+    "elysia": "^0.8.17",
+    "eventsource": "^2.0.2",
+    "ioredis": "^5.8.0",
+    "js-1sat-ord": "^0.0.37",
+    "lodash": "^4.17.21",
+    "ultracite": "5.3.4"
+  },
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "peerDependencies": {
+    "typescript": "^5.4.5"
+  }
 }
