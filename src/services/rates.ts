@@ -1,7 +1,7 @@
 import { redis } from "../index";
 import { fetchExchangeRate } from "../utils";
 
-interface BsvUsdRate {
+export interface BsvUsdRate {
   rate: number;
   timestamp: number;
 }
@@ -20,6 +20,14 @@ export async function storeRateInHistory(): Promise<void> {
         rate,
         timestamp: Date.now(),
       };
+
+      // Store current rate (for USD quotes)
+      await redis.set(
+        "bsv_usd_rate:current",
+        JSON.stringify(rateData),
+        "EX",
+        120, // 2 minute expiry
+      );
 
       // Store in history (Redis ZSet for time-series)
       await redis.zadd(

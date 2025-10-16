@@ -1,4 +1,5 @@
-import { fetchExchangeRate } from "../utils";
+import { redis } from "..";
+import type { BsvUsdRate } from "./rates";
 
 interface QuotesObject {
   BSV: {
@@ -12,6 +13,22 @@ interface QuotesObject {
 }
 
 /**
+ * Fetches the current BSV/USD rate from our enhanced rate service
+ */
+async function getBsvUsdRate(): Promise<number> {
+  try {
+    const rateStr = await redis.get("bsv_usd_rate:current");
+    if (rateStr) {
+      const rate = JSON.parse(rateStr) as BsvUsdRate;
+      return rate.rate;
+    }
+  } catch (e) {
+    console.error("Error fetching BSV/USD rate:", e);
+  }
+  return 0;
+}
+
+/**
  * Adds USD quotes to market data items
  * Maintains 100% backward compatibility by only adding new fields
  */
@@ -19,7 +36,7 @@ export async function addUsdQuotesToMarketData<T extends { price: number; market
   items: T[],
 ): Promise<(T & { quotes?: QuotesObject })[]> {
   try {
-    const bsvUsdRate = await fetchExchangeRate();
+    const bsvUsdRate = await getBsvUsdRate();
 
     if (!bsvUsdRate || bsvUsdRate <= 0) {
       // If rate unavailable, return items unchanged
@@ -53,7 +70,7 @@ export async function addUsdQuotesToSingleItem<T extends { price: number; market
   item: T,
 ): Promise<T & { quotes?: QuotesObject }> {
   try {
-    const bsvUsdRate = await fetchExchangeRate();
+    const bsvUsdRate = await getBsvUsdRate();
 
     if (!bsvUsdRate || bsvUsdRate <= 0) {
       return item;
@@ -85,7 +102,7 @@ export async function addUsdToBalances<T extends { price?: number; value?: numbe
   balances: T[],
 ): Promise<(T & { price_usd?: number; value_usd?: number; value_bsv?: number })[]> {
   try {
-    const bsvUsdRate = await fetchExchangeRate();
+    const bsvUsdRate = await getBsvUsdRate();
 
     if (!bsvUsdRate || bsvUsdRate <= 0) {
       return balances;
