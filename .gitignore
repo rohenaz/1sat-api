@@ -6,3 +6,16 @@
 
 # macOS
 .DS_Store
+
+# Redis
+dump.rdb
+
+# Working documentation (tasks, plans, research)
+/docs/
+/TASK-*.md
+/PLAN-*.md
+
+# Keep these in version control:
+# - README.md (project overview)
+# - CLAUDE.md (AI instructions)
+# - AGENTS.md (agent configuration)

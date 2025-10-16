@@ -1,15 +1,13 @@
+import {
+  P2PKH,
+  PrivateKey,
+  Transaction,
+  type TransactionInput,
+  type TransactionOutput,
+} from "@bsv/sdk";
 import { basicAuth } from "@eelkevdbos/elysia-basic-auth";
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
-import {
-  P2PKHAddress,
-  PrivateKey,
-  Script,
-  SigHash,
-  Transaction,
-  TxIn,
-  TxOut,
-} from "bsv-wasm";
 import { Elysia, t } from "elysia";
 import Redis from "ioredis";
 import type { Utxo } from "js-1sat-ord";
@@ -37,6 +35,8 @@ import {
   loadV1TickerDetails,
   loadV2TickerDetails,
 } from "./init";
+import { startStatusUpdater } from "./jobs/status-updater";
+import { get24hRateChange } from "./services/rates";
 import { sseInit } from "./sse";
 import { createAirdropTx } from "./tx";
 import {
@@ -71,6 +71,7 @@ redis.on("connect", async () => {
   await loadAllV1Names();
   await loadIncludedV2Names();
   await sseInit();
+  await startStatusUpdater();
 });
 
 redis.on("error", (err) => console.error("Redis Error", err));
@@ -135,7 +136,7 @@ const app = new Elysia()
       const autofill = await findMatchingKeys(redis, "autofill", "", type);
 
       // find the num
-      const result = autofill.find((a) => a.num === Number.parseInt(num));
+      const result = autofill.find((a) => a.num === Number.parseInt(num, 10));
       if (result) {
         await redis.set(
           `num-${type}-${num}`,
@@ -707,6 +708,8 @@ const app = new Elysia()
   )
   .get("/status", async ({ set }) => {
     set.headers["Content-Type"] = "application/json";
+    set.headers["X-API-Version"] = "1.0.0";
+
     // get chaininfo from cache
     const chainInfoStr = await redis.get("chain-info");
     let chainInfo: ChainInfo = JSON.parse(chainInfoStr || "{}");
@@ -742,11 +745,39 @@ const app = new Elysia()
     } catch (e) {
       console.error("Error fetching stats", e);
     }
+
+    // Fetch market data
+    let market = null;
+    try {
+      const marketStatsStr = await redis.get("market_stats:current");
+      if (marketStatsStr) {
+        const marketStats = JSON.parse(marketStatsStr);
+        const change24h = await get24hRateChange();
+
+        market = {
+          bsv_usd: {
+            rate: exchangeRate,
+            timestamp: new Date().toISOString(),
+            source: "whatsonchain",
+            change_24h: change24h,
+          },
+          total_market_cap_bsv: marketStats.total_market_cap_bsv,
+          total_market_cap_usd: marketStats.total_market_cap_usd,
+          assets: marketStats.assets,
+        };
+      }
+    } catch (e) {
+      console.error("Error fetching market data:", e);
+    }
+
     // return the chain info, fresh, or cached in case of failure
     return {
       chainInfo,
       exchangeRate,
       indexers,
+      ...(market && { market }),
+      timestamp: new Date().toISOString(),
+      height: chainInfo.blocks,
     };
   })
   .get("/user/:address/balance", async ({ params, set }) => {
@@ -841,8 +872,8 @@ const app = new Elysia()
       throw new Error("FUNDING_KEY environment variable is not set");
     }
 
-    const privateKey = PrivateKey.from_wif(fundingKey);
-    const address = P2PKHAddress.from_pubkey(privateKey.to_public_key());
+    const privateKey = PrivateKey.fromWif(fundingKey);
+    const address = privateKey.toAddress();
 
     // Get all UTXOs from Redis
     let utxos: OrdUtxo[] = [];
@@ -855,9 +886,9 @@ const app = new Elysia()
     } else {
       // broadcaster does not store utxos in redis, fetch from gorillapool
       try {
-        const url = `${API_HOST}/api/txos/address/${address.to_string()}/unspent?limit=${limit}&refresh=true`;
+        const url = `${API_HOST}/api/txos/address/${address}/unspent?limit=${limit}&refresh=true`;
         const u = await fetchJSON<OrdUtxo[]>(url);
-        console.log("Hitting url", url, "with address", address.to_string());
+        console.log("Hitting url", url, "with address", address);
         if (!u) {
           throw new Error("No UTXOs found for address");
         }
@@ -868,61 +899,49 @@ const app = new Elysia()
         return [];
       }
     }
-    // console.log({ utxos });
 
-    const tx = new Transaction(1, 0);
-
+    // Build transaction with new API
+    const lockingScript = new P2PKH().lock(address);
+    const inputs: TransactionInput[] = [];
     let totalSatoshis = 0;
-    const txIns: TxIn[] = [];
 
     for (const utxo of utxos) {
-      const txIn = new TxIn(
-        Buffer.from(utxo.txid, "hex"),
-        utxo.vout,
-        address.get_locking_script(),
-      );
-      txIn.set_satoshis(BigInt(utxo.satoshis));
-      txIns.push(txIn);
+      const input: TransactionInput = {
+        sourceTXID: utxo.txid,
+        sourceOutputIndex: utxo.vout,
+        unlockingScriptTemplate: new P2PKH().unlock(
+          privateKey,
+          "all", // SIGHASH_ALL (sign all inputs and outputs)
+          false, // not anyoneCanPay
+          utxo.satoshis,
+          lockingScript,
+        ),
+        sequence: 0xffffffff,
+      };
+      inputs.push(input);
       totalSatoshis += utxo.satoshis;
     }
 
-    const feeSats = Math.ceil(txIns.length / 5);
+    const feeSats = Math.ceil(inputs.length / 5);
     const outputSatoshis = totalSatoshis - feeSats;
 
-    tx.add_output(
-      new TxOut(BigInt(outputSatoshis), address.get_locking_script()),
-    );
+    const output: TransactionOutput = {
+      satoshis: outputSatoshis,
+      lockingScript: lockingScript,
+    };
 
-    txIns.forEach((txIn, index) => {
-      tx.add_input(txIn);
+    const tx = new Transaction(1, inputs, [output], 0);
+    await tx.sign();
 
-      const utxo = utxos[index];
-      const sig = tx.sign(
-        privateKey,
-        SigHash.InputOutputs,
-        index,
-        address.get_locking_script(),
-        BigInt(utxo.satoshis),
-      );
-
-      txIn.set_unlocking_script(
-        Script.from_asm_string(
-          `${sig.to_hex()} ${privateKey.to_public_key().to_hex()}`,
-        ),
-      );
-
-      tx.set_input(index, txIn);
-    });
-
-    const rawTx = Buffer.from(tx.to_bytes()).toString("base64");
+    const rawTx = Buffer.from(tx.toBinary()).toString("base64");
 
     // return {
     //   rawTx,
     //   size: Math.ceil(rawTx.length / 2),
     //   fee: feeSats,
-    //   numInputs: tx.get_ninputs(),
-    //   numOutputs: tx.get_noutputs(),
-    //   txid: tx.get_id_hex(),
+    //   numInputs: tx.inputs.length,
+    //   numOutputs: tx.outputs.length,
+    //   txid: tx.id('hex'),
     // };
     return rawTx;
   })
