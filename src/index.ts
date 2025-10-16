@@ -37,6 +37,7 @@ import {
 } from "./init";
 import { startStatusUpdater } from "./jobs/status-updater";
 import { get24hRateChange } from "./services/rates";
+import { addUsdQuotesToMarketData, addUsdQuotesToSingleItem, addUsdToBalances } from "./services/usd-quotes";
 import { sseInit } from "./sse";
 import { createAirdropTx } from "./tx";
 import {
@@ -324,7 +325,7 @@ const app = new Elysia()
         const sortMethod = sort;
         const sortDirection = dir === "asc" ? 1 : -1;
 
-        return marketData.sort(
+        const sortedData = marketData.sort(
           (a: MarketDataV1 | MarketDataV2, b: MarketDataV1 | MarketDataV2) => {
             const compareByName = (): number => {
               if (params.assetType === AssetType.BSV20) {
@@ -396,6 +397,9 @@ const app = new Elysia()
             return compareFunction() * sortDirection;
           },
         );
+
+        // Add USD quotes to the sorted data
+        return await addUsdQuotesToMarketData(sortedData as (MarketDataV1 | MarketDataV2)[]);
       } catch (e) {
         console.error("Error fetching market data:", e);
         set.status = 500;
@@ -475,7 +479,17 @@ const app = new Elysia()
           params.assetType as AssetType,
           id,
         );
-        return marketData;
+
+        if (!marketData || marketData.length === 0) {
+          set.status = 404;
+          return {};
+        }
+
+        // fetchMarketData returns an array, we want the first item
+        const item = marketData[0];
+
+        // Add USD quotes to the single item
+        return await addUsdQuotesToSingleItem(item);
       } catch (e) {
         console.error("Error fetching market data:", e);
         set.status = 500;
@@ -840,10 +854,13 @@ const app = new Elysia()
         return {
           ...b,
           price: token.price,
+          amount: Number(b.all.confirmed),
         };
       }),
     );
-    return enriched;
+
+    // Add USD values to balances
+    return await addUsdToBalances(enriched);
   })
   .get("/admin/utxo/consolidate/:key", async ({ params, set, query }) => {
     const evilUtxos: string[] = query.exclude?.split(",") || [
