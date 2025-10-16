@@ -1,4 +1,4 @@
-import EventSource from "eventsource";
+import { EventSource } from "eventsource";
 import { type ChainInfo, redis } from ".";
 import { API_HOST, AssetType } from "./constants";
 import { loadV1TickerDetails, loadV2TickerDetails } from "./init";

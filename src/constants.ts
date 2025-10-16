@@ -24,23 +24,23 @@ export const bsv21Blacklist = [
   "d9776ed54276526a88c3388b09c46c1dc6cffe8f14e7d407ef9f20db73621ec5_0"
 ]
 
-import { P2PKHAddress, PrivateKey, PublicKey } from "bsv-wasm";
+import { PrivateKey } from "@bsv/sdk";
+
 export const TOKEN = Bun.env.TOKEN;
 export const REDIS_URL = Bun.env.REDIS_URL;
 export const ONESAT_API_HOST = "https://api.1sat.market";
-// 1NVoMjzjAgskT5dqWtTXVjQXUns7RqYp2m
-export const ordiAddress = P2PKHAddress.from_pubkey(
-  PublicKey.from_private_key(PrivateKey.from_wif(Bun.env.ORDPK)),
-).to_string();
-export const payAddress = P2PKHAddress.from_pubkey(
-  PublicKey.from_private_key(PrivateKey.from_wif(Bun.env.PAYPK)),
-).to_string();
 
 export const ordPkWif = Bun.env.ORDPK;
 export const payPkWif = Bun.env.PAYPK;
 
-export const ordPk = PrivateKey.from_wif(ordPkWif!);
-export const payPk = PrivateKey.from_wif(payPkWif!);
+// Optional - don't throw if missing (needed for some endpoints only)
+export const ordPk = ordPkWif ? PrivateKey.fromWif(ordPkWif) : null;
+export const payPk = payPkWif ? PrivateKey.fromWif(payPkWif) : null;
+
+// 1NVoMjzjAgskT5dqWtTXVjQXUns7RqYp2m
+export const ordiAddress = ordPk ? ordPk.toAddress() : "";
+export const payAddress = payPk ? payPk.toAddress() : "";
+
 export const TICK = "GM";
 export const ONESAT_TOKEN_ID = ""
 export const GM_CHANNEL_ID = "1094249765530779689";
