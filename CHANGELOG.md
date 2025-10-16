@@ -14,12 +14,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Asset counts by type (BSV20/BSV21)
   - Response includes `timestamp` and `height` fields
   - Added `X-API-Version: 1.0.0` header to all responses
+- USD quotes added to all market and balance endpoints
+  - `GET /market/:assetType` includes `quotes.USD` object with price and market_cap
+  - `GET /market/:assetType/:id` includes `quotes.USD` object
+  - `GET /user/:address/balance` includes `price_usd`, `value_bsv`, and `value_usd` fields
+  - All USD conversions gracefully degrade if exchange rate unavailable
 - Background job system for market data updates
   - Rate history tracking every 1 minute
   - Market statistics aggregation every 5 minutes
 - New service modules:
   - `src/services/rates.ts` - BSV/USD rate history tracking
   - `src/services/market-stats.ts` - Market cap aggregation
+  - `src/services/usd-quotes.ts` - USD conversion helpers
   - `src/jobs/status-updater.ts` - Background job orchestration
 
 ### Changed
