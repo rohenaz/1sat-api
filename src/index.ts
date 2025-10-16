@@ -37,8 +37,11 @@ import {
 } from "./init";
 import { startStatusUpdater } from "./jobs/status-updater";
 import { get24hRateChange } from "./services/rates";
+import { searchAssets } from "./services/search";
 import { addUsdQuotesToMarketData, addUsdQuotesToSingleItem, addUsdToBalances } from "./services/usd-quotes";
 import { sseInit } from "./sse";
+import { swaggerConfig } from "./swagger/config";
+import { endpointDocs } from "./swagger/endpoint-docs";
 import { createAirdropTx } from "./tx";
 import {
   type BSV20,
@@ -79,17 +82,7 @@ redis.on("error", (err) => console.error("Redis Error", err));
 
 const app = new Elysia()
   .use(cors())
-  .use(
-    swagger({
-      documentation: {
-        info: {
-          title: "1Sat Ordinals API",
-          version: "1.0.0",
-          description: "API for 1satordinals.com",
-        },
-      },
-    }),
-  )
+  .use(swagger(swaggerConfig))
   .use(
     basicAuth({
       credentials: { env: "BASIC_AUTH_CREDENTIALS" },
@@ -407,6 +400,7 @@ const app = new Elysia()
       }
     },
     {
+      ...endpointDocs.marketList,
       transform({ params }) {
         params.assetType = params.assetType.toLowerCase();
       },
@@ -469,6 +463,50 @@ const app = new Elysia()
     });
     return leaderboard;
   })
+  .get(
+    "/search",
+    async ({ query, set }) => {
+      const { q, limit = "20", type } = query;
+
+      if (!q || q.trim() === "") {
+        set.status = 400;
+        return {
+          error: "Query parameter 'q' is required",
+          results: [],
+        };
+      }
+
+      try {
+        const results = await searchAssets(
+          q,
+          Number.parseInt(limit, 10),
+          type as "bsv20" | "bsv21" | undefined,
+        );
+
+        return {
+          query: q,
+          total: results.length,
+          results,
+          timestamp: new Date().toISOString(),
+        };
+      } catch (e) {
+        console.error("Error performing search:", e);
+        set.status = 500;
+        return {
+          error: "Internal server error",
+          results: [],
+        };
+      }
+    },
+    {
+      ...endpointDocs.search,
+      query: t.Object({
+        q: t.String({ description: "Search query" }),
+        limit: t.Optional(t.String({ description: "Maximum number of results (default: 20, max: 100)" })),
+        type: t.Optional(t.Union([t.Literal("bsv20"), t.Literal("bsv21")], { description: "Filter by asset type" })),
+      }),
+    },
+  )
   .get(
     "/market/:assetType/:id",
     async ({ set, params, query }) => {
@@ -793,7 +831,7 @@ const app = new Elysia()
       timestamp: new Date().toISOString(),
       height: chainInfo.blocks,
     };
-  })
+  }, endpointDocs.status)
   .get("/user/:address/balance", async ({ params, set }) => {
     // [
     //   {

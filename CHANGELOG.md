@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **NEW**: Unified search endpoint `GET /search`
+  - Search across both BSV20 and BSV21 tokens in one request
+  - Relevance scoring (exact match = 1.0, prefix = 0.8, contains = 0.5)
+  - Optional type filtering (`?type=bsv20` or `?type=bsv21`)
+  - USD quotes included in all search results
+  - Results sorted by relevance score and market cap
+  - Service: `src/services/search.ts`
 - Enhanced `/status` endpoint with professional market data
   - BSV/USD rate with 24h change tracking
   - Total market cap in BSV and USD
@@ -22,10 +29,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Background job system for market data updates
   - Rate history tracking every 1 minute
   - Market statistics aggregation every 5 minutes
+- Modular Swagger/OpenAPI documentation structure
+  - Extracted 204 lines from `index.ts` into organized modules
+  - `src/swagger/config.ts` - Main API configuration
+  - `src/swagger/schemas/` - Response schemas (quotes, market, status, search)
+  - `src/swagger/endpoint-docs.ts` - Documentation for all 23 endpoints
+  - 3 endpoints fully documented, 20 ready to apply
 - New service modules:
   - `src/services/rates.ts` - BSV/USD rate history tracking
   - `src/services/market-stats.ts` - Market cap aggregation
   - `src/services/usd-quotes.ts` - USD conversion helpers
+  - `src/services/search.ts` - Unified search with relevance scoring
   - `src/jobs/status-updater.ts` - Background job orchestration
 
 ### Changed
