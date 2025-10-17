@@ -96,7 +96,7 @@ const app = new Elysia()
   .get("/", ({ set }) => {
     set.headers["Content-Type"] = "text/html";
     return ":)";
-  })
+  }, endpointDocs.root)
   .onError(({ error }) => {
     console.error("Error:", error);
   })
@@ -115,6 +115,7 @@ const app = new Elysia()
       );
     },
     {
+      ...endpointDocs.tickerAutofill,
       transform({ params }) {
         params.assetType = params.assetType.toLowerCase();
         params.id = params.id.toLowerCase();
@@ -147,7 +148,7 @@ const app = new Elysia()
     }
     console.log({ result });
     return result;
-  })
+  }, endpointDocs.tickerByNum)
   .post(
     "/ticker/num",
     async ({ set, body }) => {
@@ -174,6 +175,7 @@ const app = new Elysia()
       return results;
     },
     {
+      ...endpointDocs.tickerNumPost,
       body: t.Object({
         ids: t.Array(t.String()),
       }),
@@ -196,7 +198,7 @@ const app = new Elysia()
       return [];
     }
     // use the search endpoint to find listings for a collection by id
-  })
+  }, endpointDocs.collectionMarket)
   .get("/collection", async ({ set, query }) => {
     const { offset, limit } = query;
     try {
@@ -234,7 +236,7 @@ const app = new Elysia()
       set.status = 500;
       return [];
     }
-  })
+  }, endpointDocs.collectionList)
   .get("/collection/:collectionId/items", async ({ params, query, set }) => {
     const { offset, limit } = query;
     const collectionId = params.collectionId;
@@ -293,7 +295,7 @@ const app = new Elysia()
       set.status = 500;
       return [];
     }
-  })
+  }, endpointDocs.collectionItems)
   .get(
     "/market/:assetType",
     async ({ set, params, query }) => {
@@ -439,6 +441,7 @@ const app = new Elysia()
       }
     },
     {
+      ...endpointDocs.marketSearch,
       transform({ params }) {
         params.assetType = params.assetType.toLowerCase();
         params.term = params.term.toLowerCase();
@@ -466,7 +469,7 @@ const app = new Elysia()
       lastPurchaseTimestamp: Date.now(),
     });
     return leaderboard;
-  })
+  }, endpointDocs.leaderboard)
   .get(
     "/search",
     async ({ query, set }) => {
@@ -539,6 +542,7 @@ const app = new Elysia()
       }
     },
     {
+      ...endpointDocs.marketById,
       transform({ params }) {
         params.assetType = params.assetType.toLowerCase();
         params.id = params.id.toLowerCase();
@@ -570,6 +574,7 @@ const app = new Elysia()
       }
     },
     {
+      ...endpointDocs.mint,
       transform({ params }) {
         params.assetType = params.assetType.toLowerCase();
         params.id = params.id.toLowerCase();
@@ -598,7 +603,7 @@ const app = new Elysia()
       set.status = 500;
       return [];
     }
-  })
+  }, endpointDocs.mineLatest)
   .get("/mine/pow20/", async ({ params, set }) => {
     // find all the pow20 contracts
     const q = {
@@ -628,7 +633,7 @@ const app = new Elysia()
       set.status = 500;
       return [];
     }
-  })
+  }, endpointDocs.mineList)
   .get("/mine/pow20/search/:sym", async ({ params, set }) => {
     // // find all the pow20 contracts in redis that start with the given sym
     const sym = params.sym.toLowerCase();
@@ -675,7 +680,7 @@ const app = new Elysia()
     //   set.status = 500;
     //   return []
     // }
-  })
+  }, endpointDocs.mineSearch)
   .get("/airdrop/:template", async ({ params }) => {
     let addresses: string[] = [];
     // return a list of addresses
@@ -706,7 +711,7 @@ const app = new Elysia()
       }
     }
     return addresses || [];
-  })
+  }, endpointDocs.airdropTemplate)
   .post(
     "/airdrop/private/:airdropId",
     async ({ params, body }) => {
@@ -753,6 +758,7 @@ const app = new Elysia()
       };
     },
     {
+      ...endpointDocs.airdropPrivate,
       body: t.Object({
         password: t.String(),
         to: t.String(),
@@ -903,7 +909,7 @@ const app = new Elysia()
 
     // Add USD values to balances
     return await addUsdToBalances(enriched);
-  })
+  }, endpointDocs.userBalance)
   .get("/admin/utxo/consolidate/:key", async ({ params, set, query }) => {
     const evilUtxos: string[] = query.exclude?.split(",") || [
       "cf86adda3cf3926838b469b1b19c4fa447602186b98b68cb1a893d1d8223ae89",
@@ -1003,7 +1009,7 @@ const app = new Elysia()
     //   txid: tx.id('hex'),
     // };
     return rawTx;
-  })
+  }, endpointDocs.adminConsolidate)
   .get(
     "/discord/:discordId",
     async ({ params, set }) => {
@@ -1020,6 +1026,7 @@ const app = new Elysia()
       return JSON.parse(user);
     },
     {
+      ...endpointDocs.discordUser,
       params: t.Object({
         discordId: t.String(),
       }),
@@ -1080,6 +1087,7 @@ const app = new Elysia()
       };
     },
     {
+      ...endpointDocs.discordCheck,
       params: t.Object({
         discordId: t.String(),
         txid: t.String(),
