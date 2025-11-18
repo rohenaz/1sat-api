@@ -14,7 +14,7 @@
         "elysia": "^1.4.12",
         "eventsource": "^4.0.0",
         "ioredis": "^5.8.1",
-        "js-1sat-ord": "^0.1.86",
+        "js-1sat-ord": "^0.1.88",
         "lodash": "^4.17.21",
         "ultracite": "5.6.4",
       },
@@ -132,7 +132,7 @@
 
     "ioredis": ["ioredis@5.8.1", "", { "dependencies": { "@ioredis/commands": "1.4.0", "cluster-key-slot": "^1.1.0", "debug": "^4.3.4", "denque": "^2.1.0", "lodash.defaults": "^4.2.0", "lodash.isarguments": "^3.1.0", "redis-errors": "^1.2.0", "redis-parser": "^3.0.0", "standard-as-callback": "^2.1.0" } }, "sha512-Qho8TgIamqEPdgiMadJwzRMW3TudIg6vpg4YONokGDudy4eqRIJtDbVX72pfLBcWxvbn3qm/40TyGUObdW4tLQ=="],
 
-    "js-1sat-ord": ["js-1sat-ord@0.1.86", "", { "dependencies": { "image-meta": "^0.2.2", "satoshi-token": "^0.0.4", "sigma-protocol": "^0.1.6" } }, "sha512-0csSibinIgod+/zK5nmnRjZz/7h12FsfQTe/WJRcnCRe0e2cHz1l5FSK7FlQk2PR3y6gvAd03jpw/qreqk2/Zg=="],
+    "js-1sat-ord": ["js-1sat-ord@0.1.88", "", { "dependencies": { "image-meta": "^0.2.2", "satoshi-token": "^0.0.4", "sigma-protocol": "^0.1.6" } }, "sha512-U3n+5SEe9LyxuB0OaSU4fIywxBz3pvoxuJvaxQ741qiutYhC3v1rCEzVdEjSOn/sWi0xiFh8C75U8vMd18fZhw=="],
 
     "jsonc-parser": ["jsonc-parser@3.3.1", "", {}, "sha512-HUgH65KyejrUFPvHFPbqOY0rsFip3Bo5wb4ngvdi1EpCYWUQDC5V+Y7mZws+DLkr4M//zQJoanu1SP+87Dv1oQ=="],
 

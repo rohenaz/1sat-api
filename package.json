@@ -22,7 +22,7 @@
     "elysia": "^1.4.12",
     "eventsource": "^4.0.0",
     "ioredis": "^5.8.1",
-    "js-1sat-ord": "^0.1.86",
+    "js-1sat-ord": "^0.1.88",
     "lodash": "^4.17.21",
     "ultracite": "5.6.4"
   },
