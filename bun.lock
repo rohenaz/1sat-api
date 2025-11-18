@@ -1,10 +1,11 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "1sat-api",
       "dependencies": {
-        "@bsv/sdk": "^1.8.2",
+        "@bsv/sdk": "^1.9.9",
         "@eelkevdbos/elysia-basic-auth": "^2.0.1",
         "@elysiajs/cors": "^1.4.0",
         "@elysiajs/swagger": "^1.3.1",
@@ -13,7 +14,7 @@
         "elysia": "^1.4.12",
         "eventsource": "^4.0.0",
         "ioredis": "^5.8.1",
-        "js-1sat-ord": "^0.1.82",
+        "js-1sat-ord": "^0.1.86",
         "lodash": "^4.17.21",
         "ultracite": "5.6.4",
       },
@@ -47,7 +48,7 @@
 
     "@borewit/text-codec": ["@borewit/text-codec@0.1.1", "", {}, "sha512-5L/uBxmjaCIX5h8Z+uu+kA9BQLkc/Wl06UGR5ajNRxu+/XjonB5i8JpgFMrPj3LXTCPA0pv8yxUvbUi+QthGGA=="],
 
-    "@bsv/sdk": ["@bsv/sdk@1.8.2", "", {}, "sha512-ZLDTca0JoZXFOxQ86saapPVe93EIvWhZZtNsegVYCT562kKwo+lziyfkzM1PrGX9W3E49JofIjC4br6iFVmNoA=="],
+    "@bsv/sdk": ["@bsv/sdk@1.9.9", "", {}, "sha512-bN90ULdrVJXokoWyF1Yw/sqtAns+T7CFAEA/J40RHKlHIkGN6Rb/ruWXGAL+rb1iJ/YzhnNs+y53dRdMCCkcxA=="],
 
     "@clack/core": ["@clack/core@0.5.0", "", { "dependencies": { "picocolors": "^1.0.0", "sisteransi": "^1.0.5" } }, "sha512-p3y0FIOwaYRUPRcMO7+dlmLh8PSRcrjuTndsiA0WAFbWES0mLZlrjVoBRZ9DzkPFJZG6KGkJmoEAY0ZcVWTkow=="],
 
@@ -131,7 +132,7 @@
 
     "ioredis": ["ioredis@5.8.1", "", { "dependencies": { "@ioredis/commands": "1.4.0", "cluster-key-slot": "^1.1.0", "debug": "^4.3.4", "denque": "^2.1.0", "lodash.defaults": "^4.2.0", "lodash.isarguments": "^3.1.0", "redis-errors": "^1.2.0", "redis-parser": "^3.0.0", "standard-as-callback": "^2.1.0" } }, "sha512-Qho8TgIamqEPdgiMadJwzRMW3TudIg6vpg4YONokGDudy4eqRIJtDbVX72pfLBcWxvbn3qm/40TyGUObdW4tLQ=="],
 
-    "js-1sat-ord": ["js-1sat-ord@0.1.82", "", { "dependencies": { "image-meta": "^0.2.1", "satoshi-token": "^0.0.4", "sigma-protocol": "^0.1.6" }, "peerDependencies": { "@bsv/sdk": "^1.1.23" } }, "sha512-T7v+3fgCJEpB487d7ffBbwrO6yvSHt7Uix0knri8+ja4lAPt8YuEIwxj0oooo6bqqQr4hyOVhpZUpM8VYzyRvg=="],
+    "js-1sat-ord": ["js-1sat-ord@0.1.86", "", { "dependencies": { "image-meta": "^0.2.2", "satoshi-token": "^0.0.4", "sigma-protocol": "^0.1.6" } }, "sha512-0csSibinIgod+/zK5nmnRjZz/7h12FsfQTe/WJRcnCRe0e2cHz1l5FSK7FlQk2PR3y6gvAd03jpw/qreqk2/Zg=="],
 
     "jsonc-parser": ["jsonc-parser@3.3.1", "", {}, "sha512-HUgH65KyejrUFPvHFPbqOY0rsFip3Bo5wb4ngvdi1EpCYWUQDC5V+Y7mZws+DLkr4M//zQJoanu1SP+87Dv1oQ=="],
 
