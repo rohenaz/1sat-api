@@ -178,22 +178,34 @@ const app = new Elysia()
     },
   )
   .get("/collection/:collectionId/market", async ({ params, query, set }) => {
-    // ofset and limit
-    const { offset, limit } = query;
+    const { offset, limit, traits, minPrice, maxPrice, sort } = query;
     const collectionId = params.collectionId;
-    console.log({ collectionId, offset, limit });
+
+    // Parse traits filter: "Background:Blue,Eyes:Red" -> [{name: "Background", value: "Blue"}, ...]
+    const parsedTraits = traits
+      ? traits.split(",").map((t) => {
+          const [name, value] = t.split(":");
+          return { name, value };
+        })
+      : undefined;
+
     try {
       return await fetchCollectionMarket(
-        { map: { subTypeData: { collectionId } } },
-        Number.parseInt(offset || "0"),
-        limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE,
+        {
+          collectionId,
+          traits: parsedTraits,
+          minPrice: minPrice ? Number.parseInt(minPrice, 10) : undefined,
+          maxPrice: maxPrice ? Number.parseInt(maxPrice, 10) : undefined,
+          sort: sort as "price_asc" | "price_desc" | "rarity" | "mint_number" | undefined,
+        },
+        Number.parseInt(offset || "0", 10),
+        limit ? Number.parseInt(limit, 10) : NUMBER_OF_ITEMS_PER_PAGE,
       );
     } catch (e) {
       console.error("Error fetching collection market:", e);
       set.status = 500;
       return [];
     }
-    // use the search endpoint to find listings for a collection by id
   }, endpointDocs.collectionMarket)
   .get("/collection", async ({ set, query }) => {
     const { offset, limit } = query;
@@ -234,14 +246,26 @@ const app = new Elysia()
     }
   }, endpointDocs.collectionList)
   .get("/collection/:collectionId/items", async ({ params, query, set }) => {
-    const { offset, limit } = query;
+    const { offset, limit, traits, sort } = query;
     const collectionId = params.collectionId;
+
+    // Parse traits filter: "Background:Blue,Eyes:Red" -> [{name: "Background", value: "Blue"}, ...]
+    const parsedTraits = traits
+      ? traits.split(",").map((t) => {
+          const [name, value] = t.split(":");
+          return { name, value };
+        })
+      : undefined;
 
     try {
       const items = await fetchCollectionItems(
-        { map: { subTypeData: { collectionId } } },
-        Number.parseInt(offset || "0"),
-        limit ? Number.parseInt(limit) : NUMBER_OF_ITEMS_PER_PAGE,
+        {
+          collectionId,
+          traits: parsedTraits,
+          sort: sort as "recent" | "rarity" | "mint_number" | undefined,
+        },
+        Number.parseInt(offset || "0", 10),
+        limit ? Number.parseInt(limit, 10) : NUMBER_OF_ITEMS_PER_PAGE,
       );
 
       // Fetch the collection data from the API
