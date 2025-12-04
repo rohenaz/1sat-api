@@ -76,7 +76,7 @@ export const endpointDocs = {
   collectionMarket: {
     detail: {
       summary: "Get Collection Market Listings",
-      description: "Get all active market listings for a specific collection",
+      description: "Get active listings for a collection with filtering by traits, price range, and sorting. Traits filter format: 'TraitName:Value,AnotherTrait:Value'",
       tags: ["Collections"],
     },
   },
@@ -84,7 +84,7 @@ export const endpointDocs = {
   collectionItems: {
     detail: {
       summary: "Get Collection Items",
-      description: "Get paginated items/NFTs within a specific collection",
+      description: "Get items/NFTs in a collection with filtering by traits and sorting. Traits filter format: 'TraitName:Value,AnotherTrait:Value'",
       tags: ["Collections"],
     },
   },
