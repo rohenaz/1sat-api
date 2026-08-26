@@ -1,27 +1,27 @@
 export type BaseTxo = {
-  txid: string;
-  vout: number;
-  height: number;
-  idx: number;
-  script?: string;
+	txid: string;
+	vout: number;
+	height: number;
+	idx: number;
+	script?: string;
 };
 
 export type GPFile = {
-  hash: string;
-  size: number;
-  type: string;
+	hash: string;
+	size: number;
+	type: string;
 };
 
 export type Utxo = {
-  satoshis: number;
-  txid: string;
-  vout: number;
-  script: string;
+	satoshis: number;
+	txid: string;
+	vout: number;
+	script: string;
 };
 
 export type WocUtxo = {
-  height: number;
-  tx_hash: string;
-  tx_pos: number;
-  value: number;
+	height: number;
+	tx_hash: string;
+	tx_pos: number;
+	value: number;
 };
