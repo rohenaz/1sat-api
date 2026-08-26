@@ -1,5 +1,16 @@
 # Professional Market API - Implementation Status
 
+> **Historical plan (2025-10-16).** The original `upgrade/market-api` branch was
+> merged to `main` and deployed on 2026-08-26 at `bb65557`. This file preserves
+> the branch's original intent, but its phase counts and some implementation
+> claims are stale. The current source of truth is
+> [`docs/COMMERCIAL_API_MIGRATION_ASSESSMENT.md`](docs/COMMERCIAL_API_MIGRATION_ASSESSMENT.md).
+>
+> Corrections: all 23 live routes now have OpenAPI definitions; the current rate
+> path uses WhatsOnChain plus Redis cache (not a CoinGecko fallback); contains-only
+> search is not reached by the prefix candidate scan; and the API version header
+> is currently emitted by `/status`, not every response.
+
 **Branch:** `upgrade/market-api`
 **Status:** Phase 1-3 Complete, Swagger Documentation In Progress
 **Date:** 2025-10-16

@@ -1,63 +1,63 @@
-# Bun + TypeScript starter
+# 1Sat Market API
 
-![](../../actions/workflows/ci.yml/badge.svg)
+The compatibility and market-data API behind `https://api.1sat.market` and
+1Sat marketplace experiences. It aggregates BSV-20, BSV-21, OrdLock, collection,
+balance, quote, mining, and application data from legacy 1Sat infrastructure.
 
-[![](https://railway.app/button.svg)](https://railway.app/template/G3k1Tv?referralCode=bonus)
+The service is not the same product as `1sat-stack`: the stack supplies modern
+protocol/indexing primitives, while this repository supplies market read models
+and legacy HTTP contracts. See the
+[commercial API and stack migration assessment](docs/COMMERCIAL_API_MIGRATION_ASSESSMENT.md)
+for the compatibility matrix and target architecture.
 
-## Key Features
+## Runtime
 
-- [<img src="https://github-production-user-asset-6210df.s3.amazonaws.com/17180392/266803654-ac5f086c-71ec-493a-a377-784cec2dc525.svg" height=19.2 align=center /> Bun](https://bun.sh/)
-  - [Debugging](.vscode/launch.json)
-  - [ESM & CommonJS compatibility](https://bun.sh/blog/bun-v1.0#esm-commonjs-compatibility)
-  - [Fast package manager](https://bun.sh/blog/bun-v1.0#install-speeds)
-  - [Fast runtime](https://bun.sh/blog/bun-v1.0#speed)
-  - [Fast test runner](https://bun.sh/blog/bun-v1.0#bun-is-a-test-runner)
-  - [Highly optimized APIs](https://bun.sh/blog/bun-v1.0#bun-apis)
-  - [Hot reloading](https://bun.sh/docs/runtime/hot#hot-mode)
-  - [TypeScript first class support](https://bun.sh/docs/runtime/typescript)
-- [<img src="https://github-production-user-asset-6210df.s3.amazonaws.com/17180392/266780371-74b32ff7-5cc3-45e1-af80-923a05c9f87b.svg" height=19.2 align=center /> Biome](https://biomejs.dev/)
-  - [Fast formatting](https://github.com/biomejs/biome/tree/main/benchmark#formatting)
-  - [Fast linting](https://github.com/biomejs/biome/tree/main/benchmark#linting)
-  - [Import sorting](https://biomejs.dev/analyzer/#imports-sorting)
-- [<img src="https://user-images.githubusercontent.com/124377191/228447757-78408c15-e914-4fb3-9135-f1ff45ee3fce.svg" height=19.2 align=center /> GitHub](https://github.com)
-  - [One click template](https://github.com/dayblox/bun-ts/generate)
-  - [Continuous Integration](.github/workflows/ci.yml)
+- Bun with TypeScript
+- Elysia and OpenAPI/Swagger
+- Redis read models and caches
+- `@bsv/sdk` transaction primitives
+- Railway production and development deployments
 
-## Prerequisites
+## Local development
 
-- [<img src="https://github-production-user-asset-6210df.s3.amazonaws.com/17180392/266803654-ac5f086c-71ec-493a-a377-784cec2dc525.svg" height=19.2 align=center /> Bun](https://bun.sh/) `>=1.0.0`
-  - [All-in-one toolkit](https://bun.sh/blog/bun-v1.0#bun-is-an-all-in-one-toolkit)
-  - [JavaScript runtime](https://bun.sh/blog/bun-v1.0#bun-is-a-javascript-runtime)
-  - [Package manager](https://bun.sh/blog/bun-v1.0#bun-is-a-package-manager)
-  - [Test runner](https://bun.sh/blog/bun-v1.0#bun-is-a-test-runner)
-  - [Bundler](https://bun.sh/blog/bun-v1.0#bun-is-a-bundler)
+Install the versioned lockfile exactly:
 
-## Getting Started
+```sh
+bun install --frozen-lockfile
+```
 
-1.  **[Deploy on Railway](https://railway.app/template/G3k1Tv?referralCode=bonus)** or **[use this template](https://github.com/dayblox/bun-ts/generate)**
+Run the service:
 
-2.  **Clone** the repository
+```sh
+bun start
+```
 
-3.  **Install** dependencies
+Run validation:
 
-    ```sh
-    bun i
-    ```
+```sh
+bun test
+bunx tsc --noEmit
+bunx --bun biome check .
+bun audit
+```
 
-## Usage
+The repository uses the text `bun.lock` format. The older binary `bun.lockb`
+was removed during the professional API upgrade.
 
-- **Development** mode (**debug**)
+## API and operations
 
-  `F5`
+- Production: `https://api.1sat.market`
+- OpenAPI UI: `https://api.1sat.market/swagger`
+- OpenAPI JSON: `https://api.1sat.market/swagger/json`
+- Health/market status: `https://api.1sat.market/status`
 
-- Running **tests** (**watch** mode)
+Required service configuration includes the primary Redis URL, bot Redis URL,
+upstream/application wallet keys used by enabled workflows, and admin Basic Auth
+credentials. Never commit those values.
 
-  ```sh
-  bun test --watch
-  ```
+## Documentation
 
-- **Production** mode
-
-  ```sh
-  bun start
-  ```
+- [Commercial API migration assessment](docs/COMMERCIAL_API_MIGRATION_ASSESSMENT.md)
+- [Differential stabilization review](1SAT_API_DIFFERENTIAL_REVIEW_2026-08-26.md)
+- [Historical professional API plan](IMPLEMENTATION_STATUS.md)
+- [Changelog](CHANGELOG.md)
