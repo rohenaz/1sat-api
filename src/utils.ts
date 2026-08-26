@@ -22,7 +22,9 @@ export const fetchJSON = async <T>(url: string): Promise<T | null> => {
   try {
     const response = await fetch(url);
     if (!response.ok) {
-      console.error("Fetch failed", { url, status: response.status });
+      if (response.status !== 404) {
+        console.error("Fetch failed", { url, status: response.status });
+      }
       return null;
     }
     return await response.json() as T;
