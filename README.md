@@ -1,14 +1,16 @@
 # 1Sat Market API
 
-The compatibility and market-data API behind `https://api.1sat.market` and
-1Sat marketplace experiences. It aggregates BSV-20, BSV-21, OrdLock, collection,
-balance, quote, mining, and application data from legacy 1Sat infrastructure.
+The stabilized legacy market-data API behind `https://api.1sat.market`. It
+aggregates BSV-20, BSV-21, OrdLock, collection, balance, quote, mining, and
+application data for the existing production experience.
 
-The service is not the same product as `1sat-stack`: the stack supplies modern
-protocol/indexing primitives, while this repository supplies market read models
-and legacy HTTP contracts. See the
-[commercial API and stack migration assessment](docs/COMMERCIAL_API_MIGRATION_ASSESSMENT.md)
-for the compatibility matrix and target architecture.
+This production service is not the architecture for the new 1Sat Wallet
+paradigm. The greenfield commercial API will use `1sat-stack` exclusively,
+adopt stack-native identities and data models, and integrate with the Omega
+website without preserving this service's wire contracts or runtime fallbacks.
+See the
+[greenfield capability and architecture assessment](docs/COMMERCIAL_API_MIGRATION_ASSESSMENT.md)
+for the feature map and delivery plan.
 
 ## Runtime
 
@@ -57,7 +59,7 @@ credentials. Never commit those values.
 
 ## Documentation
 
-- [Commercial API migration assessment](docs/COMMERCIAL_API_MIGRATION_ASSESSMENT.md)
+- [Greenfield commercial API architecture](docs/COMMERCIAL_API_MIGRATION_ASSESSMENT.md)
 - [Differential stabilization review](1SAT_API_DIFFERENTIAL_REVIEW_2026-08-26.md)
 - [Historical professional API plan](IMPLEMENTATION_STATUS.md)
 - [Changelog](CHANGELOG.md)
