@@ -5,12 +5,12 @@ import {
 	type TransactionInput,
 	type TransactionOutput,
 } from "@bsv/sdk";
-import { basicAuth } from "@eelkevdbos/elysia-basic-auth";
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { Elysia, t } from "elysia";
 import Redis from "ioredis";
 import type { Utxo } from "js-1sat-ord";
+import { createBasicAuthGuard } from "./auth";
 import {
 	fetchCollectionItems,
 	fetchCollectionMarket,
@@ -91,9 +91,9 @@ redis.on("error", (err) => console.error("Redis Error", err));
 const app = new Elysia()
 	.use(cors())
 	.use(swagger(swaggerConfig))
-	.use(
-		basicAuth({
-			credentials: { env: "BASIC_AUTH_CREDENTIALS" },
+	.onRequest(
+		createBasicAuthGuard({
+			credentials: process.env.BASIC_AUTH_CREDENTIALS ?? "",
 			scope: "/admin",
 		}),
 	)
