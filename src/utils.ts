@@ -1,5 +1,6 @@
 import { type ChainInfo, redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
+import { fetchJSON } from "./http";
 import type {
 	BSV20Details,
 	BSV21Details,
@@ -22,37 +23,7 @@ const timeframes: Timeframe[] = [
 	{ label: "ALL", value: 9999 },
 ];
 
-// Helper function to fetch JSON
-export const fetchJSON = async <T>(url: string): Promise<T | null> => {
-	try {
-		const response = await fetch(url);
-		if (!response.ok) {
-			if (response.status !== 404) {
-				console.error("Fetch failed", { url, status: response.status });
-			}
-			return null;
-		}
-		return (await response.json()) as T;
-	} catch (e) {
-		console.log("Fetch error", e);
-		return null;
-	}
-};
-
-export const fetchJSONArray = async <T>(url: string): Promise<T[]> => {
-	const response = await fetchJSON<unknown>(url);
-	if (response === null) {
-		return [];
-	}
-	if (!Array.isArray(response)) {
-		console.error("Expected an array response", {
-			url,
-			responseType: typeof response,
-		});
-		return [];
-	}
-	return response as T[];
-};
+export { fetchJSON, fetchJSONArray } from "./http";
 
 export const setPctChange = async (
 	id: string,
