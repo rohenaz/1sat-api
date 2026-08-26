@@ -2,7 +2,8 @@ import { fetchJSON } from "./http";
 
 type FetchTransaction = (url: string) => Promise<unknown | null>;
 
-const fetchTransaction: FetchTransaction = (url) => fetchJSON<unknown>(url);
+const fetchTransaction: FetchTransaction = (url) =>
+	fetchJSON<unknown>(url, { throwOnError: true });
 
 export const isTransactionOnChain = async (
 	txid: string,

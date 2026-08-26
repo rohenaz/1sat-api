@@ -1167,7 +1167,15 @@ const app = new Elysia()
 
 			// see if the win exists on chain
 			// if it already does we cannot claim anything
-			const claimed = await isTransactionOnChain(params.txid);
+			let claimed: boolean;
+			try {
+				claimed = await isTransactionOnChain(params.txid);
+			} catch {
+				set.status = 503;
+				return {
+					error: "unable to verify transaction status",
+				};
+			}
 			if (!claimed) {
 				// if it doesn't, we can claim it
 				const claim = {

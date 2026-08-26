@@ -84,6 +84,28 @@ describe("JSON fetching", () => {
 		}
 	});
 
+	test("can propagate an exhausted upstream failure", async () => {
+		const errorSpy = spyOn(console, "error").mockImplementation(
+			() => undefined,
+		);
+		const fetcher = responseSequence(
+			new Response("unavailable", { status: 503 }),
+		);
+
+		try {
+			const request = fetchJSON("https://example.com/unavailable", {
+				fetcher,
+				retries: 0,
+				throwOnError: true,
+			});
+
+			await expect(request).rejects.toThrow("Fetch failed with status 503");
+			expect(errorSpy).toHaveBeenCalledTimes(1);
+		} finally {
+			errorSpy.mockRestore();
+		}
+	});
+
 	test("does not retry a request cancelled by its caller", async () => {
 		const errorSpy = spyOn(console, "error").mockImplementation(
 			() => undefined,

@@ -20,4 +20,12 @@ describe("claim transaction lookup", () => {
 			"https://api.whatsonchain.com/v1/bsv/main/tx/hash/abc123",
 		);
 	});
+
+	test("propagates lookup failures instead of treating them as unclaimed", async () => {
+		const lookup = isTransactionOnChain("unavailable", async () => {
+			throw new Error("upstream unavailable");
+		});
+
+		await expect(lookup).rejects.toThrow("upstream unavailable");
+	});
 });

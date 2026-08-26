@@ -8,6 +8,7 @@ type FetchJSONOptions = {
 	retries?: number;
 	retryDelayMs?: number;
 	signal?: AbortSignal;
+	throwOnError?: boolean;
 	timeoutMs?: number;
 };
 
@@ -28,6 +29,7 @@ export const fetchJSON = async <T>(
 		retries = 1,
 		retryDelayMs = 100,
 		signal,
+		throwOnError = false,
 		timeoutMs = DEFAULT_TIMEOUT_MS,
 	}: FetchJSONOptions = {},
 ): Promise<T | null> => {
@@ -46,7 +48,14 @@ export const fetchJSON = async <T>(
 			}
 
 			if (response.status !== 404) {
-				console.error("Fetch failed", { url, status: response.status });
+				const error = new Error(`Fetch failed with status ${response.status}`);
+				if (throwOnError) {
+					throw error;
+				}
+				console.error("Fetch failed", {
+					url,
+					status: response.status,
+				});
 			}
 			return null;
 		} catch (error) {
@@ -59,6 +68,9 @@ export const fetchJSON = async <T>(
 			}
 
 			console.error("Fetch error", { error, url });
+			if (throwOnError) {
+				throw error;
+			}
 			return null;
 		}
 	}
