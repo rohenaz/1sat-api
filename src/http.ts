@@ -7,18 +7,35 @@ type FetchJSONOptions = {
 	fetcher?: Fetcher;
 	retries?: number;
 	retryDelayMs?: number;
+	signal?: AbortSignal;
+	timeoutMs?: number;
 };
+
+const DEFAULT_TIMEOUT_MS = 10_000;
 
 const shouldRetry = (status: number): boolean =>
 	status === 429 || status >= 500;
 
+const createSignal = (timeoutMs: number, signal?: AbortSignal): AbortSignal => {
+	const timeoutSignal = AbortSignal.timeout(timeoutMs);
+	return signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
+};
+
 export const fetchJSON = async <T>(
 	url: string,
-	{ fetcher = fetch, retries = 1, retryDelayMs = 100 }: FetchJSONOptions = {},
+	{
+		fetcher = fetch,
+		retries = 1,
+		retryDelayMs = 100,
+		signal,
+		timeoutMs = DEFAULT_TIMEOUT_MS,
+	}: FetchJSONOptions = {},
 ): Promise<T | null> => {
 	for (let attempt = 0; attempt <= retries; attempt += 1) {
 		try {
-			const response = await fetcher(url);
+			const response = await fetcher(url, {
+				signal: createSignal(timeoutMs, signal),
+			});
 			if (response.ok) {
 				return (await response.json()) as T;
 			}
@@ -33,6 +50,9 @@ export const fetchJSON = async <T>(
 			}
 			return null;
 		} catch (error) {
+			if (signal?.aborted) {
+				return null;
+			}
 			if (attempt < retries) {
 				await Bun.sleep(retryDelayMs * (attempt + 1));
 				continue;

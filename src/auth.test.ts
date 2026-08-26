@@ -26,8 +26,17 @@ describe("basic auth guard", () => {
 
 	test("challenges missing, malformed, and invalid credentials", () => {
 		const invalidPassword = `Basic ${Buffer.from("admin:wrong").toString("base64")}`;
+		const invalidUsername = `Basic ${Buffer.from("unknown:secret").toString("base64")}`;
+		const missingPassword = `Basic ${Buffer.from("admin:").toString("base64")}`;
 
-		for (const authorization of [undefined, "Basic", invalidPassword]) {
+		for (const authorization of [
+			undefined,
+			"Basic",
+			"Basic ",
+			invalidPassword,
+			invalidUsername,
+			missingPassword,
+		]) {
 			const response = guard({
 				request: request("/admin/utxo/consolidate/key", authorization),
 			});

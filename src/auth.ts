@@ -71,10 +71,10 @@ export const createBasicAuthGuard = ({
 				.toString("utf8")
 				.split(":");
 			const reference = credentials.get(username);
+			const usernameMatches = safeEqual(username, reference?.username ?? "");
+			const passwordMatches = safeEqual(password, reference?.password ?? "");
 			const valid =
-				Boolean(username && password) &&
-				safeEqual(username, reference?.username ?? "") &&
-				safeEqual(password, reference?.password ?? "");
+				Boolean(username && password) && usernameMatches && passwordMatches;
 
 			return valid ? undefined : unauthorized(realm);
 		} catch {

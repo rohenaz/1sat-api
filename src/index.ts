@@ -11,6 +11,7 @@ import { Elysia, t } from "elysia";
 import Redis from "ioredis";
 import type { Utxo } from "js-1sat-ord";
 import { createBasicAuthGuard } from "./auth";
+import { isTransactionOnChain } from "./claims";
 import {
 	fetchCollectionItems,
 	fetchCollectionMarket,
@@ -75,7 +76,7 @@ botRedis.on("error", (err) => console.error("Bot Redis Error", err));
 redis.on("connect", () => console.log("Connected to Redis"));
 redis.on("error", (err) => console.error("Redis Error", err));
 
-initRedis.on("connect", async () => {
+initRedis.once("connect", async () => {
 	console.log("Connected to initialization Redis");
 
 	try {
@@ -1165,11 +1166,9 @@ const app = new Elysia()
 			}
 
 			// see if the win exists on chain
-			// if it already does we cacnnot claim anything
-			const tx = fetchJSON(
-				`https://api.whatsonchain.com/v1/bsv/main/tx/hash/${params.txid}`,
-			);
-			if (!tx) {
+			// if it already does we cannot claim anything
+			const claimed = await isTransactionOnChain(params.txid);
+			if (!claimed) {
 				// if it doesn't, we can claim it
 				const claim = {
 					win,
