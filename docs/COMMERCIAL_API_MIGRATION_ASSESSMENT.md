@@ -284,6 +284,145 @@ Until isolation is complete, the existing dev API must not introduce schema
 changes, destructive jobs, bulk rewrites, or test data into shared Redis. No
 greenfield experiment should begin on that instance.
 
+## Project ownership and exact change locations
+
+### `1sat-stack`: protocol facts and overlay infrastructure
+
+Repository: `~/code/1sat-stack`
+
+Target branch: a dedicated feature branch from `origin/master`
+
+The stack owns admission, validation, indexed protocol facts, replayable
+lookup, and raw event access. It does not own commercial ranking, text search,
+OHLCV, customer plans, or the public market-data contract.
+
+#### Required stack work for collections
+
+The collection implementation exists in `pkg/collection`, but at revision
+`589884a` it is a library package and is not wired into the main server.
+`cmd/server/config.go` has no collection config/service field, initialization,
+registrar entry, or close lifecycle. The hosted API consequently cannot enable
+it through configuration alone.
+
+The stack feature should update:
+
+| Location | Exact responsibility |
+|---|---|
+| `cmd/server/config.go` | Import collection package; add `Config.Collection` and `Services.Collection`; call `SetDefaults`, `Initialize`, registrar mounting, and `Close` |
+| `config.example.yaml` | Add `collection.mode`, route settings, and initial `collection_ids` |
+| `cmd/server/config_test.go` | Cover disabled/enabled initialization and dependency gates |
+| `cmd/server/docs_test.go` | Assert the collection capability and mounted route prefixes |
+| `pkg/collection/docs/` | Add the embedded OpenAPI fragment used by the server registrar |
+| `pkg/collection/config.go` | Keep static registration and define the lifecycle for newly discovered collection topics |
+| `pkg/collection/topic_discovery.go` | Trigger or publish dynamic item-topic registration when a valid new root is admitted |
+| `pkg/collection/*_test.go` | Prove SIGMA admission, relative IDs, idempotent topic registration, and restart behavior |
+
+After that code ships, the stack deployment must enable the module, synchronize
+`tm_1sat_collection`, register/backfill item topics, and advertise
+`collection` from `/1sat/capabilities`.
+
+The collection package remains mint-membership infrastructure. Current owner,
+listing joins, sales, floors, volume, traits, and commercial collection search
+belong in the dev API projections.
+
+#### Stack surfaces that need no initial code change
+
+| Existing stack location | Consumer use |
+|---|---|
+| `pkg/ordlock/routes.go` and `ordlock.go` | Cursor through active, sale, and cancel records; validate historical completeness before requesting changes |
+| `pkg/bsv21/routes.go` and `pkg/lookup/bsv21.go` | Token details, registry facts, balances, history, and unspent outputs |
+| `pkg/txo`, `pkg/owner`, `pkg/ordfs`, `pkg/chaintracks` | Ownership, content, provenance, chain state, and replay inputs |
+
+If OrdLock backfill testing proves that a required sale fact is absent, the fix
+belongs in `pkg/ordlock/ordlock.go`, `routes.go`, its Swagger fragment, and
+tests. Do not add a parallel sale interpretation to the commercial API.
+
+#### Conditional stack work
+
+If BSV-20 or POW-20 remains in product scope, implement it as new stack-native
+indexing capability—for example `pkg/bsv20` or `pkg/pow20` plus
+`cmd/server` wiring, documentation, sync, and tests. The dev API may project
+those facts only after the canonical stack capability exists. It must not call
+the old API as a substitute.
+
+### `1sat-api` dev: commercial product and customer endpoints
+
+Repository: `~/code/1sat-api`
+
+Deployment branch: `upgrade/market-api` (currently an ancestor of `main`;
+fast-forward it to `main` before greenfield implementation)
+
+Railway service: `api.1sat.market dev`
+
+This project owns the durable commercial read model, calculations, query
+semantics, OpenAPI, API keys, quotas, and usage metering. A proposed clean
+structure is:
+
+| Proposed location | Responsibility |
+|---|---|
+| `src/index.ts`, `src/app.ts`, `src/config.ts` | Process entry, Elysia composition, strict environment validation |
+| `src/clients/stack.ts` | The only infrastructure client; stack HTTP/SSE/backfill access |
+| `migrations/` and `src/db/` | PostgreSQL schema, transactions, cursor indexes, checkpoints |
+| `src/domain/` | New asset, ordinal, listing, trade, collection, portfolio, and freshness types |
+| `src/projectors/` | BSV-21 catalog, OrdLock trades, collections, owner positions, candles, and search documents |
+| `src/routes/` | Customer endpoints under the new `/api/v1` contract |
+| `src/jobs/projector.ts` | Backfill, checkpoint resume, SSE consumption, replay, and lag |
+| `src/openapi/` | Contract schemas and generated/public documentation |
+| `src/auth/` and `src/metering/` | API keys, plans, quotas, request usage, and audit events |
+
+All proposed commercial endpoints live here:
+
+| Dev API endpoints | Owner |
+|---|---|
+| `/api/v1/assets*`, asset market summaries, candles | `1sat-api` routes + asset/trade projectors |
+| `/api/v1/listings*`, `/api/v1/trades` | `1sat-api` routes backed by OrdLock projection |
+| `/api/v1/collections*` and collection market analytics | `1sat-api` routes backed by stack collection facts plus commercial joins |
+| `/api/v1/search` | `1sat-api` search documents and PostgreSQL indexes |
+| `/api/v1/owners/{owner}/portfolio` | `1sat-api` owner-position projection |
+| `/api/v1/status` | `1sat-api` dependency health, chain height, checkpoints, and lag |
+
+The dev API does not proxy the stack's 136 low-level endpoints and does not
+reimplement protocol admission or validation.
+
+### `1sat-website` Omega: product UI and client adoption
+
+Repository: `~/code/1sat-website`
+
+Branch: `omega`
+
+Omega owns presentation, wallet interactions, and calls to the new customer
+contract. Exact integration locations are:
+
+| Existing Omega location | Change |
+|---|---|
+| `lib/constants.ts` | Replace legacy API hosts with one new commercial API base; keep stack base separately |
+| `app/api/autofill/route.ts` | Call the new typed search/assets endpoint |
+| `lib/api.ts` | Replace legacy ordinal browse feed with native listing client |
+| `app/(main)/market/search/[term]/page.tsx` | Render typed new search results |
+| `lib/market-data.ts` | Replace raw worker-status registry with commercial asset/market client |
+| `app/(main)/market/bsv21/page.tsx` | Render new catalog and market summary fields |
+| `app/(main)/market/ordinals/page.tsx` | Consume the chosen listing contract consistently |
+| `components/settings/settings-form.tsx` | Replace the remaining Gorilla content URL with stack content |
+| `lib/stack.ts` | Continue to own direct low-level stack clients where a commercial projection is unnecessary |
+
+Omega does not calculate canonical prices, floors, candles, or portfolio
+valuation in React. Those calculations live in `1sat-api`.
+
+### Railway: isolation and managed data services
+
+Project: `1sat.market`
+
+Railway owns deployment boundaries, not business schema:
+
+- create a real `development` environment or a separate greenfield project;
+- run `api.1sat.market dev` from `upgrade/market-api`;
+- provision dedicated development PostgreSQL;
+- remove production Redis references from the greenfield service;
+- add a dev-only Redis later only if measured need justifies it;
+- configure the new API domain, secrets, health check, backups, and restore
+  policy;
+- keep `api.1sat.market` on `main` and its production Redis untouched.
+
 ## Recommended greenfield data model
 
 The initial durable model can remain compact:
