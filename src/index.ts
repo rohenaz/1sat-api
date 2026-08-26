@@ -66,11 +66,15 @@ botRedis.on("error", (err) => console.error("Bot Redis Error", err));
 redis.on("connect", async () => {
   console.log("Connected to Redis");
 
-  await fetchV1Tickers();
-  await fetchV2Tickers();
-  await loadAllV1Names();
-  await loadIncludedV2Names();
-  await sseInit();
+  try {
+    await fetchV1Tickers();
+    await fetchV2Tickers();
+    await loadAllV1Names();
+    await loadIncludedV2Names();
+    await sseInit();
+  } catch (error) {
+    console.error("Redis initialization failed", error);
+  }
 });
 
 redis.on("error", (err) => console.error("Redis Error", err));

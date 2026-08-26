@@ -21,6 +21,10 @@ const timeframes: Timeframe[] = [
 export const fetchJSON = async <T>(url: string): Promise<T | null> => {
   try {
     const response = await fetch(url);
+    if (!response.ok) {
+      console.error("Fetch failed", { url, status: response.status });
+      return null;
+    }
     return await response.json() as T;
   } catch (e) {
     console.log("Fetch error", e);
@@ -28,7 +32,23 @@ export const fetchJSON = async <T>(url: string): Promise<T | null> => {
   }
 };
 
+export const fetchJSONArray = async <T>(url: string): Promise<T[]> => {
+  const response = await fetchJSON<unknown>(url);
+  if (response === null) {
+    return [];
+  }
+  if (!Array.isArray(response)) {
+    console.error("Expected an array response", { url, responseType: typeof response });
+    return [];
+  }
+  return response as T[];
+};
+
 export const setPctChange = async (id: string, sales: ListingsV1[] | ListingsV2[], currentHeight: number) => {
+  if (!Array.isArray(sales)) {
+    console.error("Cannot calculate percentage change from a non-array sales response", { id });
+    return 0;
+  }
   const cutoffs = timeframes.map((tf) => currentHeight - Math.floor(tf.value * 144));
   // assuming 144 blocks from current height "currentHeight" is 1 day, calculate cutoffs for each timeframe
 

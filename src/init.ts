@@ -1,13 +1,13 @@
 import { type ChainInfo, redis } from ".";
 import { API_HOST, AssetType, bsv21Blacklist } from "./constants";
 import type { BSV20V1, BSV21, Holder, ListingsV1, ListingsV2, MarketDataV1, MarketDataV2 } from "./types/bsv20";
-import { calculateMarketCap, fetchChainInfo, fetchJSON, setPctChange } from "./utils";
+import { calculateMarketCap, fetchChainInfo, fetchJSONArray, fetchJSON, setPctChange } from "./utils";
 
 
 // on boot up we get all the tickers and cache them
 export const fetchV1Tickers = async (): Promise<MarketDataV1[]> => {
   const urlV1Tokens = `${API_HOST}/bsv20?limit=100&offset=0&sort=height&dir=desc&included=true`;
-  const tickersV1 = (await fetchJSON<BSV20V1[]>(urlV1Tokens)) || [];
+  const tickersV1 = await fetchJSONArray<BSV20V1>(urlV1Tokens);
   console.log("Fetched v1 tickers", tickersV1.length)
 
   const info = await fetchChainInfo()
@@ -27,9 +27,8 @@ type TickerName = {
 const fetchV1TickerNames = async (offset: number, resultsPerPage: number, included: boolean) => {
   const url = `${API_HOST}/bsv20?limit=${resultsPerPage}&sort=height&dir=asc&offset=${offset}&included=${included}`
   console.log("Fetching", url)
-  const response = await fetch(url)
-  const ticker = await response.json() as BSV20V1[]
-  const tickers = (ticker || []).map((t, idx) => {
+  const ticker = await fetchJSONArray<BSV20V1>(url)
+  const tickers = ticker.map((t, idx) => {
     const v1 = t as BSV20V1
     return {
       tick: v1.tick,
@@ -46,9 +45,8 @@ const fetchV1TickerNames = async (offset: number, resultsPerPage: number, includ
 
 const fetchV2TickerNames = async (offset: number, resultsPerPage: number, included: boolean) => {
   const url = `${API_HOST}/bsv20/v2?limit=${resultsPerPage}&offset=${offset}&included=${included}`
-  const response = await fetch(url)
-  const ticker = (await response.json()) as BSV21[]
-  return (ticker || []).filter((v2) => {
+  const ticker = await fetchJSONArray<BSV21>(url)
+  return ticker.filter((v2) => {
     return v2.sym && v2.id
   }).map((t) => {
     const v2 = t as BSV21
@@ -124,7 +122,7 @@ export const loadIncludedV2Names = async (): Promise<void> => {
 export const fetchV2Tickers = async () => {
   const urlV2Tokens = `${API_HOST}/bsv20/v2?limit=2500&offset=0&included=true`;
   console.log("Fetching v2 tickers from", urlV2Tokens);
-  const tickersV2 = await fetchJSON<BSV21[]>(urlV2Tokens);
+  const tickersV2 = await fetchJSONArray<BSV21>(urlV2Tokens);
   if (!tickersV2 || !tickersV2.length) {
     return []
   }
@@ -149,13 +147,13 @@ export const loadV1TickerDetails = async (tickersV1: BSV20V1[], info: ChainInfo)
     await Promise.all([
       (async () => {
         const urlSales = `${API_HOST}/bsv20/market/sales?dir=desc&limit=20&offset=0&tick=${tick}`;
-        sales = (await fetchJSON<ListingsV1[]>(urlSales) || [])
+        sales = await fetchJSONArray<ListingsV1>(urlSales)
       })(),
       (async () => {
         const urlListings = `${API_HOST}/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&tick=${tick}`;
         const key = `listings-${AssetType.BSV20}-${tick.toLowerCase()}`;
         const pipeline = redis.pipeline().del(key);
-        for (const listing of (await fetchJSON<ListingsV1[]>(urlListings) || [])) {
+        for (const listing of await fetchJSONArray<ListingsV1>(urlListings)) {
           pipeline.hset(key, `${listing.txid}_${listing.vout}`, JSON.stringify(listing))
         }
         await pipeline.exec()
@@ -267,14 +265,12 @@ async function fetchContractData(id: string, ticker: MarketDataV2): Promise<Part
 
 async function fetchSales(id: string): Promise<ListingsV2[]> {
   const urlSales = `${API_HOST}/bsv20/market/sales?dir=desc&limit=20&offset=0&id=${id}`;
-  const sales = await fetchJSON<ListingsV2[]>(urlSales);
-  return sales || [];
+  return await fetchJSONArray<ListingsV2>(urlSales);
 }
 
 async function fetchListings(id: string): Promise<ListingsV2[]> {
   const urlListings = `${API_HOST}/bsv20/market?sort=price_per_token&dir=asc&limit=20&offset=0&id=${id}`;
-  const listings = await fetchJSON<ListingsV2[]>(urlListings);
-  return listings || [];
+  return await fetchJSONArray<ListingsV2>(urlListings);
 }
 
 async function fetchHolders(id: string, ticker: MarketDataV2): Promise<void> {
