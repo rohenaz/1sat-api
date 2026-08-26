@@ -72,6 +72,9 @@ two generations of infrastructure.
   version 1 of the new contract. It is unrelated to the old unversioned API.
 - Environment and domain select the paradigm. Individual requests do not
   silently switch between paradigms.
+- The greenfield deployment has an isolated Railway environment or project,
+  isolated credentials, and isolated data services. A differently named API
+  service inside the production environment is not sufficient isolation.
 - If the stack is unavailable, read endpoints may serve their last consistent
   materialized state with explicit freshness metadata; live operations fail
   clearly with `503`. A durable read model is part of the design, not a legacy
@@ -252,6 +255,35 @@ The remaining legacy call sites are a precise first integration backlog:
 Omega and the new API should change together. There is no need to preserve old
 response types inside either codebase.
 
+## Current Railway isolation blocker
+
+Railway currently has one environment named `production`. Both
+`api.1sat.market` and `api.1sat.market dev` live in it, and the project has
+one Redis service. Both API services expose `REDIS_URL`,
+`REDIS_PRIVATE_URL`, and `BOT_REDIS_URL`; the user confirmed that the API
+services resolve their Redis configuration to the same instance.
+
+Schema-compatible dev code avoids an immediate schema mismatch, but sharing is
+still an operational risk because dev jobs and tests can mutate production
+keys. It is categorically unsafe for greenfield development.
+
+Before replacing routes, schemas, jobs, or initialization behavior on dev:
+
+1. create a real Railway `development` environment or a separate greenfield
+   project;
+2. provision a dedicated development PostgreSQL database there;
+3. do not attach production Redis variables to the greenfield API;
+4. add a dedicated development Redis only if measured caching or ephemeral
+   coordination needs justify it;
+5. backfill development projections from `1sat-stack`, not by cloning or
+   mutating production Redis;
+6. verify from rendered Railway variables and connection tests that no
+   production data-service hostname or credential is reachable from dev.
+
+Until isolation is complete, the existing dev API must not introduce schema
+changes, destructive jobs, bulk rewrites, or test data into shared Redis. No
+greenfield experiment should begin on that instance.
+
 ## Recommended greenfield data model
 
 The initial durable model can remain compact:
@@ -361,6 +393,10 @@ Validate these prices against measured cost-to-serve before launch.
 
 ### Phase 0 — contract and capability decisions
 
+- Create the isolated Railway development environment/project and dedicated
+  PostgreSQL before any greenfield schema work.
+- Remove shared `REDIS_URL`, `REDIS_PRIVATE_URL`, and `BOT_REDIS_URL` from
+  the greenfield service.
 - Decide whether BSV-20 and POW-20 are excluded. If retained, define a new
   stack/overlay indexing capability before exposing them in the API.
 - Choose the initial commercial API hostname.
@@ -419,6 +455,10 @@ runtime. The cutover unit is the new product environment.
 
 - No import, environment variable, network call, or operational runbook in the
   new API references the legacy production API.
+- Development and production do not share database/cache services, credentials,
+  volumes, environment-level variables, or writable data.
+- The greenfield service has no legacy Redis variables; any future Redis cache
+  is separately provisioned and disposable.
 - No GorillaPool market/search dependency remains in Omega or the new API.
 - Canonical IDs are stack-native outpoints/token IDs.
 - All list endpoints have stable opaque cursors and deterministic ordering.
