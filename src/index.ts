@@ -105,8 +105,10 @@ const app = new Elysia()
 		},
 		endpointDocs.root,
 	)
-	.onError(({ error }) => {
-		console.error("Error:", error);
+	.onError(({ code, error }) => {
+		if (code !== "NOT_FOUND") {
+			console.error("Error:", error);
+		}
 	})
 	.get(
 		"/ticker/autofill/:assetType/:id",
