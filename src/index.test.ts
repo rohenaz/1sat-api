@@ -18,4 +18,17 @@ describe("HTTP semantics", () => {
 		expect(response.headers.get("content-length")).toBe("11");
 		expect(await response.text()).toBe("");
 	});
+
+	test("HEAD succeeds for parameterized async GET routes", async () => {
+		const app = new Elysia().get("/async/:id", async ({ params }) => ({
+			id: params.id,
+		}));
+		const response = await app.handle(
+			new Request("http://localhost/async/test", { method: "HEAD" }),
+		);
+
+		expect(response.status).toBe(200);
+		expect(response.headers.get("content-length")).toBe("13");
+		expect(await response.text()).toBe("");
+	});
 });
