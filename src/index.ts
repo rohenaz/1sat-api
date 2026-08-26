@@ -66,13 +66,17 @@ import {
 } from "./utils";
 
 export const redis = new Redis(`${process.env.REDIS_URL}`);
+export const initRedis = redis.duplicate();
 export const botRedis = new Redis(`${process.env.BOT_REDIS_URL}`);
 
 botRedis.on("connect", () => console.log("Connected to Bot Redis"));
 botRedis.on("error", (err) => console.error("Bot Redis Error", err));
 
-redis.on("connect", async () => {
-	console.log("Connected to Redis");
+redis.on("connect", () => console.log("Connected to Redis"));
+redis.on("error", (err) => console.error("Redis Error", err));
+
+initRedis.on("connect", async () => {
+	console.log("Connected to initialization Redis");
 
 	try {
 		await fetchV1Tickers();
@@ -85,8 +89,9 @@ redis.on("connect", async () => {
 		console.error("Redis initialization failed", error);
 	}
 });
-
-redis.on("error", (err) => console.error("Redis Error", err));
+initRedis.on("error", (err) =>
+	console.error("Initialization Redis Error", err),
+);
 
 const app = new Elysia()
 	.use(cors())

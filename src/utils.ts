@@ -1,3 +1,4 @@
+import type { Redis } from "ioredis";
 import { type ChainInfo, redis } from ".";
 import { API_HOST, AssetType, defaults } from "./constants";
 import { fetchJSON } from "./http";
@@ -29,6 +30,7 @@ export const setPctChange = async (
 	id: string,
 	sales: ListingsV1[] | ListingsV2[],
 	currentHeight: number,
+	cache: Redis = redis,
 ) => {
 	if (!Array.isArray(sales)) {
 		console.error(
@@ -56,7 +58,7 @@ export const setPctChange = async (
 		const pctChange = ((lastPrice - firstPrice) / firstPrice) * 100;
 		console.log({ lastPrice, firstPrice, pctChange });
 		// cache the pct for the ticker
-		await redis.set(
+		await cache.set(
 			`pct-${timeframes[4].label.toLowerCase()}-${id.toLowerCase()}`,
 			pctChange,
 			"EX",

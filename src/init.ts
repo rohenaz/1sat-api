@@ -1,4 +1,4 @@
-import { type ChainInfo, redis } from ".";
+import { type ChainInfo, initRedis as redis } from ".";
 import { API_HOST, AssetType, bsv21Blacklist } from "./constants";
 import type {
 	BSV20V1,
@@ -237,7 +237,12 @@ export const loadV1TickerDetails = async (
 			price,
 			Number.parseInt(ticker.max, 10),
 		);
-		const pctChange = await setPctChange(ticker.tick, sales, info.blocks);
+		const pctChange = await setPctChange(
+			ticker.tick,
+			sales,
+			info.blocks,
+			redis,
+		);
 		const lastSaleHeight =
 			sales.length > 0 ? sales[0]?.spendHeight || 0 : undefined;
 
@@ -300,7 +305,7 @@ export const loadV2TickerDetails = async (
 			price,
 			Number.parseInt(ticker.amt, 10),
 		);
-		const pctChange = await setPctChange(id, sales, info.blocks);
+		const pctChange = await setPctChange(id, sales, info.blocks, redis);
 
 		const result = {
 			...ticker,
